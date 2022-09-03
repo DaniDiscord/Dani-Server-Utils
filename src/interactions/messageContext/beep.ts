@@ -1,4 +1,9 @@
-import { CacheType, CommandInteraction } from "discord.js";
+import {
+  CacheType,
+  CommandInteraction,
+  MessageApplicationCommandData,
+  MessageContextMenuCommandInteraction,
+} from "discord.js";
 import {
   CustomInteractionReplyOptions,
   InteractionCommand,
@@ -22,6 +27,7 @@ export default class BeepCommand extends InteractionCommand {
   async execute(
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
-    return { content: `Boop (message context command on ${interaction})` };
+    const int = interaction as MessageContextMenuCommandInteraction;
+    return { content: `Boop (message context command on ${int.targetMessage.id})` };
   }
 }

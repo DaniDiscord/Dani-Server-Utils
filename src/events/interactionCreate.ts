@@ -27,7 +27,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
 
   if (interaction.isCommand()) {
     const cmd = client.slashCommands.get(
-      `${interaction.commandType}-${interaction.command?.name}`
+      `${interaction.commandType}-${interaction.commandName}`
     );
     if (!cmd) return;
     let log = `User ${interaction.user.username} executed ${

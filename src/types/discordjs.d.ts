@@ -3,7 +3,7 @@ import { IAutoSlow, ISettings } from "./mongodb";
 
 import { Command } from "./command";
 import { Config } from "config";
-import { InteractionCommand } from "classes/SlashCommand";
+import { InteractionCommand } from "classes/CustomInteraction";
 import { ReactionHandler } from "lib/reacthandler";
 
 declare module "discord.js" {
