@@ -148,52 +148,6 @@ export class CustomClient extends Client {
     return permlvl;
   }
 
-  randomColor(s = 0.5, v = 0.95): [number, number, number] {
-    const h = (Math.random() + 0.618033988749895) % 1;
-    const h_i = Math.floor(h * 6);
-    const f = h * 6 - h_i;
-    const p = v * (1 - s);
-    const q = v * (1 - f * s);
-    const t = v * (1 - (1 - f) * s);
-    let r: number;
-    let g: number;
-    let b: number;
-
-    if (h_i < 2) {
-      b = p;
-
-      if (h_i == 0) {
-        r = v;
-        g = t;
-      } else {
-        r = q;
-        g = v;
-      }
-    } else if (h_i < 4) {
-      r = p;
-
-      if (h_i == 2) {
-        g = v;
-        b = t;
-      } else {
-        g = q;
-        b = v;
-      }
-    } else {
-      g = p;
-
-      if (h_i == 4) {
-        r = t;
-        b = v;
-      } else {
-        r = v;
-        b = q;
-      }
-    }
-
-    return [Math.floor(r * 256), Math.floor(g * 256), Math.floor(b * 256)];
-  }
-
   gradient(start_color: string, end_color: string, steps = 10): string[] {
     // strip the leading # if it's there
     start_color = start_color.replace(/^\s*#|\s*$/g, "");

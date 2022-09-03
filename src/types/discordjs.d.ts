@@ -28,7 +28,6 @@ declare module "discord.js" {
     log(type: string, msg: any, title?: string): void;
     errEmb(errnum?: number, extra?: string): MessageEmbed;
     permlevel(message?: Message, member?: GuildMember): number;
-    randomColor(s?: number, v?: number): [number, number, number];
     gradient(start_color: string, end_color: string, steps?: number): string[];
     loadCommand(
       category: string,

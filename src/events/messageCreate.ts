@@ -1,4 +1,11 @@
-import { Collection, GuildChannel, Message, MessageEmbed, TextChannel } from "discord.js";
+import {
+  ChannelType,
+  Collection,
+  EmbedBuilder,
+  GuildChannel,
+  Message,
+  TextChannel,
+} from "discord.js";
 
 import { Command } from "types/command";
 import { CustomClient } from "../lib/client";
@@ -86,29 +93,35 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
               }, 5000);
           }
           const logCh = message.guild.channels.cache.get(CHAIN_DELETION_LOG_CHANNEL_ID);
-          if (logCh && logCh.guild != null && (logCh.isText() || logCh.isThread())) {
-            const emb = new MessageEmbed()
-              .setAuthor(
-                `${message.author.username}#${message.author.discriminator} ${
+          if (
+            logCh &&
+            logCh.guild != null &&
+            (logCh.type === ChannelType.GuildText || logCh.isThread())
+          ) {
+            const emb = new EmbedBuilder()
+              .setAuthor({
+                name: `${message.author.username}#${message.author.discriminator} ${
                   message.member?.nickname ? `(${message.member.nickname})` : ""
                 }`,
-                message.author.avatarURL() ??
-                  "https://cdn.discordapp.com/embed/avatars/0.png"
-              )
-              .setColor("RANDOM")
+                iconURL:
+                  message.author.avatarURL() ??
+                  "https://cdn.discordapp.com/embed/avatars/0.png",
+              })
+              .setColor("Random")
               .setDescription(`Chain detection in <#${message.channelId}>`)
-              .addField(
-                "Channel",
-                `<#${message.channel.id}> (${
-                  (message.channel as GuildChannel)?.name ?? "Unknown"
-                })`
-              )
-              .addField(
-                "ID",
-                `\`\`\`ini\nUser = ${message.author.id}\nMessage = ${message.id}\`\`\``
-              )
-              .addField("Date", new Date(message.createdTimestamp).toString());
-
+              .addFields(
+                {
+                  name: "Channel",
+                  value: `<#${message.channel.id}> (${
+                    (message.channel as GuildChannel)?.name ?? "Unknown"
+                  })`,
+                },
+                {
+                  name: "ID",
+                  value: `\`\`\`ini\nUser = ${message.author.id}\nMessage = ${message.id}\`\`\``,
+                },
+                { name: "Date", value: new Date(message.createdTimestamp).toString() }
+              );
             const messageChunks = [];
             if (message.content) {
               if (message.content.length > 1024) {
@@ -128,7 +141,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
               messageChunks.push("None");
             }
             messageChunks.forEach((chunk, i) => {
-              emb.addField(i === 0 ? "Content" : "Continued", chunk);
+              emb.addFields({ name: i === 0 ? "Content" : "Continued", value: chunk });
             });
             await logCh.send({ embeds: [emb] }).catch(() => {});
           }
@@ -239,10 +252,9 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
       // We just send an embed with the c content
       message.channel.send({
         embeds: [
-          {
-            color: client.randomColor(),
-            description: message.settings.commands.filter(filter)[0].content,
-          },
+          new EmbedBuilder()
+            .setColor("Random")
+            .setDescription(message.settings.commands.filter(filter)[0].content),
         ],
       });
       return;
