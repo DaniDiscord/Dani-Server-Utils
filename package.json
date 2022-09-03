@@ -24,7 +24,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "colors": "^1.4.0",
-    "discord.js": "^13.0.1",
+    "discord.js": "^14.3.0",
     "dotenv": "^8.2.0",
     "ideone-npm": "^3.0.0",
     "klaw": "^3.0.0",
@@ -81,7 +81,7 @@
     "import-sort": "^6.0.0",
     "import-sort-parser-typescript": "^6.0.0",
     "import-sort-style-eslint": "^6.0.0",
-    "nodemon": "^2.0.12",
+    "nodemon": "^2.0.19",
     "prettier": "^2.3.2",
     "prettier-plugin-import-sort": "^0.0.7",
     "rimraf": "^3.0.2",

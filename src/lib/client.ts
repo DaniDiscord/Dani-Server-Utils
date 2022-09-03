@@ -1,23 +1,32 @@
-import { AutoSlowCache, AutoSlowManager } from "./autoslow";
 import {
+  APIEmbed,
+  ApplicationCommandData,
+  ApplicationCommandType,
+  ChatInputApplicationCommandData,
   Client,
   ClientOptions,
+  Collection,
   ColorResolvable,
+  Colors,
+  EmbedBuilder,
   GuildMember,
   Message,
-  MessageEmbed,
+  UserApplicationCommandData,
 } from "discord.js";
+import { AutoSlowCache, AutoSlowManager } from "./autoslow";
+import { join, resolve } from "path";
 
 import { AutoSlowModel } from "models/AutoSlow";
 import { Command } from "types/command";
 import { CounterModel } from "models/Counter";
+import { InteractionCommand } from "classes/CustomInteraction";
 import { NameModel } from "../models/Name";
 import _ from "lodash";
 /* eslint-disable @typescript-eslint/no-var-requires */
 import colors from "colors";
-import { join } from "path";
 import moment from "moment";
 import { promisify } from "util";
+import { readdir } from "fs/promises";
 
 export class CustomClient extends Client {
   constructor(options: ClientOptions) {
@@ -40,6 +49,12 @@ export class CustomClient extends Client {
 
     process.on("unhandledRejection", (err) => {
       console.error("Uncaught Promise Error: ", err);
+    });
+
+    this.slashCommands = new Collection();
+
+    this.once("ready", async () => {
+      this.loadSlashCommands();
     });
   }
 
@@ -68,40 +83,37 @@ export class CustomClient extends Client {
     );
   }
 
-  errEmb(errnum = 0, extra?: string): MessageEmbed {
-    let out: {
-      color: ColorResolvable;
-      text: string;
-    };
+  errEmb(errnum = 0, extra?: string): APIEmbed {
+    let out: APIEmbed;
 
     switch (errnum) {
       case 0:
         out = {
-          color: "RED",
-          text: `${extra ?? "Unknown error"}`,
+          color: Colors.Red,
+          description: `${extra ?? "Unknown error"}`,
         };
         break;
       case 1:
         out = {
-          color: "RED",
-          text: `Not given enough arguments${extra ? `\n${extra}` : ""}`,
+          color: Colors.Red,
+          description: `Not given enough arguments${extra ? `\n${extra}` : ""}`,
         };
         break;
       case 2:
         out = {
-          color: "RED",
-          text: `Argument invalid${extra ? `\n${extra}` : ""}`,
+          color: Colors.Red,
+          description: `Argument invalid${extra ? `\n${extra}` : ""}`,
         };
         break;
       default:
         out = {
-          color: "RED",
-          text: "Default reached",
+          color: Colors.Red,
+          description: "Default reached",
         };
         break;
     }
 
-    return new MessageEmbed().setColor(out.color).setDescription(out.text);
+    return out;
   }
 
   permlevel(message?: Message, member?: GuildMember): number {
@@ -369,6 +381,90 @@ export class CustomClient extends Client {
       AutoSlowCache.addAutoSlow(channelId, autoSlow);
     }
     return autoSlow;
+  }
+
+  private async loadSlashCommands() {
+    const folders = await readdir(resolve(__dirname, "..", "interactions"));
+    const commands = await this.application?.commands.fetch();
+    let loaded = 0;
+    for (const folder of folders) {
+      const files = await readdir(resolve(__dirname, "..", "interactions", folder));
+      for (const file of files) {
+        try {
+          // logger.info(`Loading slash command ${file}`);
+          const path = resolve(__dirname, "..", "interactions", folder, file);
+          const CustomInteractionClass = (await import(path))
+            .default as typeof InteractionCommand;
+          if (!CustomInteractionClass) continue;
+          const custInteraction = new CustomInteractionClass(this);
+          const opts = custInteraction.options;
+
+          // const existing = this.application?.commands.cache.find(
+          //   (o) => o.type === ApplicationCommandType.ChatInput && o.name === opts.name
+          // );
+          // if (existing) {
+          //   console.log(
+          //     "(opts as ChatInputApplicationCommandData).options",
+          //     (opts as ChatInputApplicationCommandData).options
+          //   );
+          //   console.log("existing.options", existing.options);
+          //   if (
+          //     !_.isEqual(
+          //       (opts as ChatInputApplicationCommandData).options,
+          //       existing.options
+          //     )
+          //   ) {
+          //     console.log("edited cmd");
+          //     await this.application?.commands.edit(existing.id, opts);
+          //   }
+          // } else {
+          //   await this.application?.commands.create(opts).catch((e) => {
+          //     console.error(e);
+          //   });
+          // }
+          await this.application?.commands.create(opts).catch((e) => {
+            console.error(e);
+          });
+
+          if (
+            custInteraction.autocompleteOptions &&
+            opts.type === ApplicationCommandType.ChatInput
+          ) {
+            this.autocompleteOptions.set(opts.name, custInteraction.autocompleteOptions);
+          }
+
+          console.log(file);
+          console.log(opts);
+          this.slashCommands.set(`${opts.type ?? 1}-${opts.name}`, custInteraction);
+          loaded++;
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    }
+
+    if (
+      commands &&
+      commands.filter((c) => !this.slashCommands.has(`${c.type ?? 1}-${c.name}`)).size > 0
+    ) {
+      this.log(
+        "Info",
+        `Unloading a total of ${commands.filter(
+          (c) => !this.slashCommands.has(c.name)
+        )} existing slash commands`
+      );
+      for (const command of commands
+        .filter((c) => !this.slashCommands.has(c.name))
+        .values()) {
+        await command.delete();
+      }
+    }
+    this.log(
+      "info",
+      `Loaded ${
+        loaded == folders.length ? "all" : `${loaded}/${folders.length}`
+      } commands`
+    );
   }
 
   wait = promisify(setTimeout);

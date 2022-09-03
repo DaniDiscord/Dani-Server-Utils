@@ -3,6 +3,7 @@ import { IAutoSlow, ISettings } from "./mongodb";
 
 import { Command } from "./command";
 import { Config } from "config";
+import { InteractionCommand } from "classes/SlashCommand";
 import { ReactionHandler } from "lib/reacthandler";
 
 declare module "discord.js" {
@@ -11,6 +12,8 @@ declare module "discord.js" {
     embColor: string;
     prefix: string;
     commands: Collection<string, Command>;
+    slashCommands: Collection<string, InteractionCommand>;
+    autocompleteOptions: Collection<string, AutocompleteOptionGenerators>;
     settings: Collection<string, ISettings>;
     aliases: Collection<string, string>;
     channelMessages: Collection<string, { word: string; count: number }[]>;
