@@ -1180,6 +1180,11 @@
   resolved "https://registry.yarnpkg.com/@sapphire/snowflake/-/snowflake-3.2.2.tgz#faacdc1b5f7c43145a71eddba917de2b707ef780"
   integrity sha512-ula2O0kpSZtX9rKXNeQMrHwNd7E4jPDJYUXmEGTFdMRfyfMw+FPyh04oKMjAiDuOi64bYgVkOV3MjK+loImFhQ==
 
+"@sourcebin/linguist@^0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@sourcebin/linguist/-/linguist-0.0.3.tgz#f87ebb06eb4450c6f2825c5cb5347cd4fc057175"
+  integrity sha512-VVkb/34pISdK+1tyqmwBac6crn8UhviKCRV5w/wc8iZyTCOoTrOu0Cgbqfh0bfMGxNlQuhaRy6cMmEmHxa5R3g==
+
 "@tokenizer/token@^0.3.0":
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/@tokenizer/token/-/token-0.3.0.tgz#fe98a93fe789247e998c75e74e9c7c63217aa276"
@@ -4986,6 +4991,14 @@ source-map@^0.6.0:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
+
+sourcebin@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/sourcebin/-/sourcebin-5.0.0.tgz#c203035f15c6c827afa5cfc4e528f6de85f71187"
+  integrity sha512-UWlYVRTa2RN0iSlmYnzhOkfVstv7hs245OWOVqHCaJ3Cy6fBAX4HcZ5a7KRe0CooVv0GAjJZ1nqJly0CN9yjnA==
+  dependencies:
+    "@sourcebin/linguist" "^0.0.3"
+    axios "^0.27.2"
 
 sparse-bitfield@^3.0.3:
   version "3.0.3"
