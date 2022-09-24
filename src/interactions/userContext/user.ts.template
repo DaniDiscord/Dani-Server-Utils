@@ -1,8 +1,7 @@
 import {
   CacheType,
   CommandInteraction,
-  MessageApplicationCommandData,
-  MessageContextMenuCommandInteraction,
+  UserContextMenuCommandInteraction,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
@@ -12,14 +11,14 @@ import {
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 
-export default class BeepCommand extends InteractionCommand {
+export default class ContextCommand extends InteractionCommand {
   /**
    *
    */
   constructor(client: CustomClient) {
     super(client, {
-      type: ApplicationCommandType.Message,
-      name: "beep",
+      type: ApplicationCommandType.User,
+      name: "User Context Command",
       // defaultMemberPermissions: "Administrator",
     });
   }
@@ -27,7 +26,7 @@ export default class BeepCommand extends InteractionCommand {
   async execute(
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
-    const int = interaction as MessageContextMenuCommandInteraction;
-    return { content: `Boop (message context command on ${int.targetMessage.id})` };
+    const int = interaction as UserContextMenuCommandInteraction;
+    return { content: `Hey there, <@!${int.targetId}>!` };
   }
 }

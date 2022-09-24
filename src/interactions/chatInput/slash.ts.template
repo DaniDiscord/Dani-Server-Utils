@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, CacheType, CommandInteraction } from "discord.js";
+import { CacheType, CommandInteraction } from "discord.js";
 import {
   CustomInteractionReplyOptions,
   InteractionCommand,
@@ -7,7 +7,7 @@ import {
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 
-export default class PingCommand extends InteractionCommand {
+export default class SlashCommand extends InteractionCommand {
   /**
    *
    */

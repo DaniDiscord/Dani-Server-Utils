@@ -1,4 +1,8 @@
-import { CacheType, CommandInteraction } from "discord.js";
+import {
+  CacheType,
+  CommandInteraction,
+  MessageContextMenuCommandInteraction,
+} from "discord.js";
 import {
   CustomInteractionReplyOptions,
   InteractionCommand,
@@ -7,14 +11,14 @@ import {
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 
-export default class FlipCommand extends InteractionCommand {
+export default class ContextCommand extends InteractionCommand {
   /**
    *
    */
   constructor(client: CustomClient) {
     super(client, {
-      type: ApplicationCommandType.User,
-      name: "flip",
+      type: ApplicationCommandType.Message,
+      name: "Message Context Command",
       // defaultMemberPermissions: "Administrator",
     });
   }
@@ -22,6 +26,7 @@ export default class FlipCommand extends InteractionCommand {
   async execute(
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
-    return { content: `Flop (user context command on ${interaction.user.username})` };
+    const int = interaction as MessageContextMenuCommandInteraction;
+    return { content: `Hey there, <@!${int.targetId}>!` };
   }
 }
