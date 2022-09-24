@@ -164,66 +164,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   message.author.permLevel = level;
 
   // Only called if the command pipeline was interrupted and the bot was ready to handle it
-  const next = async () => {
-    // Lets first check if the message is in one of the mentor roles' channels
-    if (
-      message.settings.mentorRoles
-        .map((mR) => mR.assignedChannels)
-        .flat(1)
-        .includes(message.channel.id)
-    ) {
-      // Yep. I guess we look for thanks now
-      const thanks = ["ty", "thanks", "thank you", "tyvm", "tysm", "thank"];
-      const thanksRegex = new RegExp(`(?:^| )(${thanks.join("|")})(?:$| )`, "gi");
-
-      if (message.content.match(thanksRegex)) {
-        /**
-         * They did have a thanks in there somewhere
-         *
-         * Parsing the intent behind a message is too much hassle.
-         * We'll only give the user a "thank" if there is no ambiguity.
-         *
-         * In this case, no ambiguity means they either pinged only that user, or replied to that user and didn't ping anyone
-         */
-
-        let hasPing = false;
-        let hasReply = false;
-
-        // eslint-disable-next-line max-len
-        if (message.reference && message.reference.channelId === message.channel.id)
-          hasReply = true;
-
-        if (message.mentions.members?.size == 1) {
-          hasPing = true;
-        } else if ((message.mentions.members?.size ?? 0) > 1) {
-          return;
-        }
-
-        if (hasPing !== hasReply) {
-          // bitwise XOR, very nice
-          // There is no ambiguity!
-          if (hasPing && message.mentions.members) {
-            // This is easy. Just give a thanks to the first message.mentions.members
-            client.emit("newThank", {
-              message,
-              thankedMember: message.mentions.members.first(),
-            });
-          } else if (message.reference && message.reference.messageId) {
-            // Fetch the referenced message
-            const refd = await message.channel.messages.fetch(
-              message.reference.messageId
-            );
-
-            if (!refd) {
-              return; // Referenced message wasn't found. It's deleted already lmao
-            }
-
-            client.emit("newThank", { message, thankedMember: refd.member });
-          }
-        }
-      }
-    }
-  };
+  const next = async () => {};
 
   if (!message.content.startsWith(client.prefix)) {
     return next();
