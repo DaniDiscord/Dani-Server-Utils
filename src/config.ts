@@ -90,8 +90,8 @@ export const config: Config = {
           admRole = member.guild.roles.resolve(member.settings.roles.admin);
         } else return false;
         return Boolean(
-          (msg && msg.member && msg.member.permissions.has("MANAGE_GUILD")) ||
-            (member && member.permissions.has("MANAGE_GUILD")) ||
+          (msg && msg.member && msg.member.permissions.has("ManageGuild")) ||
+            (member && member.permissions.has("ManageGuild")) ||
             (admRole &&
               ((msg && msg.member && msg.member.roles.cache.has(admRole.id)) ||
                 (member && member.roles.cache.has(admRole.id))))

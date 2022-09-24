@@ -1,8 +1,9 @@
-import { Collection, Message, MessageEmbed } from "discord.js";
+import { Collection, EmbedBuilder, Message } from "discord.js";
 import { IAutoSlow, ISettings } from "./mongodb";
 
 import { Command } from "./command";
 import { Config } from "config";
+import { InteractionCommand } from "classes/CustomInteraction";
 import { ReactionHandler } from "lib/reacthandler";
 
 declare module "discord.js" {
@@ -11,6 +12,8 @@ declare module "discord.js" {
     embColor: string;
     prefix: string;
     commands: Collection<string, Command>;
+    slashCommands: Collection<string, InteractionCommand>;
+    autocompleteOptions: Collection<string, AutocompleteOptionGenerators>;
     settings: Collection<string, ISettings>;
     aliases: Collection<string, string>;
     channelMessages: Collection<string, { word: string; count: number }[]>;
@@ -23,9 +26,8 @@ declare module "discord.js" {
 
     /* FUNCTIONS */
     log(type: string, msg: any, title?: string): void;
-    errEmb(errnum?: number, extra?: string): MessageEmbed;
+    errEmb(errnum?: number, extra?: string): EmbedBuilder;
     permlevel(message?: Message, member?: GuildMember): number;
-    randomColor(s?: number, v?: number): [number, number, number];
     gradient(start_color: string, end_color: string, steps?: number): string[];
     loadCommand(
       category: string,

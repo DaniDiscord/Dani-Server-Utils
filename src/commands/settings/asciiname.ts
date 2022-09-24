@@ -1,4 +1,5 @@
-import { Command } from "types/command";
+import { Command, PermissionLevels } from "types/command";
+
 import { unicode2Ascii } from "lib/utils";
 
 const asciiname: Command = {
@@ -35,7 +36,7 @@ const asciiname: Command = {
   },
   conf: {
     aliases: ["ascii"],
-    permLevel: "Helper",
+    permLevel: PermissionLevels.HELPER,
   },
   help: {
     name: "asciiname",

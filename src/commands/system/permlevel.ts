@@ -1,5 +1,6 @@
-import { Command } from "types/command";
-import { MessageEmbed } from "discord.js";
+import { Command, PermissionLevels } from "types/command";
+
+import { EmbedBuilder } from "discord.js";
 
 const permlevel: Command = {
   run: async (client, message, [member]) => {
@@ -9,8 +10,8 @@ const permlevel: Command = {
 
       message.channel.send({
         embeds: [
-          new MessageEmbed()
-            .setColor("GREEN")
+          new EmbedBuilder()
+            .setColor("Green")
             .setDescription(client.permlevel(undefined, gMember).toString()),
         ],
       });
@@ -18,13 +19,13 @@ const permlevel: Command = {
       client.log("err", e);
 
       message.channel.send({
-        embeds: [new MessageEmbed().setColor("RED").setDescription(e.toString())],
+        embeds: [new EmbedBuilder().setColor("Red").setDescription(e.toString())],
       });
     }
   },
   conf: {
     aliases: ["pl"],
-    permLevel: "Bot Owner",
+    permLevel: PermissionLevels.BOT_OWNER,
   },
   help: {
     name: "permlevel",

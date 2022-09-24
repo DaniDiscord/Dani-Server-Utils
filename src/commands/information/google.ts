@@ -1,5 +1,6 @@
-import { Command } from "types/command";
-import { MessageEmbed } from "discord.js";
+import { Command, PermissionLevels } from "types/command";
+
+import { EmbedBuilder } from "discord.js";
 import axios from "axios";
 
 const gKey = process.env.GOOGLE_KEY ?? "";
@@ -56,7 +57,7 @@ const google: Command = {
         return message.channel.send({ embeds: [client.errEmb(2, "Unknown Search.")] });
       }
 
-      const embed = new MessageEmbed()
+      const embed = new EmbedBuilder()
         .setTitle(`Here's what i found for \`${query}\``)
         .setDescription(href.snippet)
         .setURL(href.link)
@@ -69,7 +70,7 @@ const google: Command = {
   },
   conf: {
     aliases: ["g"],
-    permLevel: "Mentor",
+    permLevel: PermissionLevels.USER,
   },
   help: {
     name: "google",

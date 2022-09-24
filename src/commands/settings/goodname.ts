@@ -1,4 +1,4 @@
-import { Command } from "../../types/command";
+import { Command, PermissionLevels } from "../../types/command";
 
 const goodname: Command = {
   run: async (client, message, args) => {
@@ -34,7 +34,7 @@ const goodname: Command = {
   },
   conf: {
     aliases: ["goodboi"],
-    permLevel: "Helper",
+    permLevel: PermissionLevels.HELPER,
   },
   help: {
     name: "goodname",

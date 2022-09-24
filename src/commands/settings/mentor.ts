@@ -2,8 +2,8 @@ import "moment-precise-range-plugin";
 
 import { Command, PermissionLevels } from "types/command";
 
+import { EmbedBuilder } from "discord.js";
 import { MentorModel } from "../../models/Mentor";
-import { MessageEmbed } from "discord.js";
 import { SettingsModel } from "../../models/Settings";
 import _ from "lodash";
 import moment from "moment";
@@ -17,8 +17,8 @@ const mentor: Command = {
         if (client.cds.has(`Mentor-${message.channel.id}`)) {
           return message.channel.send({
             embeds: [
-              new MessageEmbed()
-                .setColor("RED")
+              new EmbedBuilder()
+                .setColor("Red")
                 .setDescription(
                   `That command is on a cooldown for another ${moment.preciseDiff(
                     moment(client.cds.get(`Mentor-${message.channel.id}`)).add(10, "m"),
@@ -60,7 +60,7 @@ const mentor: Command = {
           embeds: [
             {
               title: `Current mentor roles!`,
-              color: "GREEN",
+              color: 0x5763719,
               fields: message.settings.mentorRoles.map((mR) => {
                 return {
                   name: `Mentor name: ${mR.mentorName}`,
@@ -125,8 +125,8 @@ const mentor: Command = {
 
         return message.channel.send({
           embeds: [
-            new MessageEmbed()
-              .setColor("GREEN")
+            new EmbedBuilder()
+              .setColor("Green")
               .setDescription(
                 `Successfully added <@&${roleID}> as ${mentorName} mentors`
               ),
@@ -168,8 +168,8 @@ const mentor: Command = {
         if (!found) {
           return message.channel.send({
             embeds: [
-              new MessageEmbed()
-                .setColor("RED")
+              new EmbedBuilder()
+                .setColor("Red")
                 .setDescription(`No mentor type matching ${mN}`),
             ],
           });
@@ -186,8 +186,8 @@ const mentor: Command = {
         // lets just see how this works for now
         return message.channel.send({
           embeds: [
-            new MessageEmbed()
-              .setColor("GREEN")
+            new EmbedBuilder()
+              .setColor("Green")
               .setDescription(
                 `Successfully assigned ${mapped
                   .map((v) => `<#${v.match(/\d{17,19}/)![0]}>`)
