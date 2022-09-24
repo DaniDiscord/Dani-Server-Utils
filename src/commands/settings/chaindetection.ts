@@ -1,6 +1,6 @@
-import { Command } from "types/command";
-import { MessageEmbed } from "discord.js";
-import { SettingsModel } from "models/Settings";
+import { Command, PermissionLevels } from "types/command";
+
+import { EmbedBuilder } from "discord.js";
 const chaindetection: Command = {
   run: async (client, message, [func, ...content]) => {
     try {
@@ -9,7 +9,7 @@ const chaindetection: Command = {
         return message.channel.send({ embeds: [client.errEmb(0, "guildid not found")] });
 
       if (func.toLowerCase() == "list") {
-        const emb = new MessageEmbed().setTitle(`Chain detection ignore list`);
+        const emb = new EmbedBuilder().setTitle(`Chain detection ignore list`);
         const arr = (message.settings.chains?.ignored ?? []).map((o) => `\`${o}\``);
 
         const max_length = 1024;
@@ -28,7 +28,7 @@ const chaindetection: Command = {
         if (temp) out.push(temp);
 
         out.forEach((chunk, i) => {
-          emb.addField(i === 0 ? "Content" : "Continued", chunk);
+          emb.addFields({ name: i === 0 ? "Content" : "Continued", value: chunk });
         });
         return message.channel.send({ embeds: [emb] });
       } else if (func.toLowerCase() == "ignore") {
@@ -65,7 +65,7 @@ const chaindetection: Command = {
   },
   conf: {
     aliases: [],
-    permLevel: "Bot Owner",
+    permLevel: PermissionLevels.BOT_OWNER,
   },
   help: {
     name: "chaindetection",

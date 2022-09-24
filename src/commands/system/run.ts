@@ -1,5 +1,6 @@
-import { Command } from "types/command";
-import { MessageEmbed } from "discord.js";
+import { Command, PermissionLevels } from "types/command";
+
+import { EmbedBuilder } from "discord.js";
 
 const run: Command = {
   run: async (client, message, args) => {
@@ -13,14 +14,14 @@ const run: Command = {
         e = e.toString();
       }
 
-      message.channel.send({ embeds: [new MessageEmbed({ description: e })] });
+      message.channel.send({ embeds: [new EmbedBuilder({ description: e })] });
     } catch (e) {
       client.log("err", e);
     }
   },
   conf: {
     aliases: ["r"],
-    permLevel: "Bot Owner",
+    permLevel: PermissionLevels.BOT_OWNER,
   },
   help: {
     name: "run",

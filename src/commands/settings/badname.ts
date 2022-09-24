@@ -1,6 +1,7 @@
+import { Command, PermissionLevels } from "types/command";
+
 import { BadNamer } from "lib/badname";
 import { Client } from "discord.js";
-import { Command } from "types/command";
 
 // Untested
 const badNamer = new BadNamer();
@@ -42,7 +43,7 @@ const badname: Command = {
   },
   conf: {
     aliases: [],
-    permLevel: "Helper",
+    permLevel: PermissionLevels.HELPER,
   },
   help: {
     name: "badname",

@@ -1,6 +1,7 @@
-import { Command } from "types/command";
+import { Command, PermissionLevels } from "types/command";
+
 import { CommandModel as DBCommand } from "../../models/Command";
-import { MessageEmbed } from "discord.js";
+import { EmbedBuilder } from "discord.js";
 import { SettingsModel } from "models/Settings";
 
 const addcmd: Command = {
@@ -49,8 +50,8 @@ const addcmd: Command = {
 
       return message.channel.send({
         embeds: [
-          new MessageEmbed()
-            .setColor("GREEN")
+          new EmbedBuilder()
+            .setColor("Green")
             .setDescription(`Successfully added command ${command.toLowerCase()}`),
         ],
       });
@@ -60,7 +61,7 @@ const addcmd: Command = {
   },
   conf: {
     aliases: ["addcommand"],
-    permLevel: "Administrator",
+    permLevel: PermissionLevels.ADMINISTRATOR,
   },
   help: {
     name: "addcmd",

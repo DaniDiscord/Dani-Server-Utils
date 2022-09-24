@@ -1,4 +1,4 @@
-import { Command } from "types/command";
+import { Command, PermissionLevels } from "types/command";
 
 const cb: Command = {
   run: async (client, message, args) => {
@@ -73,7 +73,7 @@ const cb: Command = {
   },
   conf: {
     aliases: ["cb"],
-    permLevel: "Mentor",
+    permLevel: PermissionLevels.USER,
   },
   help: {
     name: "codeblock",

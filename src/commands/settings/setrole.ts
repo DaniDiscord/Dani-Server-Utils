@@ -1,5 +1,6 @@
-import { Command } from "types/command";
-import { MessageEmbed } from "discord.js";
+import { Command, PermissionLevels } from "types/command";
+
+import { EmbedBuilder } from "discord.js";
 import { SettingsModel } from "models/Settings";
 
 const rolesAvailable = Object.keys(SettingsModel.schema.paths)
@@ -55,8 +56,8 @@ const setrole: Command = {
 
       message.channel.send({
         embeds: [
-          new MessageEmbed()
-            .setColor("GREEN")
+          new EmbedBuilder()
+            .setColor("Green")
             .setDescription(
               `Set everyone with role <@&${role}> to be considered \`${roleName.toLowerCase()}\``
             ),
@@ -68,7 +69,7 @@ const setrole: Command = {
   },
   conf: {
     aliases: [],
-    permLevel: "Bot Owner",
+    permLevel: PermissionLevels.BOT_OWNER,
   },
   help: {
     name: "setrole",

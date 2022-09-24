@@ -1,14 +1,8 @@
 // Uses the '.env' file to set process.env vars
-import {
-  ApplicationCommandData,
-  Collection,
-  IntentsBitField,
-  Partials,
-} from "discord.js";
+import { Collection, IntentsBitField, Partials } from "discord.js";
 import path, { join } from "path";
 
 import { CustomClient } from "lib/client";
-import { InteractionCommand } from "classes/CustomInteraction";
 import { ReactionHandler } from "lib/reacthandler";
 import { SettingsModel } from "./models/Settings";
 import { config } from "./config";
@@ -42,6 +36,7 @@ const client = new CustomClient({
     IntentsBitField.Flags.DirectMessages,
     IntentsBitField.Flags.Guilds,
     IntentsBitField.Flags.GuildIntegrations,
+    IntentsBitField.Flags.MessageContent,
     IntentsBitField.Flags.GuildMembers,
     IntentsBitField.Flags.GuildMessages,
     IntentsBitField.Flags.GuildMessageReactions,
@@ -69,7 +64,7 @@ const run = async () => {
   );
   client.log("Load", "Loading commands");
 
-  klaw(join(__dirname, "commands")).on("data", (item) => {
+  klaw(join(__dirname, "commands")).on("data", (item: any) => {
     const category = item.path.match(/\w+(?=[\\/][\w\-\.]+$)/)![0];
     const cmdFile = path.parse(item.path);
 
@@ -95,7 +90,7 @@ const run = async () => {
 
   client.log("Load", `Loading a total of ${evtFiles.length} events`);
 
-  klaw(join(__dirname, "events")).on("data", (item) => {
+  klaw(join(__dirname, "events")).on("data", (item: any) => {
     const evtFile = path.parse(item.path);
 
     if (!evtFile.ext || (evtFile.ext !== ".ts" && evtFile.ext !== ".js")) return;

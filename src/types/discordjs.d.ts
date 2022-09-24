@@ -1,4 +1,4 @@
-import { Collection, Message, MessageEmbed } from "discord.js";
+import { Collection, EmbedBuilder, Message } from "discord.js";
 import { IAutoSlow, ISettings } from "./mongodb";
 
 import { Command } from "./command";
@@ -26,7 +26,7 @@ declare module "discord.js" {
 
     /* FUNCTIONS */
     log(type: string, msg: any, title?: string): void;
-    errEmb(errnum?: number, extra?: string): MessageEmbed;
+    errEmb(errnum?: number, extra?: string): EmbedBuilder;
     permlevel(message?: Message, member?: GuildMember): number;
     gradient(start_color: string, end_color: string, steps?: number): string[];
     loadCommand(

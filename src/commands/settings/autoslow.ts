@@ -1,4 +1,4 @@
-import { Command } from "types/command";
+import { Command, PermissionLevels } from "types/command";
 
 const autoslow: Command = {
   run: async (client, message, args) => {
@@ -24,7 +24,7 @@ const autoslow: Command = {
   },
   conf: {
     aliases: [],
-    permLevel: "Helper",
+    permLevel: PermissionLevels.HELPER,
   },
   help: {
     name: "autoslow",

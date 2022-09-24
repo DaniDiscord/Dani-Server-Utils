@@ -1,17 +1,11 @@
 import {
-  APIEmbed,
-  ApplicationCommandData,
   ApplicationCommandType,
-  ChatInputApplicationCommandData,
   Client,
   ClientOptions,
   Collection,
-  ColorResolvable,
-  Colors,
   EmbedBuilder,
   GuildMember,
   Message,
-  UserApplicationCommandData,
 } from "discord.js";
 import { AutoSlowCache, AutoSlowManager } from "./autoslow";
 import { join, resolve } from "path";
@@ -83,33 +77,33 @@ export class CustomClient extends Client {
     );
   }
 
-  errEmb(errnum = 0, extra?: string): APIEmbed {
-    let out: APIEmbed;
+  errEmb(errnum = 0, extra?: string): EmbedBuilder {
+    let out: EmbedBuilder;
 
     switch (errnum) {
       case 0:
-        out = {
-          color: Colors.Red,
-          description: `${extra ?? "Unknown error"}`,
-        };
+        out = new EmbedBuilder()
+          .setTitle("Error")
+          .setColor("Red")
+          .setDescription(`${extra ?? "Unknown error"}`);
         break;
       case 1:
-        out = {
-          color: Colors.Red,
-          description: `Not given enough arguments${extra ? `\n${extra}` : ""}`,
-        };
+        out = new EmbedBuilder()
+          .setTitle("Error")
+          .setColor("Red")
+          .setDescription(`Not given enough arguments${extra ? `\n${extra}` : ""}`);
         break;
       case 2:
-        out = {
-          color: Colors.Red,
-          description: `Argument invalid${extra ? `\n${extra}` : ""}`,
-        };
+        out = new EmbedBuilder()
+          .setTitle("Error")
+          .setColor("Red")
+          .setDescription(`Argument invalid${extra ? `\n${extra}` : ""}`);
         break;
       default:
-        out = {
-          color: Colors.Red,
-          description: "Default reached",
-        };
+        out = new EmbedBuilder()
+          .setTitle("Error")
+          .setColor("Red")
+          .setDescription("Base level error handler");
         break;
     }
 
