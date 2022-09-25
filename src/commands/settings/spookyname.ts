@@ -1,12 +1,11 @@
-import { Command, PermissionLevels } from "types/command";
-
 import { BadNamer } from "lib/badname";
 import { Client } from "discord.js";
-import { standard } from "lib/combinations";
+import { Command } from "types/command";
+import { halloween } from "lib/combinations";
 
-const badNamer = new BadNamer(standard);
+const spookyNamer = new BadNamer(halloween);
 
-const badname: Command = {
+const spookyname: Command = {
   run: async (client: Client, message, args) => {
     if (!args[0]) return client.errEmb(1);
     if (!/\d{17,19}/.test(args[0])) return client.errEmb(2);
@@ -23,7 +22,7 @@ const badname: Command = {
     const member = await message.guild!.members.fetch(id).catch();
 
     if (client.permlevel(message) <= client.permlevel(undefined, member)) {
-      return client.errEmb(0, `You don't have permission to badname that person.`);
+      return client.errEmb(0, `You don't have permission to spookyname that person.`);
     }
 
     if (!member) {
@@ -34,8 +33,8 @@ const badname: Command = {
       return client.errEmb(0, `I don't have permission to manage that user.`);
     }
 
-    const num = await client.getNextCounter("Badname");
-    const name = badNamer.get(num);
+    const num = await client.getNextCounter("Spookyname");
+    const name = spookyNamer.get(num);
 
     await client.setMemberName(member, name);
 
@@ -43,12 +42,12 @@ const badname: Command = {
   },
   conf: {
     aliases: [],
-    permLevel: PermissionLevels.HELPER,
+    permLevel: "Helper",
   },
   help: {
-    name: "badname",
-    description: `Gives a random name`,
+    name: "spookyname",
+    description: `Gives a random but spooky name`,
   },
 };
 
-export default badname;
+export default spookyname;
