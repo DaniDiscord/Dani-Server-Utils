@@ -1,4 +1,7 @@
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ChannelType,
   Collection,
   EmbedBuilder,
@@ -11,10 +14,12 @@ import { Command } from "types/command";
 import { CustomClient } from "../lib/client";
 import { ICommand } from "types/mongodb";
 import { SettingsModel } from "../models/Settings";
+import { create } from "sourcebin";
 
 const chainStops = ["muck"];
 const CHAIN_STOPS_ONLY = false; // Only triggers on chainStops
 const chainIgnoredChannels = ["594178859453382696", "970968834372698163"];
+const programmerChannels = ["677243335290912808", "482097941448884246"];
 const CHAIN_DETECTION_LENGTH = 5;
 const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
 const CHAIN_WARN_THRESHOLD = 3;
@@ -57,6 +62,48 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     autoSlowManager.messageSent();
     autoSlowManager.setOptimalSlowMode(message.channel);
   }
+
+  // Code auto-uploader
+  if (!programmerChannels.includes(message.channel.id)) return;
+
+  // Check to see if the code is a valid codeblock.
+  const ticks = message.content.includes("```");
+  if (!ticks) {
+    return;
+  }
+
+  // Get the codeblock, if it's under 15 lines, return since it isn't worth uploading.
+  let code = message.content.split("```")[1].split("```")[0];
+  if (code.split("\n").length < 15) {
+    return;
+  }
+
+  // Upload the code to Sourcebin.
+  const bin = await create({
+    title: "DSU Code-Auto Uploader",
+    description: `${message.author.tag}'s (${message.author.id}) code snippet was uploaded to Sourcebin via DSU's Auto-Code Uploader.`,
+    files: [
+      {
+        content: code,
+      },
+    ],
+  });
+  const embed = new EmbedBuilder()
+    .setTitle("DSU Code Uploader")
+    .setDescription(
+      `${message.author.tag}'s code snippet was uploaded to Sourcebin.\n\n[View Source](${bin.url}).`
+    );
+  const component = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder({ label: "View Source", url: bin.url, style: ButtonStyle.Link })
+  );
+  message.reply({
+    content: `<@!${message.author.id}>`,
+    embeds: [embed],
+    components: [component],
+  });
+
+  await client.wait(1000);
+  await message.delete();
 
   // Do whatever message filtering here
   if (level == -1) {
