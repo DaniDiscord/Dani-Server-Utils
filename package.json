@@ -34,8 +34,7 @@
     "mongoose": "^5.11.7",
     "path": "^0.12.7",
     "request": "^2.88.2",
-    "serp": "^2.1.0",
-    "sourcebin": "^5.0.0"
+    "serp": "^2.1.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",

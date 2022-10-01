@@ -30,12 +30,12 @@ or [npm is not recommended and might break stuff, preferably you should be using
 npm run dev
 ```
 
-Some of the current features include:
+Some of the current commands include:
 
 - !g for googling queries;
 - !inactive for setting staff active and inactive roles
 - !loa for the legend of ash
-- A code uploader for uploading code to Sourcebin, this prevents clogging up the chat with code.
+- !cb to put pre written code into code blocks
   As well any other specific commands that are found to be beneficial to the community.
 
 **NOTE**: You should run `yarn install` in the root after pulling, every time in case of there being dependency changes.
