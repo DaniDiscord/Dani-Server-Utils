@@ -72,7 +72,16 @@ export const standard = [
 ];
 
 export const halloween = [
-  ["Spooky", "Scary", "Boo-tiful", "Spine-tingling", "Bone-chilling", "Fang-tastic", "Ghostly", "Haunted"],
-  ["Pumpkin", "Apple", "Caramel"],
+  [
+    "Spooky",
+    "Scary",
+    "Boo-tiful",
+    "Spine-tingling",
+    "Bone-chilling",
+    "Fang-tastic",
+    "Ghostly",
+    "Haunted",
+  ],
+  ["Pumpkin", "Apple", "Caramel", "Cinnamon"],
   ["Pie", "Bread", "Corn", "Cake", "Cookies", "Candy"],
 ];
