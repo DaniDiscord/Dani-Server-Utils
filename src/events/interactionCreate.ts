@@ -1,8 +1,11 @@
 import {
   ApplicationCommand,
   ApplicationCommandType,
+  Embed,
+  EmbedBuilder,
   Interaction,
   ReactionCollector,
+  TextChannel,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
@@ -24,6 +27,26 @@ export default async function (client: CustomClient, interaction: Interaction) {
   //     await existingButtonHandler.execute(interaction);
   //   }
   // }
+
+  if (interaction.isModalSubmit()) {
+    const goodPerson = interaction.fields.getTextInputValue("goodPersonInput");
+    const soWhy = interaction.fields.getTextInputValue("soWhyInput");
+    await interaction.reply("Application sent successfully.");
+    const username = interaction.user.username;
+    const discriminator = interaction.user.discriminator;
+    const authorId = interaction.user.id;
+    const embed = new EmbedBuilder()
+      .setColor(0xaa00aa)
+      .setTitle(`Application of ${username}#${discriminator} (${authorId})`)
+      .addFields(
+        { name: "Are you a good person?", value: goodPerson },
+        { name: "So why do you want to be staff?", value: soWhy }
+      );
+
+    await (client.channels.cache.get("787154722209005629") as TextChannel).send({
+      embeds: [embed],
+    });
+  }
 
   if (interaction.isCommand()) {
     const cmd = client.slashCommands.get(
