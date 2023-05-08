@@ -12,6 +12,7 @@ import {
   CustomInteractionReplyOptions,
   InteractionCommand,
 } from "../../classes/CustomInteraction";
+import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
@@ -38,34 +39,10 @@ export default class SlashCommand extends InteractionCommand {
   async execute(
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
-    const modal = new ModalBuilder().setCustomId("s").setTitle("Staff App");
-
-    // Add components to modal
-
-    // Create the text input components
-    const goodPersonInput = new TextInputBuilder()
-      .setCustomId("goodPersonInput")
-      .setLabel("Are you a good person?")
-      .setRequired(true)
-      .setStyle(TextInputStyle.Paragraph);
-
-    const soWhyInput = new TextInputBuilder()
-      .setCustomId("soWhyInput")
-      .setLabel("So why be staff?")
-      .setRequired(true)
-      .setStyle(TextInputStyle.Paragraph);
-
-    // An action row only holds one text input,
-    // so you need one action row per text input.
-    const firstActionRow =
-      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
-        goodPersonInput
-      );
-    const secondActionRow =
-      new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(soWhyInput);
+    const modal = new ModalBuilder().setCustomId(staffAppCustomId).setTitle("Staff App");
 
     // Add inputs to the modal
-    modal.addComponents(firstActionRow, secondActionRow);
+    modal.addComponents(staffAppQuestions.map((q) => q.toActionRow()));
 
     // Show the modal to the user
     await interaction.showModal(modal);

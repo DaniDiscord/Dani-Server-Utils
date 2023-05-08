@@ -11,6 +11,7 @@ import {
   CustomInteractionReplyOptions,
   interpretInteractionResponse,
 } from "../classes/CustomInteraction";
+import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
 import { CustomClient } from "lib/client";
 import { InteractionType } from "discord-api-types/v10";
@@ -28,9 +29,20 @@ export default async function (client: CustomClient, interaction: Interaction) {
   //   }
   // }
 
-  if (interaction.isModalSubmit()) {
-    const goodPerson = interaction.fields.getTextInputValue("goodPersonInput");
-    const soWhy = interaction.fields.getTextInputValue("soWhyInput");
+  const isModalSubmit = interaction.isModalSubmit();
+  staffApp: if (isModalSubmit && interaction.customId == staffAppCustomId) {
+    const qna = [];
+    for (const question of staffAppQuestions) {
+      let answer = interaction.fields.getTextInputValue(question.customId);
+      if (answer === "") {
+        answer = "**N/A**";
+        if (question.required) {
+          await interaction.reply("Submission failed.");
+          break staffApp;
+        }
+      }
+      qna.push({ name: question.label, value: answer });
+    }
     await interaction.reply("Application sent successfully.");
     const username = interaction.user.username;
     const discriminator = interaction.user.discriminator;
@@ -38,10 +50,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
     const embed = new EmbedBuilder()
       .setColor(0xaa00aa)
       .setTitle(`Application of ${username}#${discriminator} (${authorId})`)
-      .addFields(
-        { name: "Are you a good person?", value: goodPerson },
-        { name: "So why do you want to be staff?", value: soWhy }
-      );
+      .addFields(qna);
 
     await (client.channels.cache.get("787154722209005629") as TextChannel).send({
       embeds: [embed],
