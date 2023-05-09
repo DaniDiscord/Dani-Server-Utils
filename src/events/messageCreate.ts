@@ -53,7 +53,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   Auto Slow will go here
   */
   const autoSlowManager = await client.getAutoSlow(message.channelId);
-  if (autoSlowManager !== null && level < 0 && message.channel instanceof TextChannel) {
+  if (autoSlowManager !== null && level < 1 && message.channel instanceof TextChannel) {
     autoSlowManager.messageSent();
     autoSlowManager.setOptimalSlowMode(message.channel);
   }
