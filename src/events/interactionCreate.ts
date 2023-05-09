@@ -43,16 +43,18 @@ export default async function (client: CustomClient, interaction: Interaction) {
       }
       qna.push({ name: question.label, value: answer });
     }
-    await interaction.reply("Application sent successfully.");
-    const username = interaction.user.username;
-    const discriminator = interaction.user.discriminator;
+    await interaction.reply({
+      content: "Application sent successfully.",
+      ephemeral: true,
+    });
     const authorId = interaction.user.id;
     const embed = new EmbedBuilder()
       .setColor(0xaa00aa)
-      .setTitle(`Application of ${username}#${discriminator} (${authorId})`)
+      .setTitle(`Application of ${interaction.user.tag}`)
       .addFields(qna);
 
-    await (client.channels.cache.get("787154722209005629") as TextChannel).send({
+    await (client.channels.cache.get("995792003726065684") as TextChannel).send({
+      content: `<@${authorId}> (${interaction.user.tag}) is applying for staff:`,
       embeds: [embed],
     });
   }
