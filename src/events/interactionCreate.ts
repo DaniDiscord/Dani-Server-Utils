@@ -11,10 +11,12 @@ import {
   CustomInteractionReplyOptions,
   interpretInteractionResponse,
 } from "../classes/CustomInteraction";
+import { formatDuration, intervalToDuration } from "date-fns";
 import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
 import { CustomClient } from "lib/client";
 import { InteractionType } from "discord-api-types/v10";
+import { TimestampModel } from "models/Timestamp";
 
 export default async function (client: CustomClient, interaction: Interaction) {
   // if (interaction.guildId) {
@@ -31,6 +33,36 @@ export default async function (client: CustomClient, interaction: Interaction) {
 
   const isModalSubmit = interaction.isModalSubmit();
   staffApp: if (isModalSubmit && interaction.customId == staffAppCustomId) {
+    // At this point, impose a cooldown. Lets start with a week
+    const TIMESPAN_COOLDOWN = 7 * (24 * 60 * 60 * 1000);
+    const identifier = `${interaction.user.id}-staff-application`;
+    const lastApplied = await TimestampModel.findOne({ identifier });
+    if (
+      lastApplied?.timestamp &&
+      lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN >= Date.now()
+    ) {
+      // Nah bro, deny that shit
+      await interaction.reply({
+        ephemeral: true,
+        content:
+          `Your last staff application was sent ${formatDuration(
+            intervalToDuration({ start: lastApplied.timestamp, end: Date.now() })
+          )} ago\n` +
+          `You can send a new one in ${formatDuration(
+            intervalToDuration({
+              start: Date.now(),
+              end: lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN,
+            })
+          )}`,
+      });
+      return;
+    } else {
+      await TimestampModel.updateOne(
+        { identifier },
+        { timestamp: new Date() },
+        { upsert: true }
+      );
+    }
     const qna = [];
     for (const question of staffAppQuestions) {
       let answer = interaction.fields.getTextInputValue(question.customId);
@@ -47,6 +79,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
       content: "Application sent successfully.",
       ephemeral: true,
     });
+
     const authorId = interaction.user.id;
     const embed = new EmbedBuilder()
       .setColor(0xaa00aa)

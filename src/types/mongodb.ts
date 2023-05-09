@@ -44,6 +44,13 @@ interface RawCounter {
   index: number;
 }
 
+export interface ITimestamp extends RawTimestamp, Document {}
+
+interface RawTimestamp {
+  identifier: string;
+  timestamp: Date;
+}
+
 export interface ICounter extends RawCounter, Document {}
 
 /* NAME */

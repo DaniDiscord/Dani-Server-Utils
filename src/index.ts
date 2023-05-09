@@ -112,7 +112,12 @@ const run = async () => {
     client.levelCache[thisLevel.name] = thisLevel.level;
   }
 
-  client.login(process.env.token);
+  try {
+    await client.login(process.env.token);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 };
 
 export default run();
