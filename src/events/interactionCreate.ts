@@ -53,10 +53,13 @@ export default async function (client: CustomClient, interaction: Interaction) {
       .setTitle(`Application of ${interaction.user.tag}`)
       .addFields(qna);
 
-    await (client.channels.cache.get("995792003726065684") as TextChannel).send({
-      content: `<@${authorId}> (${interaction.user.tag}) is applying for staff:`,
-      embeds: [embed],
-    });
+    const channel = await client.channels.fetch("995792003726065684");
+    if (channel?.isTextBased()) {
+      channel.send({
+        content: `<@${authorId}> (${interaction.user.tag}) is applying for staff:`,
+        embeds: [embed],
+      });
+    }
   }
 
   if (interaction.isCommand()) {

@@ -5,6 +5,7 @@ import {
   CommandInteraction,
   ModalActionRowComponentBuilder,
   ModalBuilder,
+  Snowflake,
   TextInputBuilder,
   TextInputStyle,
 } from "discord.js";
@@ -16,6 +17,8 @@ import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
+
+const APPLICATION_BANNED: Snowflake[] = ["136985027413147648"];
 
 export default class SlashCommand extends InteractionCommand {
   /**
@@ -39,6 +42,10 @@ export default class SlashCommand extends InteractionCommand {
   async execute(
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
+    if (APPLICATION_BANNED.includes(interaction.user.id)) {
+      return { eph: true, content: "You are banned from using this command." };
+    }
+
     const modal = new ModalBuilder().setCustomId(staffAppCustomId).setTitle("Staff App");
 
     // Add inputs to the modal
