@@ -25,8 +25,8 @@ const includeKatex = `<!DOCTYPE html>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js" integrity="sha384-G0zcxDFp5LWZtDuRMnBkk3EphCK1lhEf4UEyEM693ka574TZGwo4IWwS6QLzM/2t" crossorigin="anonymous">
 </script><p style="font-size:20px ; padding-top: 10px;padding-right: 10px;padding-bottom: 10px;padding-left: 10px;">`;
 
-const useCooldownMillis = 10000;
-const renderCooldownMillis = 90000;
+const useCooldownMillis = 5000;
+const renderCooldownMillis = 45000;
 
 const useCooldown: Map<Snowflake, number> = new Map();
 const renderCooldown: Map<Snowflake, number> = new Map();
