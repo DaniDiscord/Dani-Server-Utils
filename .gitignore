@@ -6,3 +6,8 @@
 .env
 node_modules
 build
+
+# TLS
+*.crt
+*.pem
+*.key

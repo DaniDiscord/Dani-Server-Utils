@@ -5,7 +5,10 @@ const template: Command = {
     return Promise.resolve().then(async () => {
       try {
       } catch (e) {
-        client.log("err", e);
+        log.error("Short message", {
+          action: template.help.name,
+          message: "Longer message",
+        });
       }
     });
   },

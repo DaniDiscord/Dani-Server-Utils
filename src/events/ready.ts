@@ -2,7 +2,6 @@ import { Client } from "discord.js";
 import { ISettings } from "types/mongodb";
 import { SettingsModel as Settings } from "../models/Settings";
 import _ from "lodash";
-import moment from "moment";
 
 export default (client: Client): void => {
   updateStuff();
@@ -27,12 +26,18 @@ export default (client: Client): void => {
           // If they're not equal, first check if the difference lies in the mentorRoles
           if (cachedSettings.mentorRoles.toString() != s.mentorRoles.toString()) {
             // The mentor roles are different. Mentor roles aren't changed clientside so just set the settings to the pulled ones
-            client.log("Fetch", `Database.mentorRoles -> Client.mentorRoles (${k.red})`);
+            log.debug("Setting sync", {
+              action: "Fetch",
+              message: `Database.mentorRoles -> Client.mentorRoles (${k})`,
+            });
             client.settings.set(k, s);
           } else {
             if (s.toUpdate) {
               // The server updated last. Grab that shit
-              client.log("Fetch", `Database -> Client (${k.red})`);
+              log.debug("Setting sync", {
+                action: "Fetch",
+                message: `Database -> Client (${k})`,
+              });
               const newSettings = await Settings.findOneAndUpdate(
                 { _id: s._id },
                 { toUpdate: false },
@@ -47,16 +52,13 @@ export default (client: Client): void => {
               delete ourThing._id;
               ourThing.toUpdate = false;
 
-              // console.log(ourThing.chains?.ignored);
+              log.debug("Setting sync", {
+                action: "Push",
+                message: `Client -> Database (${k})`,
+              });
+              await Settings.updateOne({ _id: s._id }, ourThing);
 
-              client.log("Push", `Client -> Database (${k.red})`);
-              const newSettings = await Settings.findOneAndUpdate(
-                { _id: s._id },
-                ourThing,
-                {
-                  new: true,
-                }
-              )
+              const newSettings = await Settings.findOne({ _id: s._id })
                 .populate("commands")
                 .populate("mentorRoles");
               if (newSettings) client.settings.set(k, newSettings);
@@ -64,7 +66,10 @@ export default (client: Client): void => {
           }
         }
       } else {
-        client.log("Fetch", `Guild with ID:${k.red} had no config, generating`);
+        log.debug("Config generation", {
+          action: "Fetch",
+          message: `Guild with ID:${k} had no config, generating`,
+        });
         client.settings.set(
           k,
           (
@@ -75,14 +80,17 @@ export default (client: Client): void => {
             .populate("mentorRoles")
             .populate("commands")
         );
-        client.log("Fetch", `Finished generating config for guild with ID:${k.red}`);
+        log.debug("Config generation", {
+          action: "Fetch",
+          message: `Finished generating config for guild with ID:${k}`,
+        });
       }
     }
   }
   setInterval(updateStuff, 3000);
 
-  client.log(
-    `Ready`,
-    `Bot logged in as ${client.user?.username}#${client.user?.discriminator} and ready to go!`
-  );
+  log.info("Logged in", {
+    action: `Ready`,
+    message: `Bot logged in as ${client.user?.tag}.`,
+  });
 };

@@ -197,7 +197,7 @@ const mentor: Command = {
         });
       }
     } catch (e) {
-      client.log("err", e);
+      log.error("!mentor command", e as Error);
     }
   },
   conf: {

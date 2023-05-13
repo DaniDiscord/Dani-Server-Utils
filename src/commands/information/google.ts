@@ -65,7 +65,7 @@ const google: Command = {
 
       message.channel.send({ embeds: [embed] });
     } catch (e) {
-      client.log("err", e);
+      log.error("!google command", e as Error);
     }
   },
   conf: {

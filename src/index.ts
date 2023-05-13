@@ -1,3 +1,5 @@
+import {} from "./3vilCommon/Logger";
+
 // Uses the '.env' file to set process.env vars
 import { Collection, IntentsBitField, Partials } from "discord.js";
 import path, { join } from "path";
@@ -6,12 +8,9 @@ import { CustomClient } from "lib/client";
 import { ReactionHandler } from "lib/reacthandler";
 import { SettingsModel } from "./models/Settings";
 import { config } from "./config";
-import dotenv from "dotenv";
 import klaw from "klaw";
 import mongoose from "mongoose";
 import { readdir } from "fs/promises";
-
-dotenv.config();
 
 if (!process.env.token) {
   console.error(
@@ -62,8 +61,7 @@ const run = async () => {
       { upsert: true, setDefaultsOnInsert: true, new: true }
     )
   );
-  client.log("Load", "Loading commands");
-
+  log.debug("Commands", { action: "Load", message: "Loading commands" });
   klaw(join(__dirname, "commands")).on("data", (item: any) => {
     const category = item.path.match(/\w+(?=[\\/][\w\-\.]+$)/)![0];
     const cmdFile = path.parse(item.path);
@@ -72,13 +70,8 @@ const run = async () => {
       return;
     }
 
-    if (category === "commands") {
-      client.log(
-        "Load",
-        `Did not load command ${cmdFile.name.red} because it has no category`
-      );
-    } else {
-      const { err } = client.loadCommand(category, `${cmdFile.name}${cmdFile.ext}`, true);
+    if (category !== "commands") {
+      const { err } = client.loadCommand(category, `${cmdFile.name}${cmdFile.ext}`);
 
       if (err) {
         console.log(err);
@@ -87,8 +80,7 @@ const run = async () => {
   });
 
   const evtFiles = await readdir(join(__dirname, "events"));
-
-  client.log("Load", `Loading a total of ${evtFiles.length} events`);
+  log.debug("Events", { action: "Load", message: `Loading ${evtFiles.length} events` });
 
   klaw(join(__dirname, "events")).on("data", (item: any) => {
     const evtFile = path.parse(item.path);

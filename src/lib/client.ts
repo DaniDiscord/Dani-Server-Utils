@@ -17,8 +17,6 @@ import { InteractionCommand } from "classes/CustomInteraction";
 import { NameModel } from "../models/Name";
 import _ from "lodash";
 /* eslint-disable @typescript-eslint/no-var-requires */
-import colors from "colors";
-import moment from "moment";
 import { promisify } from "util";
 import { readdir } from "fs/promises";
 
@@ -50,31 +48,6 @@ export class CustomClient extends Client {
     this.once("ready", async () => {
       this.loadSlashCommands();
     });
-  }
-
-  /*
-      Logs to console
-  */
-  log(type: string, msg: string | null, title?: string): void {
-    if (!title) {
-      title = "Log";
-    } else {
-      title = colors.magenta.bold(title);
-    }
-
-    if (!type) {
-      type = "Null";
-    }
-
-    if (["err", "error"].includes(type.toLowerCase())) {
-      type = colors.bgRed.white.bold(type);
-    }
-
-    console.log(
-      `[${colors.blue.bold(moment().format("D/M/Y HH:mm:ss.SSS"))}] [${type.green}] [${
-        title.yellow
-      }] ${msg}`
-    );
   }
 
   errEmb(errnum = 0, extra?: string): EmbedBuilder {
@@ -191,16 +164,11 @@ export class CustomClient extends Client {
   */
   loadCommand(
     category: string,
-    commandName: string,
-    dontLog: boolean
+    commandName: string
   ): { err: string; res?: undefined } | { res: boolean; err?: undefined } {
     try {
       const req = require(join(__dirname, "..", "commands", category, commandName));
       const props: Command = req.default;
-
-      if (!dontLog) {
-        this.log("Load", `Loading Command: ${props.help.name}.`);
-      }
 
       if (props.init) {
         props.init(this);
@@ -335,15 +303,18 @@ export class CustomClient extends Client {
     const folders = await readdir(resolve(__dirname, "..", "interactions"));
     const commands = await this.application?.commands.fetch();
     let loaded = 0;
+    let total = 0;
     for (const folder of folders) {
       const files = await readdir(resolve(__dirname, "..", "interactions", folder));
       for (const file of files) {
         try {
           // logger.info(`Loading slash command ${file}`);
           const path = resolve(__dirname, "..", "interactions", folder, file);
+          if (!path.endsWith("ts") && !path.endsWith("js")) continue;
           const CustomInteractionClass = (await import(path))
             .default as typeof InteractionCommand;
           if (!CustomInteractionClass) continue;
+          total++;
           const custInteraction = new CustomInteractionClass(this);
           const opts = custInteraction.options;
 
@@ -381,8 +352,6 @@ export class CustomClient extends Client {
             this.autocompleteOptions.set(opts.name, custInteraction.autocompleteOptions);
           }
 
-          console.log(file);
-          console.log(opts);
           this.slashCommands.set(`${opts.type ?? 1}-${opts.name}`, custInteraction);
           loaded++;
         } catch (error) {
@@ -395,24 +364,22 @@ export class CustomClient extends Client {
       commands &&
       commands.filter((c) => !this.slashCommands.has(`${c.type ?? 1}-${c.name}`)).size > 0
     ) {
-      this.log(
-        "Info",
-        `Unloading a total of ${commands.filter(
+      log.debug("Command sync", {
+        action: "Unload",
+        message: `Unloading a total of ${commands.filter(
           (c) => !this.slashCommands.has(c.name)
-        )} existing slash commands`
-      );
+        )} existing slash commands`,
+      });
       for (const command of commands
         .filter((c) => !this.slashCommands.has(c.name))
         .values()) {
         await command.delete();
       }
     }
-    this.log(
-      "info",
-      `Loaded ${
-        loaded == folders.length ? "all" : `${loaded}/${folders.length}`
-      } commands`
-    );
+    log.debug("Command sync", {
+      action: "Load",
+      message: `Loaded a total of ${loaded}/${total} slash commands`,
+    });
   }
 
   wait = promisify(setTimeout);

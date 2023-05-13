@@ -25,7 +25,6 @@ declare module "discord.js" {
     };
 
     /* FUNCTIONS */
-    log(type: string, msg: any, title?: string): void;
     errEmb(errnum?: number, extra?: string): EmbedBuilder;
     permlevel(message?: Message, member?: GuildMember): number;
     gradient(start_color: string, end_color: string, steps?: number): string[];

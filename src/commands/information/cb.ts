@@ -68,7 +68,7 @@ const cb: Command = {
         }
       }
     } catch (e) {
-      client.log("err", e);
+      log.error("!cb command", e as Error);
     }
   },
   conf: {

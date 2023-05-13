@@ -16,7 +16,7 @@ const permlevel: Command = {
         ],
       });
     } catch (e: any) {
-      client.log("err", e);
+      log.error("!permlevel command", e as Error);
 
       message.channel.send({
         embeds: [new EmbedBuilder().setColor("Red").setDescription(e.toString())],

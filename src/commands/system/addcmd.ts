@@ -56,7 +56,7 @@ const addcmd: Command = {
         ],
       });
     } catch (e) {
-      client.log("err", e);
+      log.error("!addcmd command", e as Error);
     }
   },
   conf: {

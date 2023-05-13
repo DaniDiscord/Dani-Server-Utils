@@ -1,6 +1,7 @@
 import { Command, PermissionLevels } from "types/command";
 
 import { EmbedBuilder } from "discord.js";
+
 const chaindetection: Command = {
   run: async (client, message, [func, ...content]) => {
     try {
@@ -60,7 +61,7 @@ const chaindetection: Command = {
       }
       return message.channel.send({ embeds: [client.errEmb(1)] });
     } catch (e) {
-      client.log("err", e);
+      log.error("!chaindetection command", e as Error);
     }
   },
   conf: {

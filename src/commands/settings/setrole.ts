@@ -64,7 +64,7 @@ const setrole: Command = {
         ],
       });
     } catch (e) {
-      client.log("err", e);
+      log.error("!setrole command", e as Error);
     }
   },
   conf: {

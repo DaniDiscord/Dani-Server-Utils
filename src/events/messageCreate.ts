@@ -38,7 +38,10 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
       .populate("mentorRoles")
       .populate("commands");
 
-    client.log("Fetch", `Database -> Client (${message.guild.id.red})`);
+    log.debug("Setting sync", {
+      action: "Fetch",
+      message: `Database -> Client (${message.guild.id})`,
+    });
 
     client.settings.set(message.guild.id, s);
     message.settings = s;

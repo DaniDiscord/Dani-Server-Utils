@@ -121,15 +121,15 @@ export default async function (client: CustomClient, interaction: Interaction) {
       `${interaction.commandType}-${interaction.commandName}`
     );
     if (!cmd) return;
-    let log = `User ${interaction.user.username} executed ${
+    let message = `User ${interaction.user.username} executed ${
       ApplicationCommandType[interaction.commandType]
     } command ${interaction.commandName}`;
-    if (interaction.user) log += ` targeting ${interaction.user.username}`;
+    if (interaction.user) message += ` targeting ${interaction.user.username}`;
     else if (interaction.isMessageContextMenuCommand()) {
-      log += ` targeting ${interaction.targetMessage.id}`;
+      message += ` targeting ${interaction.targetMessage.id}`;
     }
 
-    client.log("CMD", log);
+    log.debug("Command executed", { action: "Command", message });
 
     const response = await cmd.execute(interaction).catch(
       (e: Error) =>
