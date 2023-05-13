@@ -32,7 +32,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
   // }
 
   const isModalSubmit = interaction.isModalSubmit();
-  staffApp: if (isModalSubmit && interaction.customId == staffAppCustomId) {
+  if (isModalSubmit && interaction.customId == staffAppCustomId) {
     // At this point, impose a cooldown. Lets start with a week
     const TIMESPAN_COOLDOWN = 7 * (24 * 60 * 60 * 1000);
     const identifier = `${interaction.user.id}-staff-application`;
@@ -69,23 +69,44 @@ export default async function (client: CustomClient, interaction: Interaction) {
       if (answer === "") {
         answer = "**N/A**";
         if (question.required) {
-          await interaction.reply("Submission failed.");
-          break staffApp;
+          await interaction.reply({
+            content: "Issue sending application, please try again.",
+            ephemeral: true,
+          });
+
+          // Delete this users timeout, they couldn't send the application properly
+          await TimestampModel.deleteOne({ identifier });
+          return;
         }
       }
       qna.push({ name: question.label, value: answer });
     }
+
+    const authorId = interaction.user.id;
+
+    let embed = new EmbedBuilder();
+
+    try {
+      embed = embed
+        .setColor(0xaa00aa)
+        .setTitle(`Application of ${interaction.user.tag}`)
+        .addFields(qna);
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: "Issue sending application, please try again.",
+        ephemeral: true,
+      });
+
+      // Delete this users timeout, they couldn't send the application properly
+      await TimestampModel.deleteOne({ identifier });
+      return;
+    }
+
     await interaction.reply({
       content: "Application sent successfully.",
       ephemeral: true,
     });
-
-    const authorId = interaction.user.id;
-    const embed = new EmbedBuilder()
-      .setColor(0xaa00aa)
-      .setTitle(`Application of ${interaction.user.tag}`)
-      .addFields(qna);
-
     const channel = await client.channels.fetch("995792003726065684");
     if (channel?.isTextBased()) {
       channel.send({
