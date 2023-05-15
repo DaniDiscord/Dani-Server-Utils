@@ -13,6 +13,7 @@ import {
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
+import { PermissionsBitField } from "discord.js";
 import html2image from "node-html-to-image";
 import katex from "katex";
 
@@ -23,7 +24,9 @@ const latex = "latex";
 const includeKatex = `<!DOCTYPE html>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css" integrity="sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js" integrity="sha384-G0zcxDFp5LWZtDuRMnBkk3EphCK1lhEf4UEyEM693ka574TZGwo4IWwS6QLzM/2t" crossorigin="anonymous">
-</script><p style="font-size:20px ; padding-top: 10px;padding-right: 10px;padding-bottom: 10px;padding-left: 10px;">`;
+</script>
+<body style="width:fit-content">
+<p style="font-size:20px; padding: 10px; width: fit-content; display: flex; margin: 0">`;
 
 const useCooldownMillis = 5000;
 const renderCooldownMillis = 45000;
@@ -51,10 +54,11 @@ export default class SlashCommand extends InteractionCommand {
         {
           description: "LaTeX",
           name: latex,
+          required: true,
           type: ApplicationCommandOptionType.String,
         },
       ],
-      // defaultMemberPermissions: "Administrator",
+      defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
@@ -122,6 +126,7 @@ export default class SlashCommand extends InteractionCommand {
         output: "html",
       });
       html = includeKatex + html;
+
       const image = (await html2image({
         html: html,
       })) as Buffer;
@@ -132,7 +137,9 @@ export default class SlashCommand extends InteractionCommand {
       });
       renderCooldown.set(userId, currentMillis);
     } catch (error) {
-      interaction.editReply("You really put the L in your Latex");
+      console.error(error);
+      log.warn("Latex error", error as Error);
+      interaction.editReply("You really put the L in your Latex (Error rendering latex)");
     }
 
     return {};

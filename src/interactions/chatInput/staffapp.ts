@@ -18,7 +18,7 @@ import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 
-const APPLICATION_BANNED: Snowflake[] = [];
+const APPLICATION_BANNED: Snowflake[] = ["771103126211919913"];
 
 export default class SlashCommand extends InteractionCommand {
   /**
