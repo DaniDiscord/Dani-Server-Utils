@@ -150,7 +150,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
           }
         }
       } else {
-        if (chMessages.length == CHAIN_DETECTION_LENGTH) chMessages.pop();
+        if (chMessages.length == CHAIN_DETECTION_LENGTH) chMessages.shift();
         chMessages.push({ word: trimMsg(message.content), count: 0 });
         client.channelMessages.set(message.channel.id, chMessages);
       }
