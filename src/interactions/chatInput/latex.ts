@@ -34,13 +34,6 @@ const renderCooldownMillis = 45000;
 const useCooldown: Map<Snowflake, number> = new Map();
 const renderCooldown: Map<Snowflake, number> = new Map();
 
-const whiteListChannels = [
-  "1099358799883677896", // mentor-staff
-  "1106150463499411497", // programmers-n-tech
-  "1019655162580701184", // gamedevs
-  "881564283069153300", // studies
-];
-
 export default class SlashCommand extends InteractionCommand {
   /**
    *
@@ -65,19 +58,6 @@ export default class SlashCommand extends InteractionCommand {
   async execute(
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
-    let channelId = interaction.channelId;
-    const channel = interaction.channel;
-    if (channel instanceof ThreadChannel) {
-      channelId = channel.parentId ?? "";
-    }
-    if (!whiteListChannels.includes(channelId)) {
-      await interaction.reply({
-        content: "This command is reserved to hobby channels",
-        ephemeral: true,
-      });
-      return {};
-    }
-
     const userId = interaction.user.id;
     const currentMillis = Date.now();
 
