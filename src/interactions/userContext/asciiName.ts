@@ -12,6 +12,8 @@ import {
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
+import { PermissionLevels } from "types/command";
+import permlevel from "commands/system/permlevel";
 import { unicode2Ascii } from "lib/utils";
 
 export default class ContextCommand extends InteractionCommand {
@@ -33,6 +35,9 @@ export default class ContextCommand extends InteractionCommand {
 
     if (!(int.targetMember instanceof GuildMember)) {
       return { content: "ASCII name only works on guild members", eph: true };
+    }
+    if (this.client.permlevel(undefined, int.targetMember) >= 2) {
+      return { content: "Helper and above cannot be nicknamed" };
     }
     const unicodeName = int.targetMember.user.username;
     const name = unicode2Ascii(unicodeName);

@@ -32,12 +32,14 @@ export default class ContextCommand extends InteractionCommand {
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
     const int = interaction as UserContextMenuCommandInteraction;
-    const num = await this.client.getNextCounter("Badname");
-    const name = badNamer.get(num);
-
     if (!(int.targetMember instanceof GuildMember)) {
       return { content: "Random name only works on guild members", eph: true };
     }
+    if (this.client.permlevel(undefined, int.targetMember) >= 2) {
+      return { content: "Helper and above cannot be nicknamed" };
+    }
+    const num = await this.client.getNextCounter("Badname");
+    const name = badNamer.get(num);
     await this.client.setMemberName(int.targetMember, name);
     return { content: "User renamed successfully", eph: true };
   }

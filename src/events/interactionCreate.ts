@@ -16,6 +16,7 @@ import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
 import { CustomClient } from "lib/client";
 import { InteractionType } from "discord-api-types/v10";
+import { SettingsModel } from "models/Settings";
 import { TimestampModel } from "models/Timestamp";
 
 export default async function (client: CustomClient, interaction: Interaction) {
@@ -30,6 +31,34 @@ export default async function (client: CustomClient, interaction: Interaction) {
   //     await existingButtonHandler.execute(interaction);
   //   }
   // }
+
+  if (!interaction.guild) return;
+  if (interaction.guild && !client.settings.has((interaction.guild || {}).id)) {
+    // We don't have the settings for this guild, find them or generate empty settings
+    const s = await SettingsModel.findOneAndUpdate(
+      { _id: interaction.guild.id },
+      { toUpdate: true },
+      {
+        upsert: true,
+        setDefaultsOnInsert: true,
+        new: true,
+      }
+    )
+      .populate("mentorRoles")
+      .populate("commands");
+
+    log.debug("Setting sync", {
+      action: "Fetch",
+      message: `Database -> Client (${interaction.guild.id})`,
+    });
+
+    client.settings.set(interaction.guild.id, s);
+    interaction.settings = s;
+  } else {
+    const s = client.settings.get(interaction.guild ? interaction.guild.id : "default");
+    if (!s) return;
+    interaction.settings = s;
+  }
 
   const isModalSubmit = interaction.isModalSubmit();
   if (isModalSubmit && interaction.customId == staffAppCustomId) {
