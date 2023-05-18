@@ -256,9 +256,10 @@ export class CustomClient extends Client {
     channelId: string,
     min: number,
     max: number,
-    targetMsgsPerSec: number
+    targetMsgsPerSec: number,
+    enabled: boolean
   ): Promise<void> {
-    const autoSlow = new AutoSlowManager(min, max, targetMsgsPerSec);
+    const autoSlow = new AutoSlowManager(min, max, targetMsgsPerSec, enabled);
     AutoSlowCache.addAutoSlow(channelId, autoSlow);
     await AutoSlowModel.findOneAndUpdate(
       {
@@ -268,6 +269,7 @@ export class CustomClient extends Client {
         min: min,
         max: max,
         targetMsgsPerSec: targetMsgsPerSec,
+        enabled: enabled,
       },
       {
         new: true,
@@ -292,7 +294,8 @@ export class CustomClient extends Client {
       autoSlow = new AutoSlowManager(
         autoSlowConfig.min,
         autoSlowConfig.max,
-        autoSlowConfig.targetMsgsPerSec
+        autoSlowConfig.targetMsgsPerSec,
+        autoSlowConfig.enabled
       );
       AutoSlowCache.addAutoSlow(channelId, autoSlow);
     }

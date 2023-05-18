@@ -68,6 +68,7 @@ interface RawAutoSlow {
   targetMsgsPerSec: number;
   min: number;
   max: number;
+  enabled: boolean;
 }
 
 export interface IAutoSlow extends RawAutoSlow, Document {}

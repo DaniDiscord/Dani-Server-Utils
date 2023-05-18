@@ -6,6 +6,7 @@ export class AutoSlowManager {
   minSlow: number;
   maxSlow: number;
   targetMsgsPerSec: number;
+  enabled: boolean;
 
   msgBalance: number;
 
@@ -13,10 +14,16 @@ export class AutoSlowManager {
 
   lastSlowSet: number | null;
 
-  constructor(minSlow: number, maxSlow: number, targetMsgsPerSec: number) {
+  constructor(
+    minSlow: number,
+    maxSlow: number,
+    targetMsgsPerSec: number,
+    enabled: boolean
+  ) {
     this.minSlow = minSlow;
     this.maxSlow = maxSlow;
     this.targetMsgsPerSec = targetMsgsPerSec;
+    this.enabled = enabled;
     this.msgBalance = 0;
     this.lastTime = null;
     this.lastSlowSet = null;

@@ -42,7 +42,8 @@ declare module "discord.js" {
       channelId: string,
       min: number,
       max: number,
-      targetMsgsPerSec: number
+      targetMsgsPerSec: number,
+      enabled: boolean
     ): Promise<void>;
 
     removeAutoSlow(channelId: string): Promise<void>;

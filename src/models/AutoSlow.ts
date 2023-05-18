@@ -19,6 +19,10 @@ const AutoSlowSchema = new Schema({
     type: Number,
     default: 1,
   },
+  enabled: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export const AutoSlowModel: Model<IAutoSlow> = model("AutoSlow", AutoSlowSchema);
