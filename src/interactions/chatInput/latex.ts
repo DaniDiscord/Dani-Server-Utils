@@ -121,6 +121,7 @@ export default class SlashCommand extends InteractionCommand {
     }
     try {
       let html = katex.renderToString(stringLatex, {
+        displayMode: true,
         throwOnError: true,
         minRuleThickness: 0.1,
         output: "html",
