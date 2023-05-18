@@ -3,7 +3,6 @@ import {
   CacheType,
   ChatInputCommandInteraction,
   CommandInteraction,
-  CommandInteractionOptionResolver,
   PermissionsBitField,
 } from "discord.js";
 import {
@@ -80,18 +79,16 @@ export default class SlashCommand extends InteractionCommand {
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
     if (!(interaction instanceof ChatInputCommandInteraction)) {
-      await interaction.reply({ content: "Internal Error", ephemeral: true });
-      return {};
+      return { content: "Internal Error", eph: true };
     }
 
     const subCommand = interaction.options.getSubcommand();
     if (subCommand === REMOVE) {
       await this.client.removeAutoSlow(interaction.channelId);
-      await interaction.reply({
+      return {
         content: "Autoslow removed successfully",
-        ephemeral: true,
-      });
-      return {};
+        eph: true,
+      };
     }
 
     const currentAutoSlow = await this.client.getAutoSlow(interaction.channelId);
@@ -110,11 +107,10 @@ export default class SlashCommand extends InteractionCommand {
         freq: ${currentAutoSlow.targetMsgsPerSec} msg/s
         enabled: ${currentAutoSlow.enabled}`;
       }
-      await interaction.reply({
+      return {
         content: content,
-        ephemeral: true,
-      });
-      return {};
+        eph: true,
+      };
     }
 
     const min = commandMin ?? currentAutoSlow?.minSlow;
@@ -128,35 +124,31 @@ export default class SlashCommand extends InteractionCommand {
       typeof freq !== "number" ||
       typeof enabled !== "boolean"
     ) {
-      await interaction.reply({ content: "Missing parameters", ephemeral: true });
-      return {};
+      return { content: "Missing parameters", eph: true };
     }
 
     if (freq <= 0) {
-      await interaction.reply({
+      return {
         content: "Error: Frequency has to be a positive value",
-        ephemeral: true,
-      });
-      return {};
+        eph: true,
+      };
     }
 
     if (min < 1) {
-      await interaction.reply({
+      return {
         content: "Error: Minimum slow mode can't be lower than 1 second.",
-        ephemeral: true,
-      });
-      return {};
+        eph: true,
+      };
     }
 
     this.client.addAutoSlow(interaction.channelId, min, max, freq, enabled);
-    await interaction.reply({
+    return {
       content: `Success: Setup slow mode
        min: ${min}s
        max: ${max}s
        freq: ${freq}
        enabled: ${enabled}`,
-      ephemeral: true,
-    });
-    return {};
+      eph: true,
+    };
   }
 }
