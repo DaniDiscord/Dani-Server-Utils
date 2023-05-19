@@ -3,6 +3,7 @@ import { IAutoSlow, ISettings } from "./mongodb";
 
 import { Command } from "./command";
 import { Config } from "config";
+import { EmojiSuggestions } from "lib/emojiSuggestions";
 import { InteractionCommand } from "classes/CustomInteraction";
 import { ReactionHandler } from "lib/reacthandler";
 
@@ -49,6 +50,12 @@ declare module "discord.js" {
     removeAutoSlow(channelId: string): Promise<void>;
 
     getAutoSlow(channelId: string): Promise<AutoSlowManager | null>;
+
+    setEmojiSuggestions(emojiSuggestions: EmojiSuggestions): Promise<void>;
+
+    getEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null>;
+
+    removeEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null>;
   }
 
   export interface Base {

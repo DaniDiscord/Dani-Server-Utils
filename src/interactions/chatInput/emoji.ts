@@ -3,6 +3,7 @@ import {
   CacheType,
   ChatInputCommandInteraction,
   CommandInteraction,
+  EmbedBuilder,
   TextChannel,
 } from "discord.js";
 import {
@@ -12,40 +13,45 @@ import {
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
+import { EmojiSuggestions } from "lib/emojiSuggestions";
 
 const EMOJI = "emoji";
 
-const NAME = "name";
-const FILE = "file";
-
-const SUGGEST = "suggest";
-const SETUP = "setup";
+const CONFIG = "config";
+const GET = "get";
+const REMOVE = "remove";
 
 const APPROVAL = "approval";
 const VOTE = "vote";
-
-export const emojiSuffix = "_c";
-const maxEmojiNameLength = 32 - emojiSuffix.length;
-
-const emojiNameGuidelines = `Emoji names have to be longer than 2 characters, shorter than ${maxEmojiNameLength} characters and may only contain alphanumeric characters or underscores.`;
-
-export const approvalChannelId = "787154722209005629";
-export const voteChannelId = "787113270291988503";
+const THRESHOLD = "threshold";
+const BIAS = "bias";
+const CAP = "cap";
 
 export const approve = "👍";
 export const deny = "👎";
 
-export const threshold = 0.8;
-export const bias = 5;
+export const approveId = "approve";
+export const denyId = "deny";
 
-function isValidEmojiName(name: string) {
-  return /^[a-zA-Z0-9_]+$/.test(name);
+export const thresholdDefault = 0.75;
+export const biasDefault = 3;
+function getEmbed(emojiConfig: EmojiSuggestions): EmbedBuilder {
+  const percentage = emojiConfig.threshold * 100;
+  const epsilon = emojiConfig.bias;
+  return new EmbedBuilder().addFields([
+    { name: "Approval Channel", value: `<#${emojiConfig.sourceId}>` },
+    { name: "Voting Channel", value: `<#${emojiConfig.voteId}>` },
+    { name: "Threshold", value: `${percentage.toFixed(1)}%` },
+    { name: "Epsilon", value: `${epsilon.toFixed(2)}` },
+  ]);
 }
 
 export default class SlashCommand extends InteractionCommand {
   /**
    *
    */
+
+  // TODO: Add per-user cooldown
   constructor(client: CustomClient) {
     super(client, {
       type: ApplicationCommandType.ChatInput,
@@ -53,27 +59,8 @@ export default class SlashCommand extends InteractionCommand {
       description: "Emoji suggestions!",
       options: [
         {
-          description: "Suggest an emoji",
-          name: SUGGEST,
-          type: ApplicationCommandOptionType.Subcommand,
-          options: [
-            {
-              description: "The emoji's name",
-              name: NAME,
-              type: ApplicationCommandOptionType.String,
-              required: true,
-            },
-            {
-              description: "A media link for the emoji",
-              name: FILE,
-              type: ApplicationCommandOptionType.Attachment,
-              required: true,
-            },
-          ],
-        },
-        {
           description: "Setup emoji suggestions",
-          name: SETUP,
+          name: CONFIG,
           type: ApplicationCommandOptionType.Subcommand,
           options: [
             {
@@ -86,7 +73,34 @@ export default class SlashCommand extends InteractionCommand {
               name: VOTE,
               type: ApplicationCommandOptionType.Channel,
             },
+            {
+              description: "Amount of emojis to stop taking suggestions at",
+              name: CAP,
+              type: ApplicationCommandOptionType.Number,
+            },
+            {
+              description: `Emoji accept/reject threshold (0 < x < 1)
+              default: ${thresholdDefault}`,
+              name: THRESHOLD,
+              type: ApplicationCommandOptionType.Number,
+            },
+            {
+              description: `Higher the bias, the more votes are needed to reach threshold.
+              default: ${biasDefault}`,
+              name: BIAS,
+              type: ApplicationCommandOptionType.Number,
+            },
           ],
+        },
+        {
+          description: "Get the details of the Emoji Event",
+          name: GET,
+          type: ApplicationCommandOptionType.Subcommand,
+        },
+        {
+          description: "End emoji suggestions event",
+          name: REMOVE,
+          type: ApplicationCommandOptionType.Subcommand,
         },
       ],
       // defaultMemberPermissions: "Administrator",
@@ -100,56 +114,60 @@ export default class SlashCommand extends InteractionCommand {
       return { content: "Internal Error", eph: true };
     }
     const subcommand = interaction.options.getSubcommand();
+    const emojiSuggestionsConfig = await this.client.getEmojiSuggestions(
+      interaction.guildId
+    );
     switch (subcommand) {
-      case SUGGEST:
-        const name = interaction.options.get(NAME, true).value;
-        if (typeof name !== "string") {
+      case GET:
+        if (emojiSuggestionsConfig === null) {
           return {
-            content: emojiNameGuidelines,
+            content: "Emoji suggestions are not setup",
             eph: true,
           };
         }
-        if (name.length < 2 || name.length > 30) {
-          return {
-            content: emojiNameGuidelines,
-            eph: true,
-          };
-        }
-        if (!isValidEmojiName(name)) {
-          return {
-            content: emojiNameGuidelines,
-            eph: true,
-          };
-        }
-        const png = interaction.options.get(FILE, true);
-        const content = png.attachment?.attachment;
-        if (content === undefined) {
-          return { content: "File Error", eph: true };
-        }
 
-        const approvalChannel = await interaction.guild.channels.cache.get(
-          approvalChannelId
-        );
-        if (approvalChannel === undefined) {
-          return { content: "Approval channel can't be found" };
-        }
-        if (!(approvalChannel instanceof TextChannel)) {
-          return { content: "Approval channel is not a text channel" };
-        }
-
-        const message = await approvalChannel.send({
-          content: name,
-          files: [{ attachment: content }],
-        });
-
-        await message.react(approve);
-        await message.react(deny);
-        await this.client.reactionHandler.onNewMessage(message);
-
+        return { embeds: [getEmbed(emojiSuggestionsConfig)], eph: true };
+      case REMOVE:
+        await this.client.removeEmojiSuggestions(interaction.guildId);
         return {
-          content: `Submission successful for ${name} with file ${png.name}`,
+          content: "Emoji suggestions removed successfully",
           eph: true,
         };
+      case CONFIG:
+        const sourceId =
+          interaction.options.get(APPROVAL)?.value ?? emojiSuggestionsConfig?.sourceId;
+        const voteId =
+          interaction.options.get(VOTE)?.value ?? emojiSuggestionsConfig?.voteId;
+        const threshold =
+          interaction.options.get(THRESHOLD)?.value ??
+          emojiSuggestionsConfig?.threshold ??
+          thresholdDefault;
+        const bias =
+          interaction.options.get(BIAS)?.value ??
+          emojiSuggestionsConfig?.bias ??
+          biasDefault;
+        const cap = interaction.options.get(CAP)?.value ?? emojiSuggestionsConfig?.cap;
+
+        if (
+          typeof sourceId !== "string" ||
+          typeof voteId !== "string" ||
+          typeof threshold !== "number" ||
+          typeof bias !== "number" ||
+          typeof cap !== "number"
+        ) {
+          return { content: "Missing input or wrong datatype inputted", eph: true };
+        }
+        const newEmojiSuggestions = new EmojiSuggestions(
+          interaction.guildId,
+          sourceId,
+          voteId,
+          threshold,
+          bias,
+          cap
+        );
+        await this.client.setEmojiSuggestions(newEmojiSuggestions);
+        return { embeds: [getEmbed(newEmojiSuggestions)], eph: true };
+
       default:
         return { content: "Internal Error", eph: true };
     }
