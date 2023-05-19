@@ -4,7 +4,6 @@ import {
   ChatInputCommandInteraction,
   CommandInteraction,
   EmbedBuilder,
-  TextChannel,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
@@ -146,7 +145,8 @@ export default class SlashCommand extends InteractionCommand {
           interaction.options.get(BIAS)?.value ??
           emojiSuggestionsConfig?.bias ??
           biasDefault;
-        const cap = interaction.options.get(CAP)?.value ?? emojiSuggestionsConfig?.cap;
+        const cap =
+          interaction.options.get(CAP)?.value ?? emojiSuggestionsConfig?.emojiCap;
 
         if (
           typeof sourceId !== "string" ||

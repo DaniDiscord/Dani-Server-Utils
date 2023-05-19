@@ -1,15 +1,20 @@
 import {
+  ActionRowBuilder,
   ApplicationCommandOptionType,
+  ButtonBuilder,
+  ButtonStyle,
   CacheType,
   ChatInputCommandInteraction,
   CommandInteraction,
+  MessageActionRowComponent,
+  MessageActionRowComponentBuilder,
   TextChannel,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
   InteractionCommand,
 } from "../../classes/CustomInteraction";
-import { approve, deny } from "./emoji";
+import { approve, approveId, deny, denyId } from "./emoji";
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
@@ -98,7 +103,7 @@ export default class SlashCommand extends InteractionCommand {
     // TODO: Check File Size
     const png = interaction.options.get(FILE, true);
     const content = png.attachment;
-    if (content === undefined || content.attachment instanceof internal.Stream) {
+    if (content === undefined) {
       return { content: "File Error", eph: true };
     }
     if (content.width === null || content.height === null) {
@@ -122,13 +127,25 @@ export default class SlashCommand extends InteractionCommand {
       return { content: "Approval channel is not a text channel", eph: true };
     }
 
-    const message = await approvalChannel.send({
-      content: name,
-      files: [{ attachment: content.attachment }],
-    });
+    const approveButton = new ButtonBuilder()
+      .setEmoji(approve)
+      .setCustomId(approveId)
+      .setStyle(ButtonStyle.Primary);
+    const denyButton = new ButtonBuilder()
+      .setEmoji(deny)
+      .setCustomId(denyId)
+      .setStyle(ButtonStyle.Danger);
 
-    await message.react(approve);
-    await message.react(deny);
+    const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents([
+      approveButton,
+      denyButton,
+    ]);
+
+    await approvalChannel.send({
+      content: name,
+      files: [{ attachment: content.proxyURL }],
+      components: [row],
+    });
 
     return {
       content: `Submission successful for ${name}`,

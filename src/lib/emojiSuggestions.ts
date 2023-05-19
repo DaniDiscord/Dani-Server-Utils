@@ -1,10 +1,21 @@
-import { Client, MessageReaction, TextChannel, User } from "discord.js";
-import { approve, deny } from "interactions/chatInput/emoji";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  Client,
+  Interaction,
+  MessageActionRowComponentBuilder,
+  MessageReaction,
+  TextChannel,
+  User,
+} from "discord.js";
+import { approve, approveId, deny, denyId } from "interactions/chatInput/emoji";
 
+import { CustomClient } from "./client";
+import axios from "axios";
 import { emojiSuffix } from "interactions/chatInput/emojiSuggest";
-import internal from "stream";
 
-const delay = async (ms: number) => new Promise((res) => setTimeout(res, ms));
+const confirmationTimeoutPeriod = 15000;
 
 export class EmojiSuggestions {
   guildId: string;
@@ -40,11 +51,114 @@ export class EmojiSuggestions {
   }
 }
 
+export async function onInteraction(client: CustomClient, interaction: Interaction) {
+  if (!interaction.isButton()) {
+    return;
+  }
+  const guildId = interaction.guildId;
+  if (guildId === null) {
+    return;
+  }
+  const emojiSuggestionsConfig = await client.getEmojiSuggestions(guildId);
+  if (emojiSuggestionsConfig === null) {
+    return;
+  }
+  if (interaction.customId !== approveId && interaction.customId !== denyId) {
+    return;
+  }
+  if (interaction.channelId === emojiSuggestionsConfig.sourceId) {
+    const confirmLabel =
+      interaction.customId === approveId
+        ? "Send Emoji to Voting"
+        : "Remove Emoji from Voting";
+    const confirmStyle =
+      interaction.customId === approveId ? ButtonStyle.Primary : ButtonStyle.Danger;
+    const confirmMessage =
+      interaction.customId === approveId
+        ? "Directing Emoji to Voting"
+        : "Removing Emoji from Channel";
+
+    const confirmationId = "confirm";
+    const cancelId = "cancel";
+    const confirm = new ButtonBuilder()
+      .setLabel(confirmLabel)
+      .setCustomId(confirmationId)
+      .setStyle(confirmStyle);
+    const cancel = new ButtonBuilder()
+      .setLabel("Cancel")
+      .setCustomId(cancelId)
+      .setStyle(ButtonStyle.Secondary);
+    const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents([
+      confirm,
+      cancel,
+    ]);
+
+    const response = await interaction.reply({ components: [row], ephemeral: true });
+    let confirmed = false;
+    try {
+      const confirmation = await response.awaitMessageComponent({
+        time: confirmationTimeoutPeriod,
+      });
+      if (confirmation.customId == confirmationId) {
+        await confirmation.update({
+          content: confirmMessage,
+          components: [],
+        });
+        confirmed = true;
+      } else if (confirmation.customId == cancelId) {
+        await confirmation.update({
+          content: "Cancelling",
+          components: [],
+        });
+      }
+    } catch (e) {
+      await interaction.editReply({
+        content: "Confirmation not received, cancelling",
+        components: [],
+      });
+    }
+
+    if (confirmed && interaction.customId == denyId) {
+      interaction.message.delete();
+    } else if (!confirmed) {
+      return;
+    }
+
+    if (interaction.message.partial) {
+      await interaction.message.fetch();
+    }
+    const message = interaction.message;
+    const voteChannel = message.guild?.channels.cache.get(emojiSuggestionsConfig.voteId);
+    if (voteChannel === undefined || !(voteChannel instanceof TextChannel)) {
+      await message.channel.send("Error initiating vote");
+      return;
+    }
+
+    // Attachment is an iterator and destructuring etc. risks crashes
+    let attachment;
+    for (attachment of message.attachments.values()) {
+      break;
+    }
+    // attachment = message.attachments.values().next().value;
+    if (attachment === undefined) {
+      await message.channel.send("Error accessing emoji");
+      return;
+    }
+    const voteMessage = await voteChannel.send({
+      content: message.content,
+      files: [{ attachment: attachment.proxyURL }],
+    });
+    await voteMessage.react(approve);
+    await voteMessage.react(deny);
+    await message.delete();
+  }
+}
+
 export async function onReactionEvent(
   client: Client,
   reaction: MessageReaction,
   user: User
-) {
+): Promise<void> {
   if (user.bot) {
     return;
   }
@@ -57,64 +171,10 @@ export async function onReactionEvent(
   if (emojiSuggestionsConfig === null) {
     return;
   }
-  const approvalChannelId = emojiSuggestionsConfig.sourceId;
   const voteChannelId = emojiSuggestionsConfig.voteId;
   const threshold = emojiSuggestionsConfig.threshold;
   const bias = emojiSuggestionsConfig.bias;
-  if (message.channelId === approvalChannelId) {
-    if (reaction.partial) {
-      await reaction.fetch();
-    }
-    const thumbsUp = message.reactions.cache.get(approve)?.count;
-    const thumbsDown = message.reactions.cache.get(deny)?.count;
-    if (thumbsUp === undefined || thumbsDown === undefined) {
-      await message.channel.send("Error counting reactions");
-      return;
-    }
-    if (thumbsDown > 1) {
-      await delay(5000);
-      const newThumbsDown = message.reactions.cache.get(deny)?.count;
-      if (newThumbsDown == 1) {
-        return;
-      }
-      await message.delete();
-    } else if (thumbsUp > thumbsDown) {
-      await delay(5000);
-      // Give 5 second period to fix any misclicks
-      const newThumbsUp = message.reactions.cache.get(approve)?.count;
-      const newThumbsDown = message.reactions.cache.get(deny)?.count;
-      if (newThumbsUp !== thumbsUp) {
-        return;
-      }
-      if (newThumbsDown !== undefined && newThumbsDown > 1) {
-        return;
-      }
 
-      const voteChannel = message.guild?.channels.cache.get(voteChannelId);
-      if (voteChannel === undefined || !(voteChannel instanceof TextChannel)) {
-        await message.channel.send("Error initiating vote");
-        return;
-      }
-
-      // Attachment is an iterator and destructuring etc. risks crashes
-      let attachment;
-      for (attachment of message.attachments.values()) {
-        break;
-      }
-      // attachment = message.attachments.values().next().value;
-      if (attachment === undefined) {
-        await message.channel.send("Error accessing emoji");
-        return;
-      }
-      const voteMessage = await voteChannel.send({
-        content: message.content,
-        files: [{ attachment: attachment.attachment }],
-      });
-      await voteMessage.react(approve);
-      await voteMessage.react(deny);
-      await message.delete();
-    }
-  }
   const guild = message.guild;
   if (guild === null) {
     return;
@@ -158,12 +218,16 @@ export async function onReactionEvent(
           Next votes will include which emoji you want to replace.`
         );
       }
-      const emojiFile = attachment.attachment;
-      if (emojiFile instanceof internal.Stream) {
-        return;
+      const emoji = await axios.get(attachment.proxyURL, {
+        responseType: "arraybuffer",
+      });
+      if (!(emoji.data instanceof Buffer)) {
+        // It is guaranteed that it is a buffer
+        throw new Error("Axios did not return Buffer");
       }
+
       const emojiCreate = {
-        attachment: emojiFile,
+        attachment: Buffer.from(emoji.data),
         name: emojiName + emojiSuffix,
       };
       await guild.emojis.create(emojiCreate);
