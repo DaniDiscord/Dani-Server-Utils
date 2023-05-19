@@ -81,6 +81,16 @@ interface RawEmojiSuggestions {
   threshold: number;
   bias: number;
   emojiCap: number;
+  cooldown: number;
 }
 
 export interface IEmojiSuggestions extends RawEmojiSuggestions, Document {}
+/* EMOJI SUGGESTIONS */
+interface RawCommandCooldown {
+  commandId: string;
+  guildId: string;
+  userId: string;
+  lastUse: number;
+}
+
+export interface ICommandCooldown extends RawCommandCooldown, Document {}

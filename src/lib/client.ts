@@ -12,6 +12,7 @@ import { join, resolve } from "path";
 
 import { AutoSlowModel } from "models/AutoSlow";
 import { Command } from "types/command";
+import { CommandCooldownModel } from "models/CommandCooldown";
 import { CounterModel } from "models/Counter";
 import { EmojiSuggestions } from "./emojiSuggestions";
 import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
@@ -334,6 +335,34 @@ export class CustomClient extends Client {
   async removeEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null> {
     this.emojiEventCache.delete(guildId);
     return await EmojiSuggestionsModel.findOneAndDelete({ guildId: guildId });
+  }
+
+  async registerCommandUsage(
+    guildId: string,
+    commandId: string,
+    userId: string
+  ): Promise<void> {
+    const filter = { guildId: guildId, commandId: commandId, userId: userId };
+    await CommandCooldownModel.findOneAndUpdate(
+      filter,
+      {
+        guildId: guildId,
+        commandId: commandId,
+        userId: userId,
+        lastUse: Date.now(),
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  async getLastCommandUse(
+    guildId: string,
+    commandId: string,
+    userId: string
+  ): Promise<number | null> {
+    const filter = { guildId: guildId, commandId: commandId, userId: userId };
+    const command = await CommandCooldownModel.findOne(filter);
+    return command?.lastUse ?? null;
   }
 
   private async loadSlashCommands() {

@@ -24,6 +24,7 @@ export class EmojiSuggestions {
   threshold: number;
   bias: number;
   emojiCap: number;
+  cooldown: number;
 
   constructor(
     guildId: string,
@@ -31,7 +32,8 @@ export class EmojiSuggestions {
     voteId: string,
     threshold: number,
     bias: number,
-    emojiCap: number
+    emojiCap: number,
+    cooldown: number
   ) {
     if (sourceId === voteId) {
       throw new Error("Source channel cannot be the same as the Vote channel ");
@@ -42,12 +44,16 @@ export class EmojiSuggestions {
     if (bias <= 0) {
       throw new Error("Bias should be positive");
     }
+    if (cooldown < 0) {
+      throw new Error("Cooldown should be postiive");
+    }
     this.guildId = guildId;
     this.sourceId = sourceId;
     this.voteId = voteId;
     this.threshold = threshold;
     this.bias = bias;
     this.emojiCap = emojiCap;
+    this.cooldown = cooldown;
   }
 }
 
@@ -119,7 +125,8 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
     }
 
     if (confirmed && interaction.customId == denyId) {
-      interaction.message.delete();
+      await interaction.message.delete();
+      return;
     } else if (!confirmed) {
       return;
     }

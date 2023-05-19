@@ -6,8 +6,10 @@ import {
   CacheType,
   ChatInputCommandInteraction,
   CommandInteraction,
+  EmbedBuilder,
   MessageActionRowComponent,
   MessageActionRowComponentBuilder,
+  PermissionsBitField,
   TextChannel,
 } from "discord.js";
 import {
@@ -18,8 +20,8 @@ import { approve, approveId, deny, denyId } from "./emoji";
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
-import internal from "stream";
 
+const commandId = "emojisuggest";
 const NAME = "name";
 const FILE = "file";
 
@@ -62,6 +64,7 @@ export default class SlashCommand extends InteractionCommand {
           ],
         },
       ],
+      defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
@@ -71,6 +74,7 @@ export default class SlashCommand extends InteractionCommand {
     if (!(interaction instanceof ChatInputCommandInteraction)) {
       return { content: "Internal Error", eph: true };
     }
+
     const emojiSuggestionsConfig = await this.client.getEmojiSuggestions(
       interaction.guildId
     );
@@ -79,6 +83,27 @@ export default class SlashCommand extends InteractionCommand {
         content: "Emoji suggestions are currently closed",
         eph: true,
       };
+    }
+
+    const lastUse = await this.client.getLastCommandUse(
+      interaction.guildId,
+      commandId,
+      interaction.user.id
+    );
+    if (lastUse !== null) {
+      const deltaTime = Date.now() - lastUse;
+      // Convert cooldown to millis as we work in seconds
+      const cooldownMillis = emojiSuggestionsConfig.cooldown * 1000;
+      if (deltaTime < cooldownMillis) {
+        const reuseTime = Math.floor((lastUse + cooldownMillis) / 1000);
+        const timeLeft = new EmbedBuilder().addFields([
+          {
+            name: "Command cooldown",
+            value: `you can use this command again <t:${reuseTime}:R>`,
+          },
+        ]);
+        return { embeds: [timeLeft], eph: true };
+      }
     }
 
     const name = interaction.options.get(NAME, true).value;
@@ -147,10 +172,15 @@ export default class SlashCommand extends InteractionCommand {
       components: [row],
     });
 
+    await this.client.registerCommandUsage(
+      interaction.guildId,
+      commandId,
+      interaction.user.id
+    );
+
     return {
       content: `Submission successful for ${name}`,
       eph: true,
     };
-    return {};
   }
 }

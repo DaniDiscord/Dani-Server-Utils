@@ -56,6 +56,18 @@ declare module "discord.js" {
     getEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null>;
 
     removeEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null>;
+
+    registerCommandUsage(
+      guildId: string,
+      commandId: string,
+      userId: string
+    ): Promise<void>;
+
+    getLastCommandUse(
+      guildId: string,
+      commandId: string,
+      userId: string
+    ): Promise<number | null>;
   }
 
   export interface Base {

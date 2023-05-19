@@ -4,6 +4,7 @@ import {
   ChatInputCommandInteraction,
   CommandInteraction,
   EmbedBuilder,
+  PermissionsBitField,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
@@ -22,6 +23,7 @@ const REMOVE = "remove";
 
 const APPROVAL = "approval";
 const VOTE = "vote";
+const COOLDOWN = "cooldown";
 const THRESHOLD = "threshold";
 const BIAS = "bias";
 const CAP = "cap";
@@ -73,6 +75,11 @@ export default class SlashCommand extends InteractionCommand {
               type: ApplicationCommandOptionType.Channel,
             },
             {
+              description: "Per-user cooldown in seconds",
+              name: COOLDOWN,
+              type: ApplicationCommandOptionType.Number,
+            },
+            {
               description: "Amount of emojis to stop taking suggestions at",
               name: CAP,
               type: ApplicationCommandOptionType.Number,
@@ -102,7 +109,7 @@ export default class SlashCommand extends InteractionCommand {
           type: ApplicationCommandOptionType.Subcommand,
         },
       ],
-      // defaultMemberPermissions: "Administrator",
+      defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
@@ -147,13 +154,16 @@ export default class SlashCommand extends InteractionCommand {
           biasDefault;
         const cap =
           interaction.options.get(CAP)?.value ?? emojiSuggestionsConfig?.emojiCap;
+        const cooldown =
+          interaction.options.get(COOLDOWN)?.value ?? emojiSuggestionsConfig?.cooldown;
 
         if (
           typeof sourceId !== "string" ||
           typeof voteId !== "string" ||
           typeof threshold !== "number" ||
           typeof bias !== "number" ||
-          typeof cap !== "number"
+          typeof cap !== "number" ||
+          typeof cooldown !== "number"
         ) {
           return { content: "Missing input or wrong datatype inputted", eph: true };
         }
@@ -163,7 +173,8 @@ export default class SlashCommand extends InteractionCommand {
           voteId,
           threshold,
           bias,
-          cap
+          cap,
+          cooldown
         );
         await this.client.setEmojiSuggestions(newEmojiSuggestions);
         return { embeds: [getEmbed(newEmojiSuggestions)], eph: true };
