@@ -18,6 +18,7 @@ import { CustomClient } from "lib/client";
 import { InteractionType } from "discord-api-types/v10";
 import { SettingsModel } from "models/Settings";
 import { TimestampModel } from "models/Timestamp";
+import { onInteraction } from "lib/emojiSuggestions";
 
 export default async function (client: CustomClient, interaction: Interaction) {
   // if (interaction.guildId) {
@@ -59,6 +60,9 @@ export default async function (client: CustomClient, interaction: Interaction) {
     if (!s) return;
     interaction.settings = s;
   }
+
+  // Emojis
+  await onInteraction(client, interaction);
 
   const isModalSubmit = interaction.isModalSubmit();
   if (isModalSubmit && interaction.customId == staffAppCustomId) {

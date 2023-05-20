@@ -12,7 +12,10 @@ import { join, resolve } from "path";
 
 import { AutoSlowModel } from "models/AutoSlow";
 import { Command } from "types/command";
+import { CommandCooldownModel } from "models/CommandCooldown";
 import { CounterModel } from "models/Counter";
+import { EmojiSuggestions } from "./emojiSuggestions";
+import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
 import { InteractionCommand } from "classes/CustomInteraction";
 import { NameModel } from "../models/Name";
 import _ from "lodash";
@@ -21,9 +24,12 @@ import { promisify } from "util";
 import { readdir } from "fs/promises";
 
 export class CustomClient extends Client {
+  emojiEventCache: Map<string, EmojiSuggestions>;
+
   constructor(options: ClientOptions) {
     super(options);
 
+    this.emojiEventCache = new Map();
     this.embColor = "ea05ec";
     // `await client.wait(1000);` to "pause" for 1 second.
 
@@ -300,6 +306,63 @@ export class CustomClient extends Client {
       AutoSlowCache.addAutoSlow(channelId, autoSlow);
     }
     return autoSlow;
+  }
+
+  async setEmojiSuggestions(config: EmojiSuggestions): Promise<void> {
+    this.emojiEventCache.set(config.guildId, config);
+    const filter = {
+      guildId: config.guildId,
+    };
+    await EmojiSuggestionsModel.findOneAndUpdate(filter, config, {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    });
+  }
+
+  async getEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null> {
+    const cacheValue = this.emojiEventCache.get(guildId);
+    if (cacheValue !== undefined) {
+      return cacheValue;
+    }
+    const dbValue = await EmojiSuggestionsModel.findOne({ guildId: guildId });
+    if (dbValue !== null) {
+      this.emojiEventCache.set(guildId, dbValue);
+    }
+    return dbValue;
+  }
+
+  async removeEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null> {
+    this.emojiEventCache.delete(guildId);
+    return await EmojiSuggestionsModel.findOneAndDelete({ guildId: guildId });
+  }
+
+  async registerCommandUsage(
+    guildId: string,
+    commandId: string,
+    userId: string
+  ): Promise<void> {
+    const filter = { guildId: guildId, commandId: commandId, userId: userId };
+    await CommandCooldownModel.findOneAndUpdate(
+      filter,
+      {
+        guildId: guildId,
+        commandId: commandId,
+        userId: userId,
+        lastUse: Date.now(),
+      },
+      { new: true, upsert: true }
+    );
+  }
+
+  async getLastCommandUse(
+    guildId: string,
+    commandId: string,
+    userId: string
+  ): Promise<number | null> {
+    const filter = { guildId: guildId, commandId: commandId, userId: userId };
+    const command = await CommandCooldownModel.findOne(filter);
+    return command?.lastUse ?? null;
   }
 
   private async loadSlashCommands() {
