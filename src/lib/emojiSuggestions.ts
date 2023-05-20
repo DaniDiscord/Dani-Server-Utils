@@ -58,30 +58,37 @@ export class EmojiSuggestions {
   }
 }
 
-class SynchronizeById {
-  lock: Mutex;
-  lockMap: Map<string, Mutex>;
+export class SynchronizeById {
+  private lock: Mutex;
+  private lockMap: Map<string, Mutex>;
 
   constructor() {
     this.lock = new Mutex();
     this.lockMap = new Map();
   }
 
-  async doSynchronized(id: string, fn: () => Promise<void>) {
-    this.lock.acquire();
+  async doSynchronized(id: string, fn: () => Promise<void>): Promise<void> {
+    const release = await this.lock.acquire();
     let lock = this.lockMap.get(id);
     if (lock === undefined) {
       lock = new Mutex();
       this.lockMap.set(id, lock);
     }
+    release();
     if (lock.isLocked()) {
       return;
     }
-    lock.acquire();
-    this.lock.release();
-    await fn();
-    lock.release();
-    this.lockMap.delete(id);
+    const mapRelease = await lock.acquire();
+
+    // If we fail here, we don't want to deadlock
+    try {
+      await fn();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      this.lockMap.delete(id);
+      mapRelease();
+    }
   }
 }
 
