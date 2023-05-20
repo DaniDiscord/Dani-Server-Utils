@@ -20,7 +20,7 @@ export default class ContextCommand extends InteractionCommand {
   constructor(client: CustomClient) {
     super(client, {
       type: ApplicationCommandType.User,
-      name: "Reset To Tag",
+      name: "Reset to Display Name",
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
@@ -31,15 +31,12 @@ export default class ContextCommand extends InteractionCommand {
     const int = interaction as UserContextMenuCommandInteraction;
 
     if (!(int.targetMember instanceof GuildMember)) {
-      return { content: "Resetting to tag only works on guild members", eph: true };
+      return { content: "Reset name only works on guild members", eph: true };
     }
     if (this.client.permlevel(undefined, int.targetMember) >= 2) {
       return { content: "Helper and above cannot be nicknamed", eph: true };
     }
-    if (int.targetUser.discriminator !== "0") {
-      return { content: `Use "Reset Name" instead `, eph: true };
-    }
-    await this.client.setMemberName(int.targetMember, int.targetUser.tag);
+    await this.client.setMemberName(int.targetMember, int.targetUser.username);
     return { content: "Nickname reset successfully", eph: true };
   }
 }
