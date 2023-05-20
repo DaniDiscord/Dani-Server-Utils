@@ -83,6 +83,9 @@ export class AutoSlowManager {
   }
 
   setOptimalSlowMode(channel: TextChannel): void {
+    if (!this.enabled) {
+      return;
+    }
     const now = Date.now() / 1000;
     if (this.lastSlowSet !== null && now - this.lastSlowSet < 15) {
       return;
