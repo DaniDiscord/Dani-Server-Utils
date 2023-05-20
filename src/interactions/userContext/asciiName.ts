@@ -37,7 +37,7 @@ export default class ContextCommand extends InteractionCommand {
       return { content: "ASCII name only works on guild members", eph: true };
     }
     if (this.client.permlevel(undefined, int.targetMember) >= 2) {
-      return { content: "Helper and above cannot be nicknamed" };
+      return { content: "Helper and above cannot be nicknamed", eph: true };
     }
     const unicodeName = int.targetMember.user.username;
     const name = unicode2Ascii(unicodeName);

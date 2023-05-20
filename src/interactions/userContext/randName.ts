@@ -36,7 +36,7 @@ export default class ContextCommand extends InteractionCommand {
       return { content: "Random name only works on guild members", eph: true };
     }
     if (this.client.permlevel(undefined, int.targetMember) >= 2) {
-      return { content: "Helper and above cannot be nicknamed" };
+      return { content: "Helper and above cannot be nicknamed", eph: true };
     }
     const num = await this.client.getNextCounter("Badname");
     const name = badNamer.get(num);
