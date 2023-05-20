@@ -37,12 +37,7 @@ export default class ContextCommand extends InteractionCommand {
       return { content: "Helper and above cannot be nicknamed", eph: true };
     }
     const tag = int.targetUser.tag;
-    let newName = tag.replace(/#\d+$/, "");
-
-    if (newName.length >= 32) {
-      newName = newName.substring(0, 31);
-    }
-    newName += "*";
+    const newName = `${tag.replace(/#\d+$/, "").substring(0, 31)}*`;
     await this.client.setMemberName(int.targetMember, newName);
     return { content: "Nickname reset successfully", eph: true };
   }
