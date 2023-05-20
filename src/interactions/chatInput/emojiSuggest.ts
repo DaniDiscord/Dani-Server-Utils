@@ -7,7 +7,6 @@ import {
   ChatInputCommandInteraction,
   CommandInteraction,
   EmbedBuilder,
-  MessageActionRowComponent,
   MessageActionRowComponentBuilder,
   PermissionsBitField,
   TextChannel,
@@ -42,7 +41,7 @@ export default class SlashCommand extends InteractionCommand {
     super(client, {
       type: ApplicationCommandType.ChatInput,
       name: SUGGEST,
-      description: "Check the bot's ping!",
+      description: "Suggest an emoji",
       options: [
         {
           description: "Suggest an emoji",
