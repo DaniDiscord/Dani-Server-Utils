@@ -56,7 +56,7 @@ export default class SlashCommand extends InteractionCommand {
               required: true,
             },
             {
-              description: "The emoji file 128x128 at most in dimensions",
+              description: "The emoji's .png file (128x128 largest)",
               name: FILE,
               type: ApplicationCommandOptionType.Attachment,
               required: true,
@@ -133,6 +133,9 @@ export default class SlashCommand extends InteractionCommand {
     }
     if (content.width === null || content.height === null) {
       return { content: "Unrecognized File Type", eph: true };
+    }
+    if (content.contentType !== "image/png") {
+      return { content: "Please only send PNG files", eph: true };
     }
     if (content.width > 128 || content.height > 128) {
       return {
