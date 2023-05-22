@@ -10,6 +10,7 @@ import {
 import { AutoSlowCache, AutoSlowManager } from "./autoslow";
 import { join, resolve } from "path";
 
+import { AutoPollModel } from "models/AutoPoll";
 import { AutoSlowModel } from "models/AutoSlow";
 import { Command } from "types/command";
 import { CommandCooldownModel } from "models/CommandCooldown";
@@ -19,6 +20,7 @@ import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
 import { InteractionCommand } from "classes/CustomInteraction";
 import { NameModel } from "../models/Name";
 import _ from "lodash";
+import { autoPollCache } from "./reacthandler";
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { promisify } from "util";
 import { readdir } from "fs/promises";
@@ -363,6 +365,80 @@ export class CustomClient extends Client {
     const filter = { guildId: guildId, commandId: commandId, userId: userId };
     const command = await CommandCooldownModel.findOne(filter);
     return command?.lastUse ?? null;
+  }
+
+  async addAutoPollChannel(guildId: string, channelId: string): Promise<void> {
+    autoPollCache.addChannel(guildId, channelId);
+    await AutoPollModel.findOneAndUpdate(
+      {
+        guildId: guildId,
+      },
+      { $addToSet: { channels: channelId } },
+      {
+        upsert: true,
+      }
+    );
+  }
+
+  async removeAutoPollChannel(guildId: string, channelId: string): Promise<void> {
+    autoPollCache.removeChannel(guildId, channelId);
+    await AutoPollModel.findOneAndUpdate(
+      {
+        guildId: guildId,
+      },
+      { $pull: { channels: channelId } },
+      {
+        upsert: true,
+      }
+    );
+  }
+
+  async addClosePollRole(guildId: string, roleId: string): Promise<void> {
+    autoPollCache.addRole(guildId, roleId);
+    await AutoPollModel.findOneAndUpdate(
+      {
+        guildId: guildId,
+      },
+      { $addToSet: { roles: roleId } },
+      {
+        upsert: true,
+      }
+    );
+  }
+
+  async removeClosePollRole(guildId: string, roleId: string): Promise<void> {
+    autoPollCache.removeRole(guildId, roleId);
+    await AutoPollModel.findOneAndUpdate(
+      {
+        guildId: guildId,
+      },
+      { $pull: { roles: roleId } },
+      {
+        upsert: true,
+      }
+    );
+  }
+
+  async getAutoPollChannels(guildId: string): Promise<string[] | undefined> {
+    const cache = autoPollCache.getChannels(guildId);
+    if (cache !== undefined) {
+      return cache;
+    }
+    const db = await AutoPollModel.findOne({ guildId: guildId });
+    const channels = db?.channels;
+    autoPollCache.setChannels(guildId, channels ?? []);
+    return channels;
+  }
+
+  async getClosePollRoles(guildId: string): Promise<string[] | undefined> {
+    const cache = autoPollCache.getRoles(guildId);
+    if (cache !== undefined) {
+      return cache;
+    }
+    const db = await AutoPollModel.findOne({ guildId: guildId });
+    const roles = db?.roles;
+    autoPollCache.setRoles(guildId, roles ?? []);
+    return roles;
   }
 
   private async loadSlashCommands() {

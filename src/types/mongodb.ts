@@ -94,3 +94,11 @@ interface RawCommandCooldown {
 }
 
 export interface ICommandCooldown extends RawCommandCooldown, Document {}
+
+interface RawAutoPoll {
+  guildId: string;
+  channels: string[];
+  roles: string[];
+}
+
+export interface IAutoPoll extends RawAutoPoll, Document {}

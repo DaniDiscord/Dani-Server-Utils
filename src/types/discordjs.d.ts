@@ -51,6 +51,18 @@ declare module "discord.js" {
 
     getAutoSlow(channelId: string): Promise<AutoSlowManager | null>;
 
+    addAutoPollChannel(guildId: string, channelId: string): Promise<void>;
+
+    removeAutoPollChannel(guildId: string, channelId: string): Promise<void>;
+
+    addClosePollRole(guildId: string, roleId: string): Promise<void>;
+
+    removeClosePollRole(guildId: string, roleId: string): Promise<void>;
+
+    getAutoPollChannels(guildId: string): Promise<string[] | undefined>;
+
+    getClosePollRoles(guildId: string): Promise<string[] | undefined>;
+
     setEmojiSuggestions(emojiSuggestions: EmojiSuggestions): Promise<void>;
 
     getEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null>;
