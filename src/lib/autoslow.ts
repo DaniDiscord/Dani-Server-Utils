@@ -2,6 +2,9 @@ import { TextChannel } from "discord.js";
 
 const BASE = 0.95;
 
+const minChangeRate = 0.75;
+const minAbsoluteChange = 5;
+
 export class AutoSlowManager {
   minSlow: number;
   maxSlow: number;
@@ -78,7 +81,10 @@ export class AutoSlowManager {
       return slowMode;
     } else {
       const optimal = (Math.max(slowMode, 1) * currentBalance) / targetBalance;
-      return Math.min(Math.max(optimal, this.minSlow), this.maxSlow);
+      const maxChange = Math.max(minAbsoluteChange, Math.abs(slowMode * minChangeRate));
+      const min = Math.max(this.minSlow, slowMode - maxChange);
+      const max = Math.min(this.maxSlow, slowMode + maxChange);
+      return Math.min(Math.max(optimal, min), max);
     }
   }
 
