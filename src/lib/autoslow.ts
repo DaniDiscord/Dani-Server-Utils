@@ -81,7 +81,7 @@ export class AutoSlowManager {
       return slowMode;
     } else {
       const optimal = (Math.max(slowMode, 1) * currentBalance) / targetBalance;
-      const maxChange = Math.max(minAbsoluteChange, Math.abs(slowMode * minChangeRate));
+      const maxChange = Math.max(minAbsoluteChange, slowMode * minChangeRate);
       const min = Math.max(this.minSlow, slowMode - maxChange);
       const max = Math.min(this.maxSlow, slowMode + maxChange);
       return Math.min(Math.max(optimal, min), max);
