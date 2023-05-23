@@ -1,6 +1,7 @@
 import { Collection, EmbedBuilder, Message } from "discord.js";
 import { IAutoSlow, ISettings } from "./mongodb";
 
+import { AutoSlowManager } from "lib/autoslow";
 import { Command } from "./command";
 import { Config } from "config";
 import { EmojiSuggestions } from "lib/emojiSuggestions";
@@ -44,8 +45,10 @@ declare module "discord.js" {
       min: number,
       max: number,
       targetMsgsPerSec: number,
+      minChange: number,
+      minChangeRate: number,
       enabled: boolean
-    ): Promise<void>;
+    ): Promise<AutoSlowManager>;
 
     removeAutoSlow(channelId: string): Promise<void>;
 
