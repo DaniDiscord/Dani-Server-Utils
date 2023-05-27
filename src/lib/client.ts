@@ -438,7 +438,9 @@ export class CustomClient extends Client {
       );
       log.debug("Command sync", {
         action: "Unload",
-        message: `Unloading a total of ${slashCommands} existing slash commands`,
+        message: `Unloading a total of ${
+          Array.from(slashCommands).length
+        } existing slash commands`,
       });
       for (const command of slashCommands.values()) {
         await command.delete();
