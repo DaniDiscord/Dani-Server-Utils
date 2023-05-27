@@ -84,7 +84,12 @@ export default class SlashCommand extends InteractionCommand {
         eph: true,
       };
     }
-
+    if (interaction.guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap) {
+      return {
+        content: "Emoji cap has been hit, wait for updates",
+        eph: true,
+      };
+    }
     const lastUse = await this.client.getLastCommandUse(
       interaction.guildId,
       commandId,
