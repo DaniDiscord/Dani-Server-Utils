@@ -433,15 +433,14 @@ export class CustomClient extends Client {
       commands &&
       commands.filter((c) => !this.slashCommands.has(`${c.type ?? 1}-${c.name}`)).size > 0
     ) {
+      const slashCommands = commands.filter(
+        (c) => !this.slashCommands.has(`${c.type ?? 1}-${c.name}`)
+      );
       log.debug("Command sync", {
         action: "Unload",
-        message: `Unloading a total of ${commands.filter(
-          (c) => !this.slashCommands.has(c.name)
-        )} existing slash commands`,
+        message: `Unloading a total of ${slashCommands} existing slash commands`,
       });
-      for (const command of commands
-        .filter((c) => !this.slashCommands.has(c.name))
-        .values()) {
+      for (const command of slashCommands.values()) {
         await command.delete();
       }
     }
