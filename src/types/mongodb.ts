@@ -68,6 +68,8 @@ interface RawAutoSlow {
   targetMsgsPerSec: number;
   min: number;
   max: number;
+  minChange: number;
+  minChangeRate: number;
   enabled: boolean;
 }
 

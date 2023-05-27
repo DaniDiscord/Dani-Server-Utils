@@ -6,6 +6,8 @@ export class AutoSlowManager {
   minSlow: number;
   maxSlow: number;
   targetMsgsPerSec: number;
+  minChangeRate: number;
+  minAbsoluteChange: number;
   enabled: boolean;
 
   msgBalance: number;
@@ -18,11 +20,15 @@ export class AutoSlowManager {
     minSlow: number,
     maxSlow: number,
     targetMsgsPerSec: number,
+    minChangeRate: number,
+    minAbsoluteChange: number,
     enabled: boolean
   ) {
     this.minSlow = minSlow;
     this.maxSlow = maxSlow;
     this.targetMsgsPerSec = targetMsgsPerSec;
+    this.minChangeRate = minChangeRate;
+    this.minAbsoluteChange = minAbsoluteChange;
     this.enabled = enabled;
     this.msgBalance = 0;
     this.lastTime = null;
@@ -78,7 +84,18 @@ export class AutoSlowManager {
       return slowMode;
     } else {
       const optimal = (Math.max(slowMode, 1) * currentBalance) / targetBalance;
-      return Math.min(Math.max(optimal, this.minSlow), this.maxSlow);
+      const upwardsChange = Math.max(
+        this.minAbsoluteChange,
+        slowMode * this.minChangeRate
+      );
+      const downwardsChange = Math.max(
+        this.minAbsoluteChange,
+        slowMode / this.minChangeRate
+      );
+
+      const min = Math.max(this.minSlow, slowMode - downwardsChange);
+      const max = Math.min(this.maxSlow, slowMode + upwardsChange);
+      return Math.min(Math.max(optimal, min), max);
     }
   }
 

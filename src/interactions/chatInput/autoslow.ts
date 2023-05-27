@@ -1,8 +1,10 @@
 import {
+  APIEmbedField,
   ApplicationCommandOptionType,
   CacheType,
   ChatInputCommandInteraction,
   CommandInteraction,
+  EmbedBuilder,
   PermissionsBitField,
 } from "discord.js";
 import {
@@ -11,11 +13,14 @@ import {
 } from "../../classes/CustomInteraction";
 
 import { ApplicationCommandType } from "discord-api-types/v10";
+import { AutoSlowManager } from "lib/autoslow";
 import { CustomClient } from "lib/client";
 
 const MIN = "min";
 const MAX = "max";
 const FREQUENCY = "frequency";
+const MAX_CHANGE = "maxchange";
+const RATE_OF_CHANGE = "rateofchange";
 const ENABLED = "enabled";
 
 const CONFIG = "config";
@@ -53,6 +58,18 @@ export default class SlashCommand extends InteractionCommand {
               type: ApplicationCommandOptionType.Number,
             },
             {
+              name: MAX_CHANGE,
+              description:
+                "The default maximum amount slowmode is allowed to change by. (suggested: 5)",
+              type: ApplicationCommandOptionType.Number,
+            },
+            {
+              name: RATE_OF_CHANGE,
+              description:
+                "The amount slowmode is allowed to change, proportional to current slow mode. This overrides the default if higher. (suggested: 2)",
+              type: ApplicationCommandOptionType.Number,
+            },
+            {
               name: ENABLED,
               description: "Autoslow enabled/disabled",
               type: ApplicationCommandOptionType.Boolean,
@@ -73,6 +90,23 @@ export default class SlashCommand extends InteractionCommand {
       ],
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
+  }
+
+  paramEmbed(autoSlow: AutoSlowManager): APIEmbedField[] {
+    const min = Math.floor(autoSlow.minSlow);
+    const max = Math.floor(autoSlow.maxSlow);
+    const freq = autoSlow.targetMsgsPerSec.toFixed(2);
+    const minChange = autoSlow.minAbsoluteChange.toFixed(2);
+    const rateOfChange = (autoSlow.minChangeRate * 100).toFixed(0);
+    const enabled = autoSlow.enabled ? "enabled" : "disabled";
+    return [
+      { name: "min", value: `${min}s` },
+      { name: "max", value: `${max}s` },
+      { name: "freq", value: `${freq} msg/s` },
+      { name: "min change", value: `${minChange}s` },
+      { name: "min rate of change", value: `${rateOfChange}%` },
+      { name: "state", value: enabled },
+    ];
   }
 
   async execute(
@@ -96,19 +130,20 @@ export default class SlashCommand extends InteractionCommand {
     const commandMin = interaction.options.get(MIN)?.value;
     const commandMax = interaction.options.get(MAX)?.value;
     const commandFreq = interaction.options.get(FREQUENCY)?.value;
+    const commandMinChange = interaction.options.get(MAX_CHANGE)?.value;
+    const commandRateOfChange = interaction.options.get(RATE_OF_CHANGE)?.value;
     const commandEnabled = interaction.options.get(ENABLED)?.value;
 
     if (subCommand === GET) {
-      let content = "Autoslow doesn't exist in this channel";
+      let title = "Autoslow doesn't exist in this channel";
+      let params: APIEmbedField[] = [];
       if (currentAutoSlow !== null) {
-        content = `Current autoslow parameters:
-        min: ${currentAutoSlow.minSlow}s
-        max: ${currentAutoSlow.maxSlow}s
-        freq: ${currentAutoSlow.targetMsgsPerSec} msg/s
-        enabled: ${currentAutoSlow.enabled}`;
+        title = "Autoslow parameters";
+        params = this.paramEmbed(currentAutoSlow);
       }
+      const embed = new EmbedBuilder().setTitle(title).addFields(params);
       return {
-        content: content,
+        embeds: [embed],
         eph: true,
       };
     }
@@ -116,12 +151,16 @@ export default class SlashCommand extends InteractionCommand {
     const min = commandMin ?? currentAutoSlow?.minSlow;
     const max = commandMax ?? currentAutoSlow?.maxSlow;
     const freq = commandFreq ?? currentAutoSlow?.targetMsgsPerSec;
+    const minChange = commandMinChange ?? currentAutoSlow?.minAbsoluteChange;
+    const minChangeRate = commandRateOfChange ?? currentAutoSlow?.minChangeRate;
     const enabled = commandEnabled ?? currentAutoSlow?.enabled;
 
     if (
       typeof min !== "number" ||
       typeof max !== "number" ||
       typeof freq !== "number" ||
+      typeof minChange !== "number" ||
+      typeof minChangeRate !== "number" ||
       typeof enabled !== "boolean"
     ) {
       return { content: "Missing parameters", eph: true };
@@ -140,14 +179,40 @@ export default class SlashCommand extends InteractionCommand {
         eph: true,
       };
     }
+    if (minChange < 0) {
+      return {
+        content: "Error: Minimum Change cannot be negative",
+        eph: true,
+      };
+    }
+    if (minChangeRate < 0) {
+      return {
+        content: "Error: Minimum Change Rate cannot be negative",
+        eph: true,
+      };
+    }
+    if (minChange < 0.5 && min * minChangeRate < 0.5) {
+      return {
+        content: "Error: Minimum Change and Change Rate is too small",
+        eph: true,
+      };
+    }
 
-    this.client.addAutoSlow(interaction.channelId, min, max, freq, enabled);
+    const autoSlow = await this.client.addAutoSlow(
+      interaction.channelId,
+      min,
+      max,
+      freq,
+      minChange,
+      minChangeRate,
+      enabled
+    );
+    const params = this.paramEmbed(autoSlow);
+    const embed = new EmbedBuilder()
+      .setTitle("Success: Setup slow mode")
+      .addFields(params);
     return {
-      content: `Success: Setup slow mode
-       min: ${min}s
-       max: ${max}s
-       freq: ${freq}
-       enabled: ${enabled}`,
+      embeds: [embed],
       eph: true,
     };
   }
