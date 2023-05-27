@@ -19,7 +19,7 @@ import { CustomClient } from "lib/client";
 const MIN = "min";
 const MAX = "max";
 const FREQUENCY = "frequency";
-const MIN_CHANGE = "minchange";
+const MAX_CHANGE = "maxchange";
 const RATE_OF_CHANGE = "rateofchange";
 const ENABLED = "enabled";
 
@@ -58,15 +58,15 @@ export default class SlashCommand extends InteractionCommand {
               type: ApplicationCommandOptionType.Number,
             },
             {
-              name: MIN_CHANGE,
+              name: MAX_CHANGE,
               description:
-                "Minimum amount slow mode is allowed to change by (suggested: 5)",
+                "The default maximum amount slowmode is allowed to change by. (suggested: 5)",
               type: ApplicationCommandOptionType.Number,
             },
             {
               name: RATE_OF_CHANGE,
               description:
-                "Maximum rate of change allowed for slow mode at higher values (suggested: 2)",
+                "The amount slowmode is allowed to change, proportional to current slow mode. This overrides the default if higher. (suggested: 2)",
               type: ApplicationCommandOptionType.Number,
             },
             {
@@ -130,7 +130,7 @@ export default class SlashCommand extends InteractionCommand {
     const commandMin = interaction.options.get(MIN)?.value;
     const commandMax = interaction.options.get(MAX)?.value;
     const commandFreq = interaction.options.get(FREQUENCY)?.value;
-    const commandMinChange = interaction.options.get(MIN_CHANGE)?.value;
+    const commandMinChange = interaction.options.get(MAX_CHANGE)?.value;
     const commandRateOfChange = interaction.options.get(RATE_OF_CHANGE)?.value;
     const commandEnabled = interaction.options.get(ENABLED)?.value;
 
