@@ -26,6 +26,8 @@ import { readdir } from "fs/promises";
 export class CustomClient extends Client {
   emojiEventCache: Map<string, EmojiSuggestions>;
 
+  unloadCommands = false;
+
   constructor(options: ClientOptions) {
     super(options);
 
@@ -427,6 +429,7 @@ export class CustomClient extends Client {
     }
 
     if (
+      this.unloadCommands &&
       commands &&
       commands.filter((c) => !this.slashCommands.has(`${c.type ?? 1}-${c.name}`)).size > 0
     ) {

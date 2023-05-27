@@ -24,6 +24,7 @@
   "dependencies": {
     "@types/axios": "^0.14.0",
     "@types/katex": "^0.16.0",
+    "@types/readline-sync": "^1.4.4",
     "axios": "^1.4.0",
     "colors": "^1.4.0",
     "date-fns": "^2.30.0",
@@ -40,6 +41,7 @@
     "mongoose": "^5.11.7",
     "node-html-to-image": "^3.3.0",
     "path": "^0.12.7",
+    "readline-sync": "^1.4.10",
     "request": "^2.88.2",
     "serp": "^2.1.0"
   },
