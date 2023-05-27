@@ -90,7 +90,7 @@ export class AutoSlowManager {
       );
       const downwardsChange = Math.max(
         this.minAbsoluteChange,
-        slowMode / (1 + this.minChangeRate)
+        slowMode / this.minChangeRate
       );
 
       const min = Math.max(this.minSlow, slowMode - downwardsChange);
