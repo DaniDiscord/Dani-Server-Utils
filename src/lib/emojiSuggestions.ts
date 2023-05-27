@@ -179,12 +179,8 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
     }
 
     await approveSync.doSynchronized(message.id, async () => {
-      // Attachment is an iterator and destructuring etc. risks crashes
-      let attachment;
-      for (attachment of message.attachments.values()) {
-        break;
-      }
-      // attachment = message.attachments.values().next().value;
+      const attachment = Array.from(message.attachments.values())[0];
+
       if (attachment === undefined) {
         await message.channel.send("Error accessing emoji");
         return;
@@ -253,10 +249,7 @@ export async function onReactionEvent(
         await message.react("✨");
 
         const emojiName = message.content;
-        let attachment;
-        for (attachment of message.attachments.values()) {
-          break;
-        }
+        const attachment = Array.from(message.attachments.values())[0];
         const guild = message.guild;
         if (guild === null || attachment === undefined || emojiName === null) {
           return;
