@@ -1,7 +1,8 @@
 import {} from "./3vilCommon/Logger";
 
 // Uses the '.env' file to set process.env vars
-import { Collection, IntentsBitField, Partials } from "discord.js";
+import { Client, Collection, IntentsBitField, Partials } from "discord.js";
+import { argv, exit } from "process";
 import path, { join } from "path";
 
 import { CustomClient } from "lib/client";
@@ -11,6 +12,16 @@ import { config } from "./config";
 import klaw from "klaw";
 import mongoose from "mongoose";
 import { readdir } from "fs/promises";
+import readlineSync from "readline-sync";
+
+const clientSettings = new Map<string, (c: CustomClient) => void>([
+  [
+    "--unload",
+    (client) => {
+      client.unloadCommands = true;
+    },
+  ],
+]);
 
 if (!process.env.token) {
   console.error(
@@ -42,6 +53,29 @@ const client = new CustomClient({
   ],
 });
 
+const unknownOptions = [];
+for (let i = 2; i < argv.length; i++) {
+  const settings = clientSettings.get(argv[i]);
+  if (settings === undefined) {
+    unknownOptions.push(argv[i]);
+    continue;
+  }
+  settings(client);
+}
+if (unknownOptions.length !== 0) {
+  console.log(`Encountered unknown options: ${unknownOptions}`);
+
+  let alternatives = "Alternatives are:\n";
+  for (const [key] of clientSettings) {
+    alternatives += `${key}\n`;
+  }
+  console.log(alternatives);
+
+  const answer = readlineSync.question("Do you wish to proceed? (y/N)");
+  if (answer.toLowerCase().trim() !== "y") {
+    exit();
+  }
+}
 client.prefix = "!";
 client.commands = new Collection();
 client.settings = new Collection();

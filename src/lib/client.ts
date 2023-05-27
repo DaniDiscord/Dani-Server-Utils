@@ -26,6 +26,8 @@ import { readdir } from "fs/promises";
 export class CustomClient extends Client {
   emojiEventCache: Map<string, EmojiSuggestions>;
 
+  unloadCommands = false;
+
   constructor(options: ClientOptions) {
     super(options);
 
@@ -427,18 +429,20 @@ export class CustomClient extends Client {
     }
 
     if (
+      this.unloadCommands &&
       commands &&
       commands.filter((c) => !this.slashCommands.has(`${c.type ?? 1}-${c.name}`)).size > 0
     ) {
+      const slashCommands = commands.filter(
+        (c) => !this.slashCommands.has(`${c.type ?? 1}-${c.name}`)
+      );
       log.debug("Command sync", {
         action: "Unload",
-        message: `Unloading a total of ${commands.filter(
-          (c) => !this.slashCommands.has(c.name)
-        )} existing slash commands`,
+        message: `Unloading a total of ${
+          Array.from(slashCommands).length
+        } existing slash commands`,
       });
-      for (const command of commands
-        .filter((c) => !this.slashCommands.has(c.name))
-        .values()) {
+      for (const command of slashCommands.values()) {
         await command.delete();
       }
     }
