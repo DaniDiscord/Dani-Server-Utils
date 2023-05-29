@@ -12,6 +12,7 @@ import {
 import { approve, approveId, deny, denyId } from "interactions/chatInput/emoji";
 
 import { CustomClient } from "./client";
+import { Mutex } from "async-mutex";
 import axios from "axios";
 import { emojiSuffix } from "interactions/chatInput/emojiSuggest";
 
@@ -56,6 +57,42 @@ export class EmojiSuggestions {
     this.cooldown = cooldown;
   }
 }
+
+export class SynchronizeById {
+  private lock: Mutex;
+  private lockMap: Map<string, Mutex>;
+
+  constructor() {
+    this.lock = new Mutex();
+    this.lockMap = new Map();
+  }
+
+  async doSynchronized(id: string, fn: () => Promise<void>): Promise<void> {
+    const release = await this.lock.acquire();
+    let lock = this.lockMap.get(id);
+    if (lock === undefined) {
+      lock = new Mutex();
+      this.lockMap.set(id, lock);
+    }
+    release();
+    if (lock.isLocked()) {
+      return;
+    }
+    const mapRelease = await lock.acquire();
+
+    // If we fail here, we don't want to deadlock
+    try {
+      await fn();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      this.lockMap.delete(id);
+      mapRelease();
+    }
+  }
+}
+
+const approveSync = new SynchronizeById();
 
 export async function onInteraction(client: CustomClient, interaction: Interaction) {
   if (!interaction.isButton()) {
@@ -141,25 +178,25 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
       return;
     }
 
-    // Attachment is an iterator and destructuring etc. risks crashes
-    let attachment;
-    for (attachment of message.attachments.values()) {
-      break;
-    }
-    // attachment = message.attachments.values().next().value;
-    if (attachment === undefined) {
-      await message.channel.send("Error accessing emoji");
-      return;
-    }
-    const voteMessage = await voteChannel.send({
-      content: message.content,
-      files: [{ attachment: attachment.proxyURL }],
+    await approveSync.doSynchronized(message.id, async () => {
+      const attachment = Array.from(message.attachments.values())[0];
+
+      if (attachment === undefined) {
+        await message.channel.send("Error accessing emoji");
+        return;
+      }
+      const voteMessage = await voteChannel.send({
+        content: message.content,
+        files: [{ attachment: attachment.proxyURL }],
+      });
+      await voteMessage.react(approve);
+      await voteMessage.react(deny);
+      await message.delete();
     });
-    await voteMessage.react(approve);
-    await voteMessage.react(deny);
-    await message.delete();
   }
 }
+
+const reactionSync = new SynchronizeById();
 
 export async function onReactionEvent(
   client: Client,
@@ -201,43 +238,42 @@ export async function onReactionEvent(
     const denom = thumbsUp + thumbsDown + bias;
     const pass = thumbsUp / denom > threshold;
     const fail = thumbsDown / denom > threshold;
-    if (fail) {
-      message.reactions.removeAll();
-      await message.react("😔");
-    }
-    if (pass) {
-      // Let the user now their emoji passed the vote
-      await message.reactions.removeAll();
-      await message.react("✨");
+    await reactionSync.doSynchronized(message.id, async () => {
+      if (fail) {
+        message.reactions.removeAll();
+        await message.react("😔");
+      }
+      if (pass) {
+        // Let the user now their emoji passed the vote
+        await message.reactions.removeAll();
+        await message.react("✨");
 
-      const emojiName = message.content;
-      let attachment;
-      for (attachment of message.attachments.values()) {
-        break;
-      }
-      const guild = message.guild;
-      if (guild === null || attachment === undefined || emojiName === null) {
-        return;
-      }
-      if (guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap - 1) {
-        await message.channel.send(
-          `With this emoji, the allocated quota has been filled.
+        const emojiName = message.content;
+        const attachment = Array.from(message.attachments.values())[0];
+        const guild = message.guild;
+        if (guild === null || attachment === undefined || emojiName === null) {
+          return;
+        }
+        if (guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap - 1) {
+          await message.channel.send(
+            `With this emoji, the allocated quota has been filled.
           Next votes will include which emoji you want to replace.`
-        );
-      }
-      const emoji = await axios.get(attachment.proxyURL, {
-        responseType: "arraybuffer",
-      });
-      if (!(emoji.data instanceof Buffer)) {
-        // It is guaranteed that it is a buffer
-        throw new Error("Axios did not return Buffer");
-      }
+          );
+        }
+        const emoji = await axios.get(attachment.proxyURL, {
+          responseType: "arraybuffer",
+        });
+        if (!(emoji.data instanceof Buffer)) {
+          // It is guaranteed that it is a buffer
+          throw new Error("Axios did not return Buffer");
+        }
 
-      const emojiCreate = {
-        attachment: Buffer.from(emoji.data),
-        name: emojiName + emojiSuffix,
-      };
-      await guild.emojis.create(emojiCreate);
-    }
+        const emojiCreate = {
+          attachment: Buffer.from(emoji.data),
+          name: emojiName + emojiSuffix,
+        };
+        await guild.emojis.create(emojiCreate);
+      }
+    });
   }
 }
