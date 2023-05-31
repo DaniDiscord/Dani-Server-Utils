@@ -315,6 +315,8 @@ export class CustomClient extends Client {
         autoSlowConfig.min,
         autoSlowConfig.max,
         autoSlowConfig.targetMsgsPerSec,
+        autoSlowConfig.minChangeRate,
+        autoSlowConfig.minChange,
         autoSlowConfig.enabled
       );
       AutoSlowCache.addAutoSlow(channelId, autoSlow);
