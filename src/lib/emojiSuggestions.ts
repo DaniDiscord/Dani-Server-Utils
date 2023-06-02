@@ -248,10 +248,10 @@ export async function onReactionEvent(
         await message.reactions.removeAll();
         await message.react("✨");
 
-        const emojiName = message.content;
+        const emojiName = message.content?.split(" ")[0];
         const attachment = Array.from(message.attachments.values())[0];
         const guild = message.guild;
-        if (guild === null || attachment === undefined || emojiName === null) {
+        if (guild === null || attachment === undefined || emojiName === undefined) {
           return;
         }
         if (guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap - 1) {

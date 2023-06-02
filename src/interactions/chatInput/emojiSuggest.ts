@@ -174,7 +174,7 @@ export default class SlashCommand extends InteractionCommand {
     ]);
 
     await approvalChannel.send({
-      content: name,
+      content: `${name} from <@${interaction.user.id}>`,
       files: [{ attachment: content.proxyURL }],
       components: [row],
     });
