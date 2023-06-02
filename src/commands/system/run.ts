@@ -16,6 +16,7 @@ const run: Command = {
 
       message.channel.send({ embeds: [new EmbedBuilder({ description: e })] });
     } catch (e) {
+      console.error(e);
       log.error("!run command", e as Error);
     }
   },

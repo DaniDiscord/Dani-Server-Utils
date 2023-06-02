@@ -6,13 +6,14 @@ const permlevel: Command = {
   run: async (client, message, [member]) => {
     try {
       const ID = member.match(/\d{17,19}/)![0];
-      const gMember = await message.guild!.members.fetch(ID);
-
+      const gMember = await message.guild!.members.fetch(ID).catch(() => {});
       message.channel.send({
         embeds: [
           new EmbedBuilder()
             .setColor("Green")
-            .setDescription(client.permlevel(undefined, gMember).toString()),
+            .setDescription(
+              gMember ? client.permlevel(undefined, gMember).toString() : "N/A"
+            ),
         ],
       });
     } catch (e: any) {

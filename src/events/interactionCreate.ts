@@ -157,8 +157,9 @@ export default async function (client: CustomClient, interaction: Interaction) {
     let message = `User ${interaction.user.username} executed ${
       ApplicationCommandType[interaction.commandType]
     } command ${interaction.commandName}`;
-    if (interaction.user) message += ` targeting ${interaction.user.username}`;
-    else if (interaction.isMessageContextMenuCommand()) {
+    if (interaction.isUserContextMenuCommand()) {
+      message += ` targeting ${interaction.targetUser.username}`;
+    } else if (interaction.isMessageContextMenuCommand()) {
       message += ` targeting ${interaction.targetMessage.id}`;
     }
 

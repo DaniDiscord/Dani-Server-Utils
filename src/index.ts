@@ -31,13 +31,11 @@ if (!process.env.token) {
   process.exit(1);
 }
 
-if (process.env.mongodb_connection_url) {
-  mongoose.connect(process.env.mongodb_connection_url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-    useCreateIndex: true,
-  });
+if (!process.env.mongodb_connection_url) {
+  console.error(
+    `A mongodb connection string was not found. Please read the README.md file for instructions on how to set up the .env file`
+  );
+  process.exit(1);
 }
 
 const client = new CustomClient({
@@ -87,6 +85,17 @@ client.channelMessages = new Collection();
 client.autocompleteOptions = new Collection();
 
 const run = async () => {
+  await mongoose
+    .connect(process.env.mongodb_connection_url as string, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useFindAndModify: false,
+      useCreateIndex: true,
+    })
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    });
   client.settings.set(
     "default",
     await SettingsModel.findOneAndUpdate(
@@ -142,6 +151,7 @@ const run = async () => {
     await client.login(process.env.token);
   } catch (err) {
     console.error(err);
+    console.log("Failed trying to login with bot");
     process.exit(1);
   }
 };

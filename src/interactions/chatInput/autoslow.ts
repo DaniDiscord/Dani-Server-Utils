@@ -66,7 +66,7 @@ export default class SlashCommand extends InteractionCommand {
             {
               name: RATE_OF_CHANGE,
               description:
-                "The amount slowmode is allowed to change, proportional to current slow mode. This overrides the default if higher. (suggested: 2)",
+                "The amount slowmode is allowed to change, proportional to current slow mode. (suggested: 2)",
               type: ApplicationCommandOptionType.Number,
             },
             {
