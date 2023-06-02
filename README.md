@@ -9,14 +9,22 @@
 
 The bots configuration is managed by `dotenv`.
 
-When you open the project, you will see a `.example.env` file. You need to rename it to just `.env`. The only fields that are essential for running the bot are `token` and `mongodb_connection_url`.
+When you open the project, you will see a `.example.env` file. You need to rename it to just `.env`. The only fields that are essential for running the bot are `token`, `mongodb_connection_url` and `OWNER_ID`.
 
 `token` is the bots token that can be acquired from the [discord developer portal](https://discord.com/developers/applications) if you're making a local instance or from the #token channel if you're a developer on the discord server.
 
 ```env
 token = "token goes here"
-mongodb_connection_url = mongo url goes here
+mongodb_connection_url = "mongo url goes here"
+OWNER_ID = "Your discord User ID here, or something else if you're testing permissions"
 ```
+
+### Where do I get this mongodb_connection_url?
+
+As it stands, you'll need to host your own mongodb server.  
+To get started with this quickly, we recommend installing [Docker](https://www.docker.com/) and using the [mongo image](https://hub.docker.com/_/mongo).  
+To get the most basic mongodb server running with this, run `docker run --name mongo -p 27017:27017 -d mongo:6.0.6`.  
+If you run it like that, your `mongodb_connection_url` will be `mongodb://localhost:27017/`
 
 After you are done with the configuration, a local instance of the bot can be hosted by using
 

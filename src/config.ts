@@ -15,9 +15,12 @@ export interface Config {
     ) => boolean | undefined;
   }[];
 }
-
+if (!process.env.OWNER_ID) {
+  console.error("Missing OWNER_ID environment variable");
+  process.exit(1);
+}
 export const config: Config = {
-  ownerID: "136985027413147648",
+  ownerID: process.env.OWNER_ID as string,
   permLevels: [
     {
       level: 0,
