@@ -15,12 +15,12 @@ import {
   CustomInteractionReplyOptions,
   InteractionCommand,
 } from "../../classes/CustomInteraction";
-import { approve, approveId, deny, denyId } from "./emoji";
+import { approve, approveId, ban, banId, deny, denyId } from "./emoji";
 
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 
-const commandId = "emojisuggest";
+export const commandId = "emojisuggest";
 const NAME = "name";
 const FILE = "file";
 
@@ -88,6 +88,22 @@ export default class SlashCommand extends InteractionCommand {
         content: "Emoji cap has been hit, wait for updates",
         eph: true,
       };
+    }
+
+    const banReason = await this.client.banReason(
+      interaction.guildId,
+      commandId,
+      interaction.user.id
+    );
+    console.log(banReason);
+    if (banReason !== undefined) {
+      const banEmbed = new EmbedBuilder().addFields([
+        {
+          name: "You were banned from suggesting emojis for:",
+          value: `${banReason}`,
+        },
+      ]);
+      return { embeds: [banEmbed], eph: true };
     }
     const lastUse = await this.client.getLastCommandUse(
       interaction.guildId,
@@ -166,11 +182,16 @@ export default class SlashCommand extends InteractionCommand {
     const denyButton = new ButtonBuilder()
       .setEmoji(deny)
       .setCustomId(denyId)
+      .setStyle(ButtonStyle.Primary);
+    const banButton = new ButtonBuilder()
+      .setEmoji(ban)
+      .setCustomId(banId)
       .setStyle(ButtonStyle.Danger);
 
     const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents([
       approveButton,
       denyButton,
+      banButton,
     ]);
 
     await approvalChannel.send({

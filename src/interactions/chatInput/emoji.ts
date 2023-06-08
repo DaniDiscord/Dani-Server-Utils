@@ -14,6 +14,7 @@ import {
 import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 import { EmojiSuggestions } from "lib/emojiSuggestions";
+import { commandId } from "./emojiSuggest";
 
 const EMOJI = "emoji";
 
@@ -21,6 +22,9 @@ const CONFIG = "config";
 const GET = "get";
 const REMOVE = "remove";
 
+const UNBAN = "unban";
+
+const USER = "user";
 const APPROVAL = "approval";
 const VOTE = "vote";
 const COOLDOWN = "cooldown";
@@ -30,9 +34,11 @@ const CAP = "cap";
 
 export const approve = "👍";
 export const deny = "👎";
+export const ban = "🔨";
 
 export const approveId = "approve";
 export const denyId = "deny";
+export const banId = "ban";
 
 export const thresholdDefault = 0.75;
 export const biasDefault = 3;
@@ -108,6 +114,19 @@ export default class SlashCommand extends InteractionCommand {
           name: REMOVE,
           type: ApplicationCommandOptionType.Subcommand,
         },
+        {
+          description: "Unban user from suggesting emojis",
+          name: UNBAN,
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [
+            {
+              description: "User to unban from suggestions",
+              name: USER,
+              type: ApplicationCommandOptionType.User,
+              required: true,
+            },
+          ],
+        },
       ],
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
@@ -178,7 +197,10 @@ export default class SlashCommand extends InteractionCommand {
         );
         await this.client.setEmojiSuggestions(newEmojiSuggestions);
         return { embeds: [getEmbed(newEmojiSuggestions)], eph: true };
-
+      case UNBAN:
+        const user = interaction.options.getUser(USER, true);
+        await this.client.unbanFromCommand(interaction.guildId, commandId, user.id);
+        return { content: `<@${user.id}> unbanned`, eph: true };
       default:
         return { content: "Internal Error", eph: true };
     }
