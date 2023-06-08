@@ -3,20 +3,26 @@ import {
   ButtonBuilder,
   ButtonStyle,
   Client,
+  EmbedBuilder,
   Interaction,
   MessageActionRowComponentBuilder,
   MessageReaction,
   TextChannel,
+  TextInputStyle,
   User,
 } from "discord.js";
-import { approve, approveId, deny, denyId } from "interactions/chatInput/emoji";
+import { approve, approveId, banId, deny, denyId } from "interactions/chatInput/emoji";
+import { commandId, emojiSuffix } from "interactions/chatInput/emojiSuggest";
 
 import { CustomClient } from "./client";
+import { ModalBuilder } from "@discordjs/builders";
 import { Mutex } from "async-mutex";
+import { Question } from "./staffapp";
 import axios from "axios";
-import { emojiSuffix } from "interactions/chatInput/emojiSuggest";
 
 const confirmationTimeoutPeriod = 15000;
+
+const emojiBan = "emojiBan";
 
 export class EmojiSuggestions {
   guildId: string;
@@ -94,6 +100,41 @@ export class SynchronizeById {
 
 const approveSync = new SynchronizeById();
 
+enum SuggestionAction {
+  Approve,
+  Deny,
+  Ban,
+}
+
+function emojiEmbed(
+  actionType: SuggestionAction,
+  user: string,
+  emojiUrl: string,
+  creator: string
+): EmbedBuilder {
+  let action;
+  switch (actionType) {
+    case SuggestionAction.Approve:
+      action = `<@${creator}>'s emoji approved`;
+      break;
+    case SuggestionAction.Deny:
+      action = `<@${creator}>'s emoji denied`;
+      break;
+    case SuggestionAction.Ban:
+      action = `<@${creator}> banned from suggestions`;
+      break;
+  }
+
+  const time = Math.floor(Date.now() / 1000);
+  const embed = new EmbedBuilder()
+    .addFields([
+      { name: "Reviewed", value: `${action} by <@${user}>` },
+      { name: "Time", value: `<t:${time}:f>` },
+    ])
+    .setThumbnail(emojiUrl);
+  return embed;
+}
+
 export async function onInteraction(client: CustomClient, interaction: Interaction) {
   if (!interaction.isButton()) {
     return;
@@ -106,20 +147,80 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
   if (emojiSuggestionsConfig === null) {
     return;
   }
+
+  if (interaction.customId === banId) {
+    if (interaction.message.partial) {
+      await interaction.message.fetch();
+    }
+    const message = interaction.message;
+    const attachment = Array.from(message.attachments.values())[0];
+    let author = message.content.split(" ")[2];
+    author = author.substring(2, author.length - 1);
+    const reasonId = "reason";
+    const reasonField = new Question(
+      reasonId,
+      "Reason for ban",
+      true,
+      TextInputStyle.Paragraph
+    );
+    const modal = new ModalBuilder()
+      .setCustomId(emojiBan)
+      .setTitle(`Ban from suggestions`)
+      .addComponents(reasonField.toActionRow());
+    await interaction.showModal(modal);
+    const submitted = await interaction
+      .awaitModalSubmit({
+        time: 60000,
+        filter: (i) => i.user.id === interaction.user.id,
+      })
+      .catch((error) => {
+        // Catch any Errors that are thrown (e.g. if the awaitModalSubmit times out after 60000 ms)
+        console.error(error);
+        return null;
+      });
+    if (submitted === null) {
+      return;
+    }
+
+    const reason = submitted.fields.getTextInputValue(reasonId);
+    await client.banFromCommand(interaction.guildId ?? "", commandId, author, reason);
+    await submitted.reply({
+      content: `<@${author}> banned from suggesting emojis with reason "${reason}"`,
+      ephemeral: true,
+    });
+    const embed = emojiEmbed(
+      SuggestionAction.Ban,
+      interaction.user.id,
+      attachment.url,
+      author
+    );
+    await message.edit({
+      content: "",
+      attachments: [],
+      embeds: [embed],
+      components: [],
+    });
+    return;
+  }
   if (interaction.customId !== approveId && interaction.customId !== denyId) {
     return;
   }
   if (interaction.channelId === emojiSuggestionsConfig.sourceId) {
-    const confirmLabel =
-      interaction.customId === approveId
-        ? "Send Emoji to Voting"
-        : "Remove Emoji from Voting";
-    const confirmStyle =
-      interaction.customId === approveId ? ButtonStyle.Primary : ButtonStyle.Danger;
-    const confirmMessage =
-      interaction.customId === approveId
-        ? "Directing Emoji to Voting"
-        : "Removing Emoji from Channel";
+    let confirmLabel: string;
+    let confirmStyle: ButtonStyle;
+    let confirmMessage: string;
+    switch (interaction.customId) {
+      case approveId:
+        confirmLabel = "Send Emoji to Voting";
+        confirmStyle = ButtonStyle.Primary;
+        confirmMessage = "Directing Emoji to Voting";
+        break;
+      case denyId:
+        confirmLabel = "Remove Emoji from Voting";
+        confirmStyle = ButtonStyle.Danger;
+        confirmMessage = "Removing Emoji from Channel";
+        break;
+    }
 
     const confirmationId = "confirm";
     const cancelId = "cancel";
@@ -160,18 +261,30 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
         components: [],
       });
     }
+    if (interaction.message.partial) {
+      await interaction.message.fetch();
+    }
+    const message = interaction.message;
 
+    const attachment = Array.from(message.attachments.values())[0];
     if (confirmed && interaction.customId == denyId) {
-      await interaction.message.delete();
+      const embed = emojiEmbed(
+        SuggestionAction.Deny,
+        interaction.user.id,
+        attachment.url,
+        message.author.id
+      );
+      await message.edit({
+        content: "",
+        attachments: [],
+        embeds: [embed],
+        components: [],
+      });
       return;
     } else if (!confirmed) {
       return;
     }
 
-    if (interaction.message.partial) {
-      await interaction.message.fetch();
-    }
-    const message = interaction.message;
     const voteChannel = message.guild?.channels.cache.get(emojiSuggestionsConfig.voteId);
     if (voteChannel === undefined || !(voteChannel instanceof TextChannel)) {
       await message.channel.send("Error initiating vote");
@@ -179,8 +292,6 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
     }
 
     await approveSync.doSynchronized(message.id, async () => {
-      const attachment = Array.from(message.attachments.values())[0];
-
       if (attachment === undefined) {
         await message.channel.send("Error accessing emoji");
         return;
@@ -191,7 +302,18 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
       });
       await voteMessage.react(approve);
       await voteMessage.react(deny);
-      await message.delete();
+      const embed = emojiEmbed(
+        SuggestionAction.Approve,
+        interaction.user.id,
+        attachment.url,
+        message.author.id
+      );
+      await message.edit({
+        content: "",
+        attachments: [],
+        embeds: [embed],
+        components: [],
+      });
     });
   }
 }

@@ -66,6 +66,21 @@ declare module "discord.js" {
       userId: string
     ): Promise<void>;
 
+    banFromCommand(
+      guildId: string,
+      commandId: string,
+      userId: string,
+      banReason: string
+    ): Promise<void>;
+
+    unbanFromCommand(guildId: string, commandId: string, userId: string): Promise<void>;
+
+    banReason(
+      guildId: string,
+      commandId: string,
+      reason: string
+    ): Promise<string | undefined>;
+
     getLastCommandUse(
       guildId: string,
       commandId: string,

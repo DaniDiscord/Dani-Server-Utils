@@ -93,6 +93,8 @@ interface RawCommandCooldown {
   guildId: string;
   userId: string;
   lastUse: number;
+  banned: boolean;
+  reason: string | undefined;
 }
 
 export interface ICommandCooldown extends RawCommandCooldown, Document {}

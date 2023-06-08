@@ -367,8 +367,57 @@ export class CustomClient extends Client {
         userId: userId,
         lastUse: Date.now(),
       },
-      { new: true, upsert: true }
+      { upsert: true, setDefaultsOnInsert: true }
     );
+  }
+
+  async banFromCommand(
+    guildId: string,
+    commandId: string,
+    userId: string,
+    reason: string
+  ): Promise<void> {
+    const filter = { guildId: guildId, commandId: commandId, userId: userId };
+    await CommandCooldownModel.findOneAndUpdate(
+      filter,
+      {
+        guildId: guildId,
+        commandId: commandId,
+        userId: userId,
+        banned: true,
+        reason: reason,
+      },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+  }
+
+  async unbanFromCommand(
+    guildId: string,
+    commandId: string,
+    userId: string
+  ): Promise<void> {
+    const filter = { guildId: guildId, commandId: commandId, userId: userId };
+    await CommandCooldownModel.findOneAndUpdate(
+      filter,
+      {
+        banned: false,
+        reason: undefined,
+      },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+  }
+
+  async banReason(
+    guildId: string,
+    commandId: string,
+    userId: string
+  ): Promise<string | undefined> {
+    const filter = { guildId: guildId, commandId: commandId, userId: userId };
+    const command = await CommandCooldownModel.findOne(filter);
+    if (command === null || !command.banned) {
+      return undefined;
+    }
+    return command.reason;
   }
 
   async getLastCommandUse(

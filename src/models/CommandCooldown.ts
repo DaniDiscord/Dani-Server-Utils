@@ -6,7 +6,18 @@ const CommandCooldownSchema = new Schema({
   commandId: String,
   guildId: String,
   userId: String,
-  lastUse: Number,
+  lastUse: {
+    default: 0,
+    type: Number,
+  },
+  banned: {
+    default: false,
+    type: Boolean,
+  },
+  reason: {
+    default: undefined,
+    type: String,
+  },
 });
 
 export const CommandCooldownModel: Model<ICommandCooldown> = model(
