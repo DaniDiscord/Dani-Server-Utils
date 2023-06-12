@@ -10,12 +10,14 @@ import {
 import { AutoSlowCache, AutoSlowManager } from "./autoslow";
 import { join, resolve } from "path";
 
+import { AutoPingModel } from "models/AutoPing";
 import { AutoSlowModel } from "models/AutoSlow";
 import { Command } from "types/command";
 import { CommandCooldownModel } from "models/CommandCooldown";
 import { CounterModel } from "models/Counter";
 import { EmojiSuggestions } from "./emojiSuggestions";
 import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
+import { IAutoPing } from "types/mongodb";
 import { InteractionCommand } from "classes/CustomInteraction";
 import { NameModel } from "../models/Name";
 import _ from "lodash";
@@ -428,6 +430,53 @@ export class CustomClient extends Client {
     const filter = { guildId: guildId, commandId: commandId, userId: userId };
     const command = await CommandCooldownModel.findOne(filter);
     return command?.lastUse ?? null;
+  }
+
+  async addAutoPing(
+    guildId: string,
+    roleId: string,
+    forumId: string,
+    tag: string,
+    targetChannelId: string
+  ): Promise<void> {
+    const value = {
+      guildId: guildId,
+      roleId: roleId,
+      forumId: forumId,
+      tag: tag,
+      targetChannelId: targetChannelId,
+    };
+    await AutoPingModel.replaceOne(value, value, { upsert: true });
+  }
+
+  async getAutoPing(guildId: string, forumId: string): Promise<IAutoPing[]> {
+    return await AutoPingModel.find({
+      guildId: guildId,
+      forumId: forumId,
+    });
+  }
+
+  async removeAutoPings(
+    guildId: string,
+    roleId: string | undefined,
+    forumId: string | undefined,
+    tag: string | undefined,
+    targetChannelId: string | undefined
+  ): Promise<void> {
+    type Filter = { [key: string]: string };
+    const filter: Filter = {};
+    filter.guildId = guildId;
+    if (roleId) filter.roleId = roleId;
+    if (forumId) filter.forumId = forumId;
+    if (tag) filter.tag = tag;
+    if (targetChannelId) filter.targetChannelId = targetChannelId;
+    await AutoPingModel.deleteMany(filter);
+  }
+
+  async getAllAutoPing(guildId: string): Promise<IAutoPing[]> {
+    return await AutoPingModel.find({
+      guildId: guildId,
+    });
   }
 
   private async loadSlashCommands() {
