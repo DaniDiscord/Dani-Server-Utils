@@ -18,6 +18,7 @@ import { CustomClient } from "lib/client";
 import { InteractionType } from "discord-api-types/v10";
 import { SettingsModel } from "models/Settings";
 import { TimestampModel } from "models/Timestamp";
+import { forumTagComplete } from "lib/autoping";
 import { onInteraction } from "lib/emojiSuggestions";
 
 export default async function (client: CustomClient, interaction: Interaction) {
@@ -59,6 +60,11 @@ export default async function (client: CustomClient, interaction: Interaction) {
     const s = client.settings.get(interaction.guild ? interaction.guild.id : "default");
     if (!s) return;
     interaction.settings = s;
+  }
+
+  const isAutocomplete = interaction.isAutocomplete();
+  if (isAutocomplete) {
+    await forumTagComplete(interaction);
   }
 
   // Emojis

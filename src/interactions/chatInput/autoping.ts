@@ -4,6 +4,7 @@ import {
   ChatInputCommandInteraction,
   CommandInteraction,
   EmbedBuilder,
+  ForumChannel,
   PermissionsBitField,
 } from "discord.js";
 import {
@@ -21,7 +22,7 @@ const clear = "clear";
 
 const role = "role";
 const forum = "forum";
-const tag = "tag";
+export const tag = "tag";
 const ping = "ping";
 
 export const allTag = "all";
@@ -60,9 +61,10 @@ export default class SlashCommand extends InteractionCommand {
               required: true,
             },
             {
-              description: `Forum tag to trigger pings, write ${allTag} to be pinged for everything`,
+              description: `Forum tag name to trigger pings, write ${allTag} to be pinged for everything`,
               name: tag,
               type: ApplicationCommandOptionType.String,
+              autocomplete: true,
               required: true,
             },
           ],
@@ -99,9 +101,10 @@ export default class SlashCommand extends InteractionCommand {
               type: ApplicationCommandOptionType.Channel,
             },
             {
-              description: "Forum tag to trigger pings",
+              description: "Forum tag name to trigger pings",
               name: tag,
               type: ApplicationCommandOptionType.String,
+              autocomplete: true,
             },
           ],
         },
@@ -120,15 +123,29 @@ export default class SlashCommand extends InteractionCommand {
     const subcommand = interaction.options.getSubcommand();
     switch (subcommand) {
       case register:
+        const forumChannel = interaction.options.getChannel(forum, true);
         const roleId = interaction.options.getRole(role, true).id;
-        const forumId = interaction.options.getChannel(forum, true).id;
-        const tagName = interaction.options.getString(tag, true);
+        const tagId = interaction.options.getString(tag, true);
         const targetChannelId = interaction.options.getChannel(ping, true);
+
+        let validTag = tagId === allTag;
+        if (forumChannel instanceof ForumChannel) {
+          validTag =
+            forumChannel.availableTags.find((tag) => tag.id === tagId) !== undefined;
+        }
+
+        if (!validTag) {
+          return {
+            content: "The tag ID is not valid for this forum",
+            eph: true,
+          };
+        }
+
         await this.client.addAutoPing(
           guildId,
           roleId,
-          forumId,
-          tagName,
+          forumChannel.id,
+          tagId,
           targetChannelId.id
         );
         return {
@@ -137,6 +154,17 @@ export default class SlashCommand extends InteractionCommand {
         };
       case list:
         const autoPings = await this.client.getAllAutoPing(guildId);
+
+        const tags = new Map<string, string>();
+        for (const [id, channel] of interaction.guild.channels.cache) {
+          if (!(channel instanceof ForumChannel)) {
+            continue;
+          }
+          for (const tag of channel.availableTags) {
+            tags.set(tag.id, tag.name);
+          }
+        }
+
         const autoPingMessage = [];
         let index = 0;
         const title =
@@ -146,7 +174,9 @@ export default class SlashCommand extends InteractionCommand {
         for (const autoPing of autoPings) {
           autoPingMessage.push({
             name: `auto-ping ${index}`,
-            value: `<#${autoPing.forumId}> with tag ${autoPing.tag} pings <@&${autoPing.roleId}> in <#${autoPing.targetChannelId}>\n`,
+            value: `<#${autoPing.forumId}> with tag ${tags.get(autoPing.tag)} pings <@&${
+              autoPing.roleId
+            }> in <#${autoPing.targetChannelId}>\n`,
           });
           index += 1;
         }
@@ -158,13 +188,13 @@ export default class SlashCommand extends InteractionCommand {
       case remove:
         const roleId2 = interaction.options.getRole(role, false)?.id;
         const forumId2 = interaction.options.getChannel(forum, false)?.id;
-        const tagName2 = interaction.options.getString(tag, false) ?? undefined;
+        const tagId2 = interaction.options.getString(tag, false) ?? undefined;
         const targetChannelId2 = interaction.options.getChannel(ping, false);
         await this.client.removeAutoPings(
           guildId,
           roleId2,
           forumId2,
-          tagName2,
+          tagId2,
           targetChannelId2?.id
         );
         return { content: "Removed automatic pings", eph: true };
