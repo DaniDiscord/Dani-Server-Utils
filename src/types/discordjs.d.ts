@@ -1,5 +1,5 @@
 import { Collection, EmbedBuilder, Message } from "discord.js";
-import { IAutoSlow, ISettings } from "./mongodb";
+import { IAutoPing, IAutoSlow, ISettings } from "./mongodb";
 
 import { AutoSlowManager } from "lib/autoslow";
 import { Command } from "./command";
@@ -86,6 +86,26 @@ declare module "discord.js" {
       commandId: string,
       userId: string
     ): Promise<number | null>;
+
+    addAutoPing(
+      guildId: string,
+      roleId: string,
+      forumId: string,
+      tag: string,
+      targetChannelId: string
+    ): Promise<void>;
+
+    getAutoPing(guildId: string, forumId: string): Promise<IAutoPing[]>;
+
+    removeAutoPings(
+      guildId: string,
+      roleId: string,
+      forumId: string,
+      tag: string,
+      targetChannelId: string
+    ): Promise<void>;
+
+    getAllAutoPing(guildId: string): Promise<IAutoPing[]>;
   }
 
   export interface Base {

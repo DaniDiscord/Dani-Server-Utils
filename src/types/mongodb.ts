@@ -98,3 +98,14 @@ interface RawCommandCooldown {
 }
 
 export interface ICommandCooldown extends RawCommandCooldown, Document {}
+
+/* AUTOPING */
+interface RawAutoPing {
+  guildId: string;
+  roleId: string;
+  forumId: string;
+  tag: string;
+  targetChannelId: string;
+}
+
+export interface IAutoPing extends RawAutoPing, Document {}
