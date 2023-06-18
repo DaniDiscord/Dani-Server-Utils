@@ -47,19 +47,19 @@ export default class SlashCommand extends InteractionCommand {
     for (const emoji of emojis) {
       let percentPopularity = ((emoji.count - avg) / avg) * 100;
 
-      let message = "more popular than average";
+      let message = `${percentPopularity.toFixed(1)} more popular than average`;
       if (percentPopularity < 0) {
         percentPopularity = -percentPopularity;
-        message = "less popular than average";
+        message = `${percentPopularity.toFixed(1)}% less popular than average`;
       }
       if (percentPopularity < 1) {
-        message = "is average";
+        message = `Is average`;
       }
 
       if (percentPopularity)
         embedFields.push({
           name: `#${index} ${emoji.name}`,
-          value: `${percentPopularity.toFixed(1)}% ${message}`,
+          value: message,
         });
       index++;
     }
