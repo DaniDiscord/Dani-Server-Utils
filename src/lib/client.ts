@@ -17,6 +17,8 @@ import { CommandCooldownModel } from "models/CommandCooldown";
 import { CounterModel } from "models/Counter";
 import { EmojiSuggestions } from "./emojiSuggestions";
 import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
+import { EmojiUsage } from "./stats";
+import { EmojiUsageModel } from "models/EmojiUsage";
 import { IAutoPing } from "types/mongodb";
 import { InteractionCommand } from "classes/CustomInteraction";
 import { NameModel } from "../models/Name";
@@ -24,6 +26,9 @@ import _ from "lodash";
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { promisify } from "util";
 import { readdir } from "fs/promises";
+
+const emojiUsageDecayPerDay = 0.9;
+const millisToDay = 24 * 60 * 60 * 1000;
 
 export class CustomClient extends Client {
   emojiEventCache: Map<string, EmojiSuggestions>;
@@ -472,10 +477,41 @@ export class CustomClient extends Client {
     if (targetChannelId) filter.targetChannelId = targetChannelId;
     await AutoPingModel.deleteMany(filter);
   }
-
+  u;
   async getAllAutoPing(guildId: string): Promise<IAutoPing[]> {
     return await AutoPingModel.find({
       guildId: guildId,
+    });
+  }
+
+  async addEmoji(guildId: string, name: string): Promise<void> {
+    const millis15min = 15 * 60 * 1000;
+    const time = Date.now();
+    const emojiUsage =
+      (await EmojiUsageModel.findOne({ guildId: guildId, name: name })) ??
+      (await EmojiUsageModel.create({
+        guildId: guildId,
+        name: name,
+        count: 0,
+        lastUsage: null,
+      }));
+    if (emojiUsage.lastUsage !== null && time - emojiUsage.lastUsage < millis15min) {
+      return;
+    }
+    const delta = time - emojiUsage.lastUsage;
+
+    emojiUsage.count *= Math.pow(emojiUsageDecayPerDay, delta / millisToDay);
+    emojiUsage.count++;
+    emojiUsage.lastUsage = time;
+    await emojiUsage.save();
+  }
+
+  async listEmoji(guildId: string): Promise<EmojiUsage[]> {
+    const time = Date.now();
+    const emojis = await EmojiUsageModel.find({ guildId: guildId });
+    return emojis.filter((usage) => {
+      const decay = Math.pow(emojiUsageDecayPerDay, time - usage.lastUsage);
+      return new EmojiUsage(usage.name, usage.count * decay);
     });
   }
 
