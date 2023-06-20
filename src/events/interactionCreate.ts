@@ -13,6 +13,8 @@ import {
 } from "../classes/CustomInteraction";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
+import { lftPostCustomId, lftPostQuestions } from "lib/ltfpost";
+
 
 import { CustomClient } from "lib/client";
 import { InteractionType } from "discord-api-types/v10";
@@ -150,6 +152,91 @@ export default async function (client: CustomClient, interaction: Interaction) {
     if (channel?.isTextBased()) {
       channel.send({
         content: `<@${authorId}> (${interaction.user.tag}) is applying for staff:`,
+        embeds: [embed],
+      });
+    }
+  }
+
+  const isModal = interaction.isModalSubmit();
+  if (isModal && interaction.customId == staffAppCustomId) {
+    // At this point, impose a cooldown. Lets start with a week
+    const TIMESPAN_COOLDOWN = 7 * (24 * 60 * 60 * 1000);
+    const identifier = `${interaction.user.id}-staff-application`;
+    const lastApplied = await TimestampModel.findOne({ identifier });
+    if (
+      lastApplied?.timestamp &&
+      lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN >= Date.now()
+    ) {
+      // Nah bro, deny that shit
+      await interaction.reply({
+        ephemeral: true,
+        content:
+          `Your last post was sent ${formatDuration(
+            intervalToDuration({ start: lastApplied.timestamp, end: Date.now() })
+          )} ago\n` +
+          `You can send a new one in ${formatDuration(
+            intervalToDuration({
+              start: Date.now(),
+              end: lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN,
+            })
+          )}`,
+      });
+      return;
+    } else {
+      await TimestampModel.updateOne(
+        { identifier },
+        { timestamp: new Date() },
+        { upsert: true }
+      );
+    }
+    const qna = [];
+    for (const question of staffAppQuestions) {
+      let answer = interaction.fields.getTextInputValue(question.customId);
+      if (answer === "") {
+        answer = "**N/A**";
+        if (question.required) {
+          await interaction.reply({
+            content: "Issue sending post, please try again.",
+            ephemeral: true,
+          });
+
+          // Delete this users timeout, they couldn't send the application properly
+          await TimestampModel.deleteOne({ identifier });
+          return;
+        }
+      }
+      qna.push({ name: question.label, value: answer });
+    }
+
+    const authorId = interaction.user.id;
+
+    let embed = new EmbedBuilder();
+
+    try {
+      embed = embed
+        .setColor(0xaa00aa)
+        .setTitle(`Post of ${interaction.user.tag}`)
+        .addFields(qna);
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: "Issue sending post, please try again.",
+        ephemeral: true,
+      });
+
+      // Delete this users timeout, they couldn't send the application properly
+      await TimestampModel.deleteOne({ identifier });
+      return;
+    }
+
+    await interaction.reply({
+      content: "Post sent successfully.",
+      ephemeral: true,
+    });
+    const channel = await client.channels.fetch("846759350281961523");
+    if (channel?.isTextBased()) {
+      channel.send({
+        content: `<@${authorId}> (${interaction.user.tag}) posted a Looking For Team post!`,
         embeds: [embed],
       });
     }
