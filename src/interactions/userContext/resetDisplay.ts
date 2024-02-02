@@ -36,7 +36,6 @@ export default class ContextCommand extends InteractionCommand {
     if (this.client.permlevel(undefined, int.targetMember) >= 2) {
       return { content: "Helper and above cannot be nicknamed", eph: true };
     }
-    console.log(int.targetMember.displayName);
     await this.client.setMemberName(int.targetMember, int.targetUser.displayName);
     return { content: "Nickname reset successfully", eph: true };
   }
