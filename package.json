@@ -1,6 +1,6 @@
 {
   "name": "gamedevbot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Its a bot",
   "main": "src/index.ts",
   "scripts": {
