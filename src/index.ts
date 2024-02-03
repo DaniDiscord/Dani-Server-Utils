@@ -1,7 +1,7 @@
 import {} from "./3vilCommon/Logger";
 
 // Uses the '.env' file to set process.env vars
-import { Client, Collection, IntentsBitField, Partials } from "discord.js";
+import { Collection, IntentsBitField, Partials } from "discord.js";
 import { argv, exit } from "process";
 import path, { join } from "path";
 

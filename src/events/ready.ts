@@ -6,6 +6,10 @@ import _ from "lodash";
 export default (client: Client): void => {
   updateStuff();
   async function updateStuff() {
+    client.user?.setPresence({
+      activities: [{ name: `v${process.env.npm_package_version}` }],
+    });
+
     for (const [k] of client.settings) {
       let s: ISettings | null = null;
 
