@@ -174,7 +174,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     const triggers = [
       {
         id: "wheredani",
-        cooldown: 300,
+        cooldown: 180,
         keywords: [
           ["dani", "danni", "dany", "karlson"],
           [
@@ -190,6 +190,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
             "video",
             "release",
             "releasing",
+            "quit",
           ],
         ],
         message: {
