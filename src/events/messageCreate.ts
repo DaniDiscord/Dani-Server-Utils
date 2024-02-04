@@ -14,6 +14,7 @@ import { Command } from "types/command";
 import { CustomClient } from "../lib/client";
 import { ICommand } from "types/mongodb";
 import { SettingsModel } from "../models/Settings";
+import { TriggerModel } from "models/Trigger";
 
 const chainStops = ["muck"];
 const CHAIN_STOPS_ONLY = false; // Only triggers on chainStops
@@ -222,24 +223,28 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
       },
     ];
 
-    for (const trigger of triggers) {
-      let key = `trigger-${trigger.id}`;
-      if (!client.dirtyCooldownHandler.has(key)) {
-        let allMatch = trigger.keywords.every((keywordArr) =>
-          keywordArr
-            .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
-            .some((k) => message.content.match(k))
-        );
+    const optedOut = await TriggerModel.exists({ guildId: message.guild.id, userId: message.author.id });
 
-        if (allMatch) {
-          message
-            .reply(trigger.message)
-            .then(() => {
-              client.dirtyCooldownHandler.set(key, trigger.cooldown * 1000);
-            })
-            .catch();
-
-          break; // Don't want multiple triggers on a single message
+    if (!optedOut) {
+      for (const trigger of triggers) {
+        let key = `trigger-${trigger.id}`;
+        if (!client.dirtyCooldownHandler.has(key)) {
+          let allMatch = trigger.keywords.every((keywordArr) =>
+            keywordArr
+              .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
+              .some((k) => message.content.match(k))
+          );
+  
+          if (allMatch) {
+            message
+              .reply(trigger.message)
+              .then(() => {
+                client.dirtyCooldownHandler.set(key, trigger.cooldown * 1000);
+              })
+              .catch();
+  
+            break; // Don't want multiple triggers on a single message
+          }
         }
       }
     }
