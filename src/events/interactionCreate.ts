@@ -20,6 +20,8 @@ import { SettingsModel } from "models/Settings";
 import { TimestampModel } from "models/Timestamp";
 import { forumTagComplete } from "lib/autoping";
 import { onInteraction } from "lib/emojiSuggestions";
+import { triggerId } from "./messageCreate";
+import { TriggerModel } from "models/Trigger";
 
 export default async function (client: CustomClient, interaction: Interaction) {
   // if (interaction.guildId) {
@@ -67,8 +69,33 @@ export default async function (client: CustomClient, interaction: Interaction) {
     await forumTagComplete(interaction);
   }
 
-  // Emojis
   await onInteraction(client, interaction);
+
+  const isButton = interaction.isButton();
+
+  if (isButton && interaction.customId == triggerId) {
+    const user = interaction.user;
+    const exists = await TriggerModel.exists({ guildId: interaction.guild.id, userId: user.id});
+
+    if (exists) {
+      // Nuh uh
+      await interaction.reply({
+        content: 'You have already opted out in this guild.',
+        ephemeral: true
+      });
+    } else {
+      await TriggerModel.updateOne(
+        { guildId: interaction.guild.id, userId: user.id },
+        { },
+        { upsert: true }
+      );
+
+      await interaction.reply({
+        content: 'We will not remind you in this guild again.',
+        ephemeral: true
+      });
+    }
+  }
 
   const isModalSubmit = interaction.isModalSubmit();
   if (isModalSubmit && interaction.customId == staffAppCustomId) {

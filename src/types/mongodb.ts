@@ -109,3 +109,11 @@ interface RawAutoPing {
 }
 
 export interface IAutoPing extends RawAutoPing, Document {}
+
+/* TRIGGER */
+interface RawTrigger {
+  guildId: string;
+  userId: string;
+}
+
+export interface ITrigger extends RawTrigger, Document {}

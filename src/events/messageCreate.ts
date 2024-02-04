@@ -1,4 +1,7 @@
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ChannelType,
   Collection,
   EmbedBuilder,
@@ -19,6 +22,8 @@ const CHAIN_DETECTION_LENGTH = 5;
 const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
 const CHAIN_WARN_THRESHOLD = 3;
 const CHAIN_DELETION_LOG_CHANNEL_ID = "989203228749099088";
+
+export const triggerId = "trigger";
 
 export default async (client: CustomClient, message: Message): Promise<void> => {
   client.reactionHandler.onNewMessage(message);
@@ -204,6 +209,15 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
                   "You can find more information about it [here](https://discord.com/channels/474583323340046337/474583324396879884/1067218193912963172)"
               ),
           ],
+          components: [
+            new ActionRowBuilder<ButtonBuilder>()
+              .addComponents(
+                new ButtonBuilder()
+                  .setCustomId(triggerId)
+                  .setLabel("Don't remind me again")
+                  .setStyle(ButtonStyle.Primary)
+              )
+          ]
         },
       },
     ];
