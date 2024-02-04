@@ -52,6 +52,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   }
 
   const level = client.permlevel(message, message!.member!);
+
   /*
   Auto Slow will go here
   */
@@ -165,6 +166,69 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   }
 
   message.author.permLevel = level;
+
+  // Quick and easy keyword triggering
+  {
+    // Basically, if all of the keywords subarrays have at least one
+    // word that matches in the message content, it'll send the trigger message
+    const triggers = [
+      {
+        id: "wheredani",
+        cooldown: 300,
+        keywords: [
+          ["dani", "danni", "dany", "karlson"],
+          [
+            "where",
+            "alive",
+            "dead",
+            "happened",
+            "what",
+            "when",
+            "post",
+            "upload",
+            "posting",
+            "video",
+            "release",
+            "releasing",
+          ],
+        ],
+        message: {
+          embeds: [
+            new EmbedBuilder()
+              .setColor(0x57f288)
+              .setTitle("Where is Dani!? Did Dani die!?")
+              .setDescription(
+                "Dani is fine. He is still working on his newest game/video." +
+                  "It takes a lot of time to develop games and make videos." +
+                  "You can find more information about it [here](https://discord.com/channels/474583323340046337/474583324396879884/1067218193912963172)"
+              ),
+          ],
+        },
+      },
+    ];
+
+    for (const trigger of triggers) {
+      let key = `trigger-${trigger.id}`;
+      if (!client.dirtyCooldownHandler.has(key)) {
+        let allMatch = trigger.keywords.every((keywordArr) =>
+          keywordArr
+            .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
+            .some((k) => message.content.match(k))
+        );
+
+        if (allMatch) {
+          message
+            .reply(trigger.message)
+            .then(() => {
+              client.dirtyCooldownHandler.set(key, trigger.cooldown * 1000);
+            })
+            .catch();
+
+          break; // Don't want multiple triggers on a single message
+        }
+      }
+    }
+  }
 
   // Only called if the command pipeline was interrupted and the bot was ready to handle it
   const next = async () => {};

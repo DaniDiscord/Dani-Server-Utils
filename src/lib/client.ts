@@ -20,6 +20,7 @@ import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
 import { IAutoPing } from "types/mongodb";
 import { InteractionCommand } from "classes/CustomInteraction";
 import { NameModel } from "../models/Name";
+import { TimeoutHandler } from "classes/TimeoutHandler";
 import _ from "lodash";
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { promisify } from "util";
@@ -29,12 +30,14 @@ export class CustomClient extends Client {
   emojiEventCache: Map<string, EmojiSuggestions>;
 
   unloadCommands = false;
+  dirtyCooldownHandler: TimeoutHandler;
 
   constructor(options: ClientOptions) {
     super(options);
 
     this.emojiEventCache = new Map();
     this.embColor = "ea05ec";
+    this.dirtyCooldownHandler = new TimeoutHandler();
     // `await client.wait(1000);` to "pause" for 1 second.
 
     // These 2 process methods will catch exceptions and give *more details* about the error and stack trace.
