@@ -1,5 +1,5 @@
 import { Collection, EmbedBuilder, Message } from "discord.js";
-import { IAutoPing, IAutoSlow, ISettings } from "./mongodb";
+import { IAutoPing, IAutoSlow, IEmojiUsage, ISettings } from "./mongodb";
 
 import { AutoSlowManager } from "lib/autoslow";
 import { Command } from "./command";
@@ -106,6 +106,10 @@ declare module "discord.js" {
     ): Promise<void>;
 
     getAllAutoPing(guildId: string): Promise<IAutoPing[]>;
+
+    addEmoji(guildId: string, name: string): Promise<void>;
+
+    listEmoji(guildId: string): Promise<EmojiUsage[]>;
   }
 
   export interface Base {

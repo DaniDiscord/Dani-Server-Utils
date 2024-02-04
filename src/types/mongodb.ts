@@ -109,3 +109,12 @@ interface RawAutoPing {
 }
 
 export interface IAutoPing extends RawAutoPing, Document {}
+
+interface RawEmojiUsage {
+  guildId: string;
+  name: string;
+  count: number;
+  lastUsage: number;
+}
+
+export interface IEmojiUsage extends RawEmojiUsage, Document {}

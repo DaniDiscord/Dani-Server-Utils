@@ -11,6 +11,7 @@ import { Command } from "types/command";
 import { CustomClient } from "../lib/client";
 import { ICommand } from "types/mongodb";
 import { SettingsModel } from "../models/Settings";
+import { countEmoji } from "lib/stats";
 
 const chainStops = ["muck"];
 const CHAIN_STOPS_ONLY = false; // Only triggers on chainStops
@@ -61,6 +62,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     autoSlowManager.messageSent();
     autoSlowManager.setOptimalSlowMode(message.channel);
   }
+  await countEmoji(client, message);
 
   // Do whatever message filtering here
   if (level == -1) {
