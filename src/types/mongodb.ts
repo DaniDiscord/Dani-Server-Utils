@@ -30,6 +30,19 @@ export interface RawSettings {
   chains: {
     ignored: string[];
   };
+  triggers: {
+    id: string;
+    keywords: string[][];
+    cooldown: number;
+    enabled: boolean;
+    message: {
+        embed: boolean;
+        content: string;
+        title: string;
+        description: string;
+        color: string;
+    };
+  }[],
   roles: {
     helper: string;
     moderator: string;
@@ -114,6 +127,7 @@ export interface IAutoPing extends RawAutoPing, Document {}
 interface RawTrigger {
   guildId: string;
   userId: string;
+  triggerId: string;
 }
 
 export interface ITrigger extends RawTrigger, Document {}

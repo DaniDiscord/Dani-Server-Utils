@@ -1,13 +1,9 @@
 import {
-  ActionRowBuilder,
   ApplicationCommandOptionType,
   CacheType,
   CommandInteraction,
-  ModalActionRowComponentBuilder,
   ModalBuilder,
   Snowflake,
-  TextInputBuilder,
-  TextInputStyle,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,

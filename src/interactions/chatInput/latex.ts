@@ -4,7 +4,6 @@ import {
   CommandInteraction,
   EmbedBuilder,
   Snowflake,
-  ThreadChannel,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
