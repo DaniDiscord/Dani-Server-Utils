@@ -1,11 +1,7 @@
 import {
-  ApplicationCommand,
   ApplicationCommandType,
-  Embed,
   EmbedBuilder,
   Interaction,
-  ReactionCollector,
-  TextChannel,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
@@ -15,11 +11,12 @@ import { formatDuration, intervalToDuration } from "date-fns";
 import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
 import { CustomClient } from "lib/client";
-import { InteractionType } from "discord-api-types/v10";
 import { SettingsModel } from "models/Settings";
 import { TimestampModel } from "models/Timestamp";
 import { forumTagComplete } from "lib/autoping";
 import { onInteraction } from "lib/emojiSuggestions";
+import { TriggerModel } from "models/Trigger";
+import { ISettings } from "types/mongodb";
 
 export default async function (client: CustomClient, interaction: Interaction) {
   // if (interaction.guildId) {
@@ -37,7 +34,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
   if (!interaction.guild) return;
   if (interaction.guild && !client.settings.has((interaction.guild || {}).id)) {
     // We don't have the settings for this guild, find them or generate empty settings
-    const s = await SettingsModel.findOneAndUpdate(
+    const s: ISettings = await SettingsModel.findOneAndUpdate(
       { _id: interaction.guild.id },
       { toUpdate: true },
       {
@@ -67,8 +64,41 @@ export default async function (client: CustomClient, interaction: Interaction) {
     await forumTagComplete(interaction);
   }
 
-  // Emojis
+  //Emojis
   await onInteraction(client, interaction);
+
+  const isButton = interaction.isButton();
+  const triggerIds = interaction.settings.triggers.map(t => `trigger-${t.id}`);
+
+  if (isButton) {
+    for (const id of triggerIds) {
+      if (interaction.customId != id) {
+        continue;
+      }
+
+      const user = interaction.user;
+      const optedOut = await TriggerModel.exists({ guildId: interaction.guild.id, userId: user.id, triggerId: id});
+
+      if (optedOut) {
+        // Nuh uh
+        await interaction.reply({
+          content: 'You have already opted out in this guild.',
+          ephemeral: true
+        });
+      } else {
+        await TriggerModel.updateOne(
+          { guildId: interaction.guild.id, userId: user.id, triggerId: id },
+          { },
+          { upsert: true }
+        );
+
+        await interaction.reply({
+          content: 'We will not remind you in this guild again.',
+          ephemeral: true
+        });
+      }
+    }
+  }
 
   const isModalSubmit = interaction.isModalSubmit();
   if (isModalSubmit && interaction.customId == staffAppCustomId) {
