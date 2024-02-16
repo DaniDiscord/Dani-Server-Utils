@@ -205,6 +205,15 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
   if (interaction.customId !== approveId && interaction.customId !== denyId) {
     return;
   }
+
+  if (interaction.message.partial) {
+    await interaction.message.fetch();
+  }
+  const message = interaction.message;
+  const attachment = Array.from(message.attachments.values())[0];
+  let author = message.content.split(" ")[2];
+  author = author.substring(2, author.length - 1);
+
   if (interaction.channelId === emojiSuggestionsConfig.sourceId) {
     let confirmLabel: string;
     let confirmStyle: ButtonStyle;
@@ -261,18 +270,13 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
         components: [],
       });
     }
-    if (interaction.message.partial) {
-      await interaction.message.fetch();
-    }
-    const message = interaction.message;
 
-    const attachment = Array.from(message.attachments.values())[0];
     if (confirmed && interaction.customId == denyId) {
       const embed = emojiEmbed(
         SuggestionAction.Deny,
         interaction.user.id,
         attachment.url,
-        message.author.id
+        author
       );
       await message.edit({
         content: "",
@@ -306,7 +310,7 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
         SuggestionAction.Approve,
         interaction.user.id,
         attachment.url,
-        message.author.id
+        author
       );
       await message.edit({
         content: "",
