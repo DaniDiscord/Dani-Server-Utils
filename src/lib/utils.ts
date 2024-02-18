@@ -20,6 +20,10 @@ function eliminateUnicode(name: string): string {
 }
 
 export function isColor(value: any): value is ColorResolvable {
+  if (value == null || value == undefined) {
+    return false;
+  }
+
   if (value in Colors) {
     return true;
   }

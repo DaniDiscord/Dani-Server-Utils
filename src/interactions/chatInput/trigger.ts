@@ -15,6 +15,7 @@ import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
+import { isColor } from "lib/utils";
 
 export default class SlashCommand extends InteractionCommand {
   constructor(client: CustomClient) {
@@ -242,7 +243,7 @@ export default class SlashCommand extends InteractionCommand {
           content: content || "",
           title: title || "",
           description: description || "",
-          color: color || "Random",
+          color: isColor(color) ? color : "Red",
         },
       };
 
