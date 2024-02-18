@@ -16,6 +16,7 @@ import { CustomClient } from "../lib/client";
 import { ICommand } from "types/mongodb";
 import { SettingsModel } from "../models/Settings";
 import { TriggerModel } from "models/Trigger";
+import { isColor } from "lib/utils";
 
 const chainStops = ["muck"];
 const CHAIN_STOPS_ONLY = false; // Only triggers on chainStops
@@ -172,26 +173,31 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
 
   message.author.permLevel = level;
 
-
   // Keyword triggering
   // Basically, if all of the keywords subarrays have at least one
   // word that matches in the message content, it'll send the trigger message
-  const triggers = message.settings.triggers.filter(t => t.enabled);
+  const triggers = message.settings.triggers.filter((t) => t.enabled);
 
   for (const trigger of triggers) {
     const id = `trigger-${trigger.id}`;
-    const optedOut = await TriggerModel.exists({ guildId: message.guild.id, userId: message.author.id, triggerId: id});
+    const optedOut = await TriggerModel.exists({
+      guildId: message.guild.id,
+      userId: message.author.id,
+      triggerId: id,
+    });
 
     if (optedOut) {
       continue;
     }
 
     if (!client.dirtyCooldownHandler.has(id)) {
-      let allMatch = trigger.keywords.length != 0 && trigger.keywords.every((keywordArr) =>
-        keywordArr
-          .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
-          .some((k) => message.content.match(k))
-      );
+      let allMatch =
+        trigger.keywords.length != 0 &&
+        trigger.keywords.every((keywordArr) =>
+          keywordArr
+            .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
+            .some((k) => message.content.match(k))
+        );
 
       if (allMatch) {
         const button = new ActionRowBuilder<ButtonBuilder>().setComponents(
@@ -201,18 +207,34 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
             .setStyle(ButtonStyle.Primary)
         );
 
-        let reply = trigger.message.embed ? {
-          embeds: [
-            new EmbedBuilder()
-              .setTitle(trigger.message.title)
-              .setDescription(trigger.message.description)
-              .setColor(trigger.message.color as ColorResolvable)
-          ],
-          components: [button]
-        } : {
-          content: trigger.message.content,
-          components: [button]
+        let reply: {
+          content?: string;
+          embeds?: EmbedBuilder[];
+          components: ActionRowBuilder<ButtonBuilder>[];
         };
+
+        if (trigger.message.embed) {
+          let color: ColorResolvable = "Red";
+
+          if (isColor(trigger.message.color)) {
+            color = trigger.message.color;
+          }
+
+          reply = {
+            embeds: [
+              new EmbedBuilder()
+                .setTitle(trigger.message.title)
+                .setDescription(trigger.message.description)
+                .setColor(color),
+            ],
+            components: [button],
+          };
+        } else {
+          reply = {
+            content: trigger.message.content,
+            components: [button],
+          };
+        }
 
         message
           .reply(reply)
