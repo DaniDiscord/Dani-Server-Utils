@@ -114,6 +114,12 @@ export default class SlashCommand extends InteractionCommand {
               type: ApplicationCommandOptionType.String,
               required: true,
             },
+            {
+              name: "clear",
+              description: "If set to true, deletes opt outs.",
+              type: ApplicationCommandOptionType.Boolean,
+              required: true,
+            },
           ],
         },
         {
@@ -265,6 +271,7 @@ export default class SlashCommand extends InteractionCommand {
       });
     } else if (subcommand == "remove") {
       const id = interaction.options.getString("id", true);
+      const clear = interaction.options.getBoolean("clear", true);
 
       if (interaction.settings.triggers.some((t) => t.id == id)) {
         this.client.settings.set(
@@ -276,10 +283,12 @@ export default class SlashCommand extends InteractionCommand {
           )
         );
 
-        await TriggerModel.deleteMany({
-          guildId: interaction.guild.id,
-          triggerId: `trigger-${id}`,
-        });
+        if (clear) {
+          await TriggerModel.deleteMany({
+            guildId: interaction.guild.id,
+            triggerId: `trigger-${id}`,
+          });
+        }
 
         await interaction.reply({
           embeds: [
