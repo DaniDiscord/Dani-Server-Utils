@@ -1,8 +1,4 @@
-import {
-  ApplicationCommandType,
-  EmbedBuilder,
-  Interaction,
-} from "discord.js";
+import { ApplicationCommandType, EmbedBuilder, Interaction } from "discord.js";
 import {
   CustomInteractionReplyOptions,
   interpretInteractionResponse,
@@ -11,12 +7,12 @@ import { formatDuration, intervalToDuration } from "date-fns";
 import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
 import { CustomClient } from "lib/client";
+import { ISettings } from "types/mongodb";
 import { SettingsModel } from "models/Settings";
 import { TimestampModel } from "models/Timestamp";
+import { TriggerModel } from "models/Trigger";
 import { forumTagComplete } from "lib/autoping";
 import { onInteraction } from "lib/emojiSuggestions";
-import { TriggerModel } from "models/Trigger";
-import { ISettings } from "types/mongodb";
 
 export default async function (client: CustomClient, interaction: Interaction) {
   // if (interaction.guildId) {
@@ -68,33 +64,38 @@ export default async function (client: CustomClient, interaction: Interaction) {
   await onInteraction(client, interaction);
 
   const isButton = interaction.isButton();
-  const triggerIds = interaction.settings.triggers.map(t => `trigger-${t.id}`);
 
   if (isButton) {
+    const triggerIds = interaction.settings.triggers.map((t) => `trigger-${t.id}`);
+
     for (const id of triggerIds) {
       if (interaction.customId != id) {
         continue;
       }
 
       const user = interaction.user;
-      const optedOut = await TriggerModel.exists({ guildId: interaction.guild.id, userId: user.id, triggerId: id});
+      const optedOut = await TriggerModel.exists({
+        guildId: interaction.guild.id,
+        userId: user.id,
+        triggerId: id,
+      });
 
       if (optedOut) {
         // Nuh uh
         await interaction.reply({
-          content: 'You have already opted out in this guild.',
-          ephemeral: true
+          content: "You have already opted out in this guild.",
+          ephemeral: true,
         });
       } else {
-        await TriggerModel.updateOne(
-          { guildId: interaction.guild.id, userId: user.id, triggerId: id },
-          { },
-          { upsert: true }
-        );
+        await new TriggerModel({
+          guildId: interaction.guild.id,
+          userId: user.id,
+          triggerId: id,
+        }).save();
 
         await interaction.reply({
-          content: 'We will not remind you in this guild again.',
-          ephemeral: true
+          content: "We will not remind you in this guild again.",
+          ephemeral: true,
         });
       }
     }
