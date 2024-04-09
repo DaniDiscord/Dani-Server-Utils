@@ -21,9 +21,9 @@ export default async (client: CustomClient, packet: any): Promise<void> => {
     return;
   }
 
-  /*if (client.permlevel(message, message.member!) >= 2) {
+  if (client.permlevel(message, message.member!) >= 2) {
     return;
-  }*/
+  }
 
   if (!client.settings.has(message.guild.id)) {
     const s = await SettingsModel.findOneAndUpdate(
