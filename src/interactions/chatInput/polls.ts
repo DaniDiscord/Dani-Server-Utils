@@ -35,7 +35,9 @@ export default class SlashCommand extends InteractionCommand {
               channelTypes: [
                 ChannelType.GuildText,
                 ChannelType.GuildVoice,
+                ChannelType.GuildForum,
                 ChannelType.GuildAnnouncement,
+                ChannelType.PublicThread,
               ],
             },
           ],
@@ -53,7 +55,9 @@ export default class SlashCommand extends InteractionCommand {
               channelTypes: [
                 ChannelType.GuildText,
                 ChannelType.GuildVoice,
+                ChannelType.GuildForum,
                 ChannelType.GuildAnnouncement,
+                ChannelType.PublicThread,
               ],
             },
           ],
@@ -80,7 +84,9 @@ export default class SlashCommand extends InteractionCommand {
     const channel = interaction.options.getChannel("channel", true, [
       ChannelType.GuildText,
       ChannelType.GuildVoice,
+      ChannelType.GuildForum,
       ChannelType.GuildAnnouncement,
+      ChannelType.PublicThread,
     ]);
 
     if (subcmd == "enable") {

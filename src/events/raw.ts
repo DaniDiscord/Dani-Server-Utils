@@ -1,3 +1,4 @@
+import { ChannelType } from "discord.js";
 import { CustomClient } from "lib/client";
 import { SettingsModel } from "models/Settings";
 
@@ -20,9 +21,9 @@ export default async (client: CustomClient, packet: any): Promise<void> => {
     return;
   }
 
-  if (client.permlevel(message, message.member!) >= 2) {
+  /*if (client.permlevel(message, message.member!) >= 2) {
     return;
-  }
+  }*/
 
   if (!client.settings.has(message.guild.id)) {
     const s = await SettingsModel.findOneAndUpdate(
@@ -53,7 +54,10 @@ export default async (client: CustomClient, packet: any): Promise<void> => {
     message.settings = s;
   }
 
-  if (!message.settings.pollsAllowed.includes(channel.id)) {
+  const pollsAllowed = message.settings.pollsAllowed;
+  const isThread = channel.type == ChannelType.PublicThread && channel.parent !== null;
+
+  if (!pollsAllowed.includes(channel.id) && (isThread && !pollsAllowed.includes(channel.parent.id))) {
     await message.reply("You are not allowed to send polls in this channel.");
     await message.delete();
   }
