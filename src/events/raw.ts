@@ -56,9 +56,18 @@ export default async (client: CustomClient, packet: any): Promise<void> => {
 
   const pollsAllowed = message.settings.pollsAllowed;
   const isThread = channel.type == ChannelType.PublicThread && channel.parent !== null;
+  const channelCondition = !isThread && !pollsAllowed.includes(channel.id);
+  const threadCondition =
+    isThread &&
+    !pollsAllowed.includes(channel.parent.id) &&
+    !pollsAllowed.includes(channel.id);
 
-  if (!pollsAllowed.includes(channel.id) && (isThread && !pollsAllowed.includes(channel.parent.id))) {
-    await message.reply("You are not allowed to send polls in this channel.");
+  if (channelCondition || threadCondition) {
+    const msg = await message.reply("You are not allowed to send polls in this channel.");
     await message.delete();
+
+    setTimeout(async () => {
+      await msg.delete();
+    }, 2000);
   }
 };
