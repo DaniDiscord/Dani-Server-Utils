@@ -68,6 +68,6 @@ export default async (client: CustomClient, packet: any): Promise<void> => {
 
     setTimeout(async () => {
       await msg.delete();
-    }, 2000);
+    }, 5000);
   }
 };
