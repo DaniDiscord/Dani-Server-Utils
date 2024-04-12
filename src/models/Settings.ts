@@ -11,6 +11,7 @@ const SettingsSchema = new Schema(
     chains: {
       ignored: [String],
     },
+    pollsAllowed: [String],
     triggers: [{
       id: String,
       keywords: [[String]],

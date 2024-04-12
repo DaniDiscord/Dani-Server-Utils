@@ -30,6 +30,7 @@ export interface RawSettings {
   chains: {
     ignored: string[];
   };
+  pollsAllowed: string[];
   triggers: {
     id: string;
     keywords: string[][];
