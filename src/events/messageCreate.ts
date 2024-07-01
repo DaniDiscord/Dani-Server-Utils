@@ -191,12 +191,13 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     }
 
     if (!client.dirtyCooldownHandler.has(id)) {
+      let matched : string[] = [];
       let allMatch =
         trigger.keywords.length != 0 &&
         trigger.keywords.every((keywordArr) =>
           keywordArr
             .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
-            .some((k) => message.content.match(k))
+            .some((k) => message.content.match(k) && matched.push(k.source))
         );
 
       if (allMatch) {
@@ -216,6 +217,8 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
         if (trigger.message.embed) {
           let color: ColorResolvable = "Red";
 
+          let footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`
+
           if (isColor(trigger.message.color)) {
             color = trigger.message.color;
           }
@@ -225,7 +228,8 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
               new EmbedBuilder()
                 .setTitle(trigger.message.title)
                 .setDescription(trigger.message.description)
-                .setColor(color),
+                .setColor(color)
+                .setFooter({ text: footer }),
             ],
             components: [button],
           };
