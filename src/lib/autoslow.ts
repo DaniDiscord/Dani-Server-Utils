@@ -111,7 +111,7 @@ export class AutoSlowManager {
 
     const oldSlow = channel.rateLimitPerUser;
     const newSlow = Math.round(this.getOptimalSlowMode(oldSlow));
-    if (Math.abs(newSlow - oldSlow) < 0.1) {
+    if (Math.abs(newSlow - oldSlow) < 0.1 || Number.isNaN(newSlow)) {
       return;
     }
     channel.setRateLimitPerUser(newSlow, "Stabilizing Chat Flow");
