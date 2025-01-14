@@ -30,8 +30,6 @@ export default class SlashCommand extends InteractionCommand {
         "Configure links per-role, or permit/disallow users from sending them.",
       options: [
         {
-          // This needs a "reset" option to reset all permissions for a channel
-
           name: "enable",
           type: ApplicationCommandOptionType.Subcommand,
           description: "Enable links in a channel for a role.",
