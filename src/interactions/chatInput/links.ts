@@ -143,8 +143,12 @@ export default class SlashCommand extends InteractionCommand {
       });
     }
     const embed = new EmbedBuilder().setTitle("Updated Link Permissions");
-
     const permLevel = this.client.permlevel(undefined, interaction.member);
+
+    const highestRole = interaction.member.roles.cache
+      .sort((a, b) => b.position - a.position)
+      .first();
+
     if (permLevel < 2) {
       return {
         embeds: [
@@ -162,6 +166,17 @@ export default class SlashCommand extends InteractionCommand {
         const channel = interaction.options.getChannel("channel", true);
         const role = interaction.options.getRole("role", true);
 
+        if (role.position >= highestRole?.position) {
+          return {
+            embeds: [
+              embed
+                .setTitle("Insufficient Permissions")
+                .setDescription(
+                  "You can not edit the permissions of a role equal to or higher than your highest role."
+                ),
+            ],
+          };
+        }
         const channelConfig = permissions.channels.find(
           (c) => c.channelId === channel.id
         );
@@ -224,6 +239,18 @@ export default class SlashCommand extends InteractionCommand {
         const channel = interaction.options.getChannel("channel", true);
         const role = interaction.options.getRole("role", true);
 
+        if (role.position >= highestRole?.position) {
+          return {
+            embeds: [
+              embed
+                .setTitle("Insufficient Permissions")
+                .setDescription(
+                  "You can not edit the permissions of a role equal to or higher than your highest role."
+                ),
+            ],
+          };
+        }
+
         const channelConfig = permissions.channels.find(
           (c) => c.channelId === channel.id
         );
@@ -277,6 +304,18 @@ export default class SlashCommand extends InteractionCommand {
         const reason = interaction.options.getString("reason");
         const userAccess = permissions.userAccess.find((a) => a.userId === user.id);
 
+        if (user.permLevel >= permLevel)
+          return {
+            embeds: [
+              embed
+                .setTitle("Insufficient perms.")
+                .setDescription(
+                  `Cannot manage user with same or higher permission level (${user.permLevel} vs ${permLevel})`
+                )
+                .setColor("Red"),
+            ],
+            eph: true,
+          };
         if (userAccess?.hasAccess === false) {
           return {
             embeds: [
@@ -325,6 +364,19 @@ export default class SlashCommand extends InteractionCommand {
         const user = interaction.options.getUser("user", true);
 
         const userAccess = permissions.userAccess.find((a) => a.userId === user.id);
+
+        if (user.permLevel >= permLevel)
+          return {
+            embeds: [
+              embed
+                .setTitle("Insufficient perms.")
+                .setDescription(
+                  `Cannot manage user with same or higher permission level (${user.permLevel} vs ${permLevel})`
+                )
+                .setColor("Red"),
+            ],
+            eph: true,
+          };
 
         if (!userAccess || userAccess.hasAccess) {
           return {
