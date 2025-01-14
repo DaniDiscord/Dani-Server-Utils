@@ -158,6 +158,63 @@ export default class SlashCommand extends InteractionCommand {
     }
     const embed = new EmbedBuilder().setTitle("Updated Link Permissions");
     const permLevel = this.client.permlevel(undefined, interaction.member);
+    const modCmds = ["enable", "disable"];
+    const helperCmds = ["check", "allow", "revoke"];
+    const coOwnerOnly = ["reset"];
+
+    if (permLevel < 10 && coOwnerOnly.includes(subcommand)) {
+      return {
+        embeds: [
+          embed
+            .setColor("Red")
+            .setTitle("Insufficient Permissions")
+            .setDescription("Must be perm level 10 (Bot Owner) to use this command."),
+        ],
+        eph: true,
+      };
+    }
+
+    if (permLevel < 3 && modCmds.includes(subcommand)) {
+      return {
+        embeds: [
+          embed
+            .setColor("Red")
+            .setTitle("Insufficient Permissions")
+            .setDescription("Must be perm level 3 (Moderator) to use this command."),
+        ],
+        eph: true,
+      };
+    }
+
+    if (permLevel < 2 && helperCmds.includes(subcommand)) {
+      return {
+        embeds: [
+          embed
+            .setColor("Red")
+            .setTitle("Insufficient Permissions")
+            .setDescription("Must be perm level 2 (Helper) to use this command."),
+        ],
+        eph: true,
+      };
+    }
+
+    const highestRole = interaction.member.roles.cache
+      .sort((a, b) => b.position - a.position)
+      .first();
+
+    if (permLevel < 2) {
+      return {
+        embeds: [
+          embed
+            .setColor("Red")
+            .setTitle("Insufficient Permissions")
+            .setDescription("Must be perm level 2 (Helper) to use this command."),
+        ],
+        eph: true,
+      };
+    }
+
+    const permLevel = this.client.permlevel(undefined, interaction.member);
 
     const highestRole = interaction.member.roles.cache
       .sort((a, b) => b.position - a.position)

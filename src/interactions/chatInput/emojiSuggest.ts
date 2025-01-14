@@ -83,6 +83,7 @@ export default class SlashCommand extends InteractionCommand {
         eph: true,
       };
     }
+    // eslint-disable-next-line max-len
     if (interaction.guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap) {
       return {
         content: "Emoji cap has been hit, wait for updates",
@@ -188,6 +189,7 @@ export default class SlashCommand extends InteractionCommand {
       .setCustomId(banId)
       .setStyle(ButtonStyle.Danger);
 
+    // eslint-disable-next-line max-len
     const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents([
       approveButton,
       denyButton,

@@ -1,5 +1,7 @@
 import { Command, PermissionLevels } from "types/command";
 
+import { TextChannel } from "discord.js";
+
 const inactiveHelper = "744621091372400780"; // Inactive Helper boi
 const activeHelper = "671088508458237952"; // Helper Boi
 const trialHelper = "707248805887606854";
@@ -18,7 +20,9 @@ const inactive: Command = {
         activeHelper,
         `[DSU] Staff Activity Change. [Re-add Helper boi]`
       );
-      message.channel.send(`${message.author}, you are now an active member of staff.`);
+      (message.channel as TextChannel).send(
+        `${message.author}, you are now an active member of staff.`
+      );
     } else if (active) {
       await message.member?.roles.add(
         inactiveHelper,
@@ -28,7 +32,9 @@ const inactive: Command = {
         activeHelper,
         `[DSU] Staff Activity Change. [Remove Helper boi]`
       );
-      message.channel.send(`${message.author}, you are now an inactive member of staff.`);
+      (message.channel as TextChannel).send(
+        `${message.author}, you are now an inactive member of staff.`
+      );
     }
   },
   conf: {

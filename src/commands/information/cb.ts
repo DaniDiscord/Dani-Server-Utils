@@ -1,11 +1,13 @@
 import { Command, PermissionLevels } from "types/command";
 
+import { TextChannel } from "discord.js";
+
 const cb: Command = {
   run: async (client, message, args) => {
     try {
       // Are any arguments given?
       if (args.length == 0) {
-        return message.channel.send({ embeds: [client.errEmb(1)] });
+        return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
       }
 
       if (args.length == 1 || args.length == 2) {
@@ -24,7 +26,7 @@ const cb: Command = {
 
           // make sure code block will fit under 2000 characters
           if (msg.content.length > max) {
-            return message.channel.send({
+            return (message.channel as TextChannel).send({
               embeds: [
                 client.errEmb(
                   2,
@@ -35,7 +37,7 @@ const cb: Command = {
           }
 
           // sends code block version
-          message.channel.send(`code by ${msg.author}:`);
+          (message.channel as TextChannel).send(`code by ${msg.author}:`);
 
           let messageContent = msg.content.trim();
           let begin;
@@ -59,10 +61,10 @@ const cb: Command = {
           }
 
           if (messageContent !== "") {
-            message.channel.send(messageContent);
+            (message.channel as TextChannel).send(messageContent);
           }
         } else {
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [client.errEmb(2, "please provide a valid message ID!")],
           });
         }

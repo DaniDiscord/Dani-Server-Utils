@@ -1,13 +1,15 @@
 import { Command, PermissionLevels } from "types/command";
-
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder, TextChannel } from "discord.js";
 
 const chaindetection: Command = {
   run: async (client, message, [func, ...content]) => {
     try {
-      if (!func) return message.channel.send({ embeds: [client.errEmb(1)] });
+      if (!func)
+        return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
       if (!message.guildId)
-        return message.channel.send({ embeds: [client.errEmb(0, "guildid not found")] });
+        return (message.channel as TextChannel).send({
+          embeds: [client.errEmb(0, "guildid not found")],
+        });
 
       if (func.toLowerCase() == "list") {
         const emb = new EmbedBuilder().setTitle(`Chain detection ignore list`);
@@ -31,12 +33,13 @@ const chaindetection: Command = {
         out.forEach((chunk, i) => {
           emb.addFields({ name: i === 0 ? "Content" : "Continued", value: chunk });
         });
-        return message.channel.send({ embeds: [emb] });
+        return (message.channel as TextChannel).send({ embeds: [emb] });
       } else if (func.toLowerCase() == "ignore") {
-        if (!content) return message.channel.send({ embeds: [client.errEmb(1)] });
+        if (!content)
+          return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
         const setting = client.settings.get(message.guildId);
         if (!setting)
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [client.errEmb(0, "settings not found")],
           });
         if (!setting.chains) {
@@ -46,7 +49,7 @@ const chaindetection: Command = {
           new RegExp(`${message.settings.prefix}${chaindetection.help.name} +ignore`, "i")
         );
         if (!match)
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [client.errEmb(0, "Can't understand command")],
           });
         // console.log(match);
@@ -54,12 +57,16 @@ const chaindetection: Command = {
         if (!setting.chains.ignored.includes(msgContent)) {
           setting.chains.ignored.push(msgContent);
           setting.toUpdate = true;
-          return message.channel.send({ content: `Now ignoring \`${msgContent}\`` });
+          return (message.channel as TextChannel).send({
+            content: `Now ignoring \`${msgContent}\``,
+          });
         } else {
-          return message.channel.send({ content: `Already ignoring \`${msgContent}\`` });
+          return (message.channel as TextChannel).send({
+            content: `Already ignoring \`${msgContent}\``,
+          });
         }
       }
-      return message.channel.send({ embeds: [client.errEmb(1)] });
+      return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
     } catch (e) {
       log.error("!chaindetection command", e as Error);
     }
