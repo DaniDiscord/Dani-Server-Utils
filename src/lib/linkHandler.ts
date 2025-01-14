@@ -87,16 +87,20 @@ export async function canUserSendLinks(
   userId: string,
   memberRoles: string[]
 ): Promise<boolean> {
+  const shouldLog = process.env.NODE_ENV === "development";
   const permissions = await LinkPermissionModel.findOne({ guildId });
-  console.log(permissions);
+  if(shouldLog)
+    console.log(permissions);
   if (!permissions) return false;
 
   const userAccess = permissions.userAccess.find((a) => a.userId === userId);
-  console.log("User access: ", userAccess);
+  if(shouldLog)
+    console.log("User access: ", userAccess);
   if (userAccess?.hasAccess === false) return false;
 
   const channelConfig = permissions.channels.find((c) => c.channelId === channelId);
-  console.log("Channel settings: ", channelConfig);
+  if(shouldLog)
+    console.log("Channel settings: ", channelConfig);
   if (!channelConfig) return false;
 
   return memberRoles.some((roleId) =>

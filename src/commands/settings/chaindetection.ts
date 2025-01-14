@@ -49,7 +49,7 @@ const chaindetection: Command = {
           return message.channel.send({
             embeds: [client.errEmb(0, "Can't understand command")],
           });
-        console.log(match);
+        // console.log(match);
         const msgContent = message.content.slice(match[0].length).toLowerCase().trim();
         if (!setting.chains.ignored.includes(msgContent)) {
           setting.chains.ignored.push(msgContent);

@@ -201,7 +201,7 @@ export class CustomClient extends Client {
         res: true,
       };
     } catch (e) {
-      console.log(e);
+      console.error(e);
 
       return {
         err: `Unable to load command ${commandName} in ${category}: ${e}`,
