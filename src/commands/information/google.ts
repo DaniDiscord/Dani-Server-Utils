@@ -1,6 +1,6 @@
 import { Command, PermissionLevels } from "types/command";
+import { EmbedBuilder, TextChannel } from "discord.js";
 
-import { EmbedBuilder } from "discord.js";
 import axios from "axios";
 
 const gKey = process.env.GOOGLE_KEY ?? "";
@@ -25,7 +25,7 @@ const google: Command = {
     try {
       if (!gKey || !csx) return message.reply("Either the googleKey or CSX are missing.");
       if (args.length == 0) {
-        return message.channel.send({ embeds: [client.errEmb(1)] });
+        return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
       }
 
       const match = args[0].match(/^\d{17,19}$/);
@@ -37,7 +37,7 @@ const google: Command = {
         query = await message.channel.messages.fetch(match[0]);
 
         if (!query) {
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [client.errEmb(2, "Please enter your search term!")],
           });
         } else {
@@ -46,7 +46,7 @@ const google: Command = {
       }
 
       if (!query) {
-        return message.channel.send({
+        return (message.channel as TextChannel).send({
           embeds: [client.errEmb(2, "Please enter your search term!")],
         });
       }
@@ -54,7 +54,9 @@ const google: Command = {
       const href = await search(query);
 
       if (!href) {
-        return message.channel.send({ embeds: [client.errEmb(2, "Unknown Search.")] });
+        return (message.channel as TextChannel).send({
+          embeds: [client.errEmb(2, "Unknown Search.")],
+        });
       }
 
       const embed = new EmbedBuilder()
@@ -63,7 +65,7 @@ const google: Command = {
         .setURL(href.link)
         .setColor("#2eabff");
 
-      message.channel.send({ embeds: [embed] });
+      (message.channel as TextChannel).send({ embeds: [embed] });
     } catch (e) {
       log.error("!google command", e as Error);
     }

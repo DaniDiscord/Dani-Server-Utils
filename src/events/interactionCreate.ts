@@ -1,4 +1,10 @@
-import { ApplicationCommandType, EmbedBuilder, Interaction } from "discord.js";
+/* eslint-disable max-len */
+import {
+  ApplicationCommandType,
+  EmbedBuilder,
+  Interaction,
+  TextChannel,
+} from "discord.js";
 import {
   CustomInteractionReplyOptions,
   interpretInteractionResponse,
@@ -60,7 +66,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
     await forumTagComplete(interaction);
   }
 
-  //Emojis
+  // Emojis
   await onInteraction(client, interaction);
 
   const isButton = interaction.isButton();
@@ -179,7 +185,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
     });
     const channel = await client.channels.fetch("995792003726065684");
     if (channel?.isTextBased()) {
-      channel.send({
+      (channel as TextChannel).send({
         content: `<@${authorId}> (${interaction.user.tag}) is applying for staff:`,
         embeds: [embed],
       });

@@ -1,8 +1,8 @@
 import "moment-precise-range-plugin";
 
 import { Command, PermissionLevels } from "types/command";
+import { EmbedBuilder, TextChannel } from "discord.js";
 
-import { EmbedBuilder } from "discord.js";
 import { MentorModel } from "../../models/Mentor";
 import { SettingsModel } from "../../models/Settings";
 import _ from "lodash";
@@ -15,7 +15,7 @@ const mentor: Command = {
     try {
       if (message.author.permLevel < 3) {
         if (client.cds.has(`Mentor-${message.channel.id}`)) {
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [
               new EmbedBuilder()
                 .setColor("Red")
@@ -41,13 +41,14 @@ const mentor: Command = {
 
         if (mentorAssigned.length == 0) return;
 
-        return message.channel.send(
+        return (message.channel as TextChannel).send(
           `<@&${mentorAssigned[0].roleID}> ${[subcmd, ...args].join(" ")}`
         );
       }
-      if (!subcmd) return message.channel.send({ embeds: [client.errEmb(1)] });
+      if (!subcmd)
+        return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
       if (!subcmds.includes(subcmd.toLowerCase()))
-        return message.channel.send({
+        return (message.channel as TextChannel).send({
           embeds: [
             client.errEmb(2, `Use one of the following: \`${subcmds.join("`, `")}\``),
           ],
@@ -56,7 +57,7 @@ const mentor: Command = {
       if (i == 0) {
         // They want a list. uhhh
         // Lets just map the current mentors with their roles
-        return message.channel.send({
+        return (message.channel as TextChannel).send({
           embeds: [
             {
               title: `Current mentor roles!`,
@@ -75,12 +76,12 @@ const mentor: Command = {
       } else if (i == 1) {
         // Add a mentor thing. We need role ID and name
         if (args.length != 2) {
-          return message.channel.send({ embeds: [client.errEmb(1)] });
+          return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
         }
 
         const match = args[0].match(/\d{17,19}/);
         if (!match) {
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [
               client.errEmb(
                 2,
@@ -92,7 +93,7 @@ const mentor: Command = {
 
         const roleID = match[0];
         if (!message.guild!.roles.cache.has(roleID)) {
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [
               client.errEmb(
                 2,
@@ -123,7 +124,7 @@ const mentor: Command = {
             .populate("commands")
         );
 
-        return message.channel.send({
+        return (message.channel as TextChannel).send({
           embeds: [
             new EmbedBuilder()
               .setColor("Green")
@@ -144,12 +145,12 @@ const mentor: Command = {
         // I guess the args here should be ...channels, mentorName?
         // We need at least 2 args
         if (args.length != 2) {
-          return message.channel.send({ embeds: [client.errEmb(1)] });
+          return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
         }
 
         // Only 1 arg cannot match the channel regex
         if (args.filter((a) => /@&\d{17,19}/.test(a)).length != 1) {
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [
               client.errEmb(
                 2,
@@ -166,7 +167,7 @@ const mentor: Command = {
         );
 
         if (!found) {
-          return message.channel.send({
+          return (message.channel as TextChannel).send({
             embeds: [
               new EmbedBuilder()
                 .setColor("Red")
@@ -184,7 +185,7 @@ const mentor: Command = {
         );
 
         // lets just see how this works for now
-        return message.channel.send({
+        return (message.channel as TextChannel).send({
           embeds: [
             new EmbedBuilder()
               .setColor("Green")

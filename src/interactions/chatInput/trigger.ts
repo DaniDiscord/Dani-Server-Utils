@@ -100,7 +100,7 @@ export default class SlashCommand extends InteractionCommand {
                 "The fifth group of keywords of the trigger, separated by ','.",
               type: ApplicationCommandOptionType.String,
               required: false,
-            }, //so ugly
+            }, // so ugly
           ],
         },
         {
@@ -229,7 +229,7 @@ export default class SlashCommand extends InteractionCommand {
       const color = interaction.options.getString("color", false);
       const embed = title != null || description != null || color != null;
 
-      let keywords: string[][] = [];
+      const keywords: string[][] = [];
 
       for (let i = 1; i <= 5; i++) {
         const group = interaction.options.getString(`keywords${i}`, false);

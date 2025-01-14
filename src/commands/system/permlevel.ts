@@ -1,13 +1,12 @@
 import { Command, PermissionLevels } from "types/command";
-
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder, TextChannel } from "discord.js";
 
 const permlevel: Command = {
   run: async (client, message, [member]) => {
     try {
       const ID = member.match(/\d{17,19}/)![0];
       const gMember = await message.guild!.members.fetch(ID).catch(() => {});
-      message.channel.send({
+      (message.channel as TextChannel).send({
         embeds: [
           new EmbedBuilder()
             .setColor("Green")
@@ -19,7 +18,7 @@ const permlevel: Command = {
     } catch (e: any) {
       log.error("!permlevel command", e as Error);
 
-      message.channel.send({
+      (message.channel as TextChannel).send({
         embeds: [new EmbedBuilder().setColor("Red").setDescription(e.toString())],
       });
     }

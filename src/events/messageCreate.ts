@@ -113,7 +113,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
         if (chMsg.count >= CHAIN_DELETE_MESSAGE_THRESHOLD) {
           await message.delete().catch(() => {});
           if (chMsg.count == CHAIN_WARN_THRESHOLD) {
-            const msg = await message.channel
+            const msg = await (message.channel as TextChannel)
               .send({ content: `Please stop chaining.` })
               .catch(() => {});
             if (msg && msg.deletable)
@@ -299,7 +299,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     const filter = (c: ICommand) => c.trigger == command;
     if (message.settings.commands.filter(filter).length == 1) {
       // We just send an embed with the c content
-      message.channel.send({
+      (message.channel as TextChannel).send({
         embeds: [
           new EmbedBuilder()
             .setColor("Random")
@@ -321,7 +321,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   const ret = await cmd.run(client, message, args);
 
   if (ret && ret.description) {
-    await message.channel.send({ embeds: [ret] });
+    await (message.channel as TextChannel).send({ embeds: [ret] });
   }
 
   next();

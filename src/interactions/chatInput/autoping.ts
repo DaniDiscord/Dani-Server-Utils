@@ -156,7 +156,7 @@ export default class SlashCommand extends InteractionCommand {
         const autoPings = await this.client.getAllAutoPing(guildId);
 
         const tags = new Map<string, string>();
-        for (const [id, channel] of interaction.guild.channels.cache) {
+        for (const [_, channel] of interaction.guild.channels.cache) {
           if (!(channel instanceof ForumChannel)) {
             continue;
           }
