@@ -83,8 +83,10 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     message.member?.roles.cache.map((role) => role.id) ?? []
   );
 
-  if (!canSendLinks && hasLink.hasUrls
-    && level < 3 // Moderators can post links anywhere
+  if (
+    !canSendLinks &&
+    hasLink.hasUrls &&
+    level < 3 // Moderators can post links anywhere
   ) {
     await message.delete().catch(() => {});
     return;
@@ -106,7 +108,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
         level < 2
       ) {
         // Just fucking delete the message
-        let chMsg = chMessages.find((o) => o.word == trimMsg(message.content))!;
+        const chMsg = chMessages.find((o) => o.word == trimMsg(message.content))!;
         chMsg.count++;
         if (chMsg.count >= CHAIN_DELETE_MESSAGE_THRESHOLD) {
           await message.delete().catch(() => {});
@@ -208,8 +210,8 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     }
 
     if (!client.dirtyCooldownHandler.has(id)) {
-      let matched: string[] = [];
-      let allMatch =
+      const matched: string[] = [];
+      const allMatch =
         trigger.keywords.length != 0 &&
         trigger.keywords.every((keywordArr) =>
           keywordArr
@@ -234,7 +236,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
         if (trigger.message.embed) {
           let color: ColorResolvable = "Red";
 
-          let footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
+          const footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
 
           if (isColor(trigger.message.color)) {
             color = trigger.message.color;

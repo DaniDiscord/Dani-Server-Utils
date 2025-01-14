@@ -11,7 +11,7 @@ const LinkPermissionSchema = new Schema<ILinkPermission>(
         roles: [
           {
             roleId: String,
-            enabled: { type: Boolean, default: false },
+            enabled: { type: Boolean, default: true },
           },
         ],
       },
@@ -19,7 +19,7 @@ const LinkPermissionSchema = new Schema<ILinkPermission>(
     userAccess: [
       {
         userId: String,
-        hasAccess: { type: Boolean, default: false },
+        hasAccess: { type: Boolean, default: true },
         modifiedBy: String,
         modifiedAt: { type: Date, default: Date.now },
         reason: String,

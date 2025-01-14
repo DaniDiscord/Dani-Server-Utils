@@ -395,7 +395,7 @@ export async function onReactionEvent(
         }
 
         const emojiCreate = {
-          //@ts-expect-error Data must be, and is known to be a Buffer.
+          // @ts-expect-error Data must be, and is known to be a Buffer.
           attachment: Buffer.from(emoji.data),
           name: emojiName + emojiSuffix,
         };
