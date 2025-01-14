@@ -144,6 +144,19 @@ export default class SlashCommand extends InteractionCommand {
     }
     const embed = new EmbedBuilder().setTitle("Updated Link Permissions");
 
+    const permLevel = this.client.permlevel(undefined, interaction.member);
+    if (permLevel < 2) {
+      return {
+        embeds: [
+          embed
+            .setColor("Red")
+            .setTitle("Insufficient Permissions")
+            .setDescription("Must be perm level 2 (Helper) to use this command."),
+        ],
+        eph: true,
+      };
+    }
+
     switch (subcommand) {
       case "enable": {
         const channel = interaction.options.getChannel("channel", true);
