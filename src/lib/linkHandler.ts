@@ -91,7 +91,7 @@ export async function canUserSendLinks(
   const permissions = await LinkPermissionModel.findOne({ guildId });
   if(shouldLog)
     console.log(permissions);
-  if (!permissions) return false;
+  if (!permissions) return true;
 
   const userAccess = permissions.userAccess.find((a) => a.userId === userId);
   if(shouldLog)
@@ -101,7 +101,7 @@ export async function canUserSendLinks(
   const channelConfig = permissions.channels.find((c) => c.channelId === channelId);
   if(shouldLog)
     console.log("Channel settings: ", channelConfig);
-  if (!channelConfig) return false;
+  if (!channelConfig) return true;
 
   return memberRoles.some((roleId) =>
     channelConfig.roles.some((r) => r.roleId === roleId && r.enabled)

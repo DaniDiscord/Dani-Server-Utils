@@ -83,7 +83,9 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     message.member?.roles.cache.map((role) => role.id) ?? []
   );
 
-  if (!canSendLinks && hasLink.hasUrls) {
+  if (!canSendLinks && hasLink.hasUrls
+    && level < 3 // Moderators can post links anywhere
+  ) {
     await message.delete().catch(() => {});
     return;
   }

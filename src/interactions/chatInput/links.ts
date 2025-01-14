@@ -30,9 +30,13 @@ export default class SlashCommand extends InteractionCommand {
         "Configure links per-role, or permit/disallow users from sending them.",
       options: [
         {
+          // This needs a "reset" option to reset all permissions for a channel
+
+
+          
           name: "enable",
           type: ApplicationCommandOptionType.Subcommand,
-          description: "Enable slash commands in a channel for a role.",
+          description: "Enable links in a channel for a role.",
           options: [
             {
               name: "channel",
@@ -52,7 +56,7 @@ export default class SlashCommand extends InteractionCommand {
         {
           name: "disable",
           type: ApplicationCommandOptionType.Subcommand,
-          description: "Disable slash commands in a channel for a role.",
+          description: "Disable links in a channel for a role.",
           options: [
             {
               name: "channel",
@@ -72,7 +76,7 @@ export default class SlashCommand extends InteractionCommand {
         {
           name: "revoke",
           type: ApplicationCommandOptionType.Subcommand,
-          description: "Remove slash commands from a user.",
+          description: "Remove link perms from a user.",
           options: [
             {
               name: "user",
@@ -261,7 +265,7 @@ export default class SlashCommand extends InteractionCommand {
             embeds: [
               embed
                 .setDescription(
-                  `Links are already disabled in ${channel} for role ${role}.`
+                  `${channel} does not have a configuration for role ${role}.`
                 )
                 .setColor("Red"),
             ],
