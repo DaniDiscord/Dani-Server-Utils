@@ -176,6 +176,11 @@ export default class SlashCommand extends InteractionCommand {
     }
 
     const permLevel = this.client.permlevel(undefined, interaction.member);
+
+    const highestRole = interaction.member.roles.cache
+      .sort((a, b) => b.position - a.position)
+      .first();
+
     if (permLevel < 2) {
       return {
         embeds: [
