@@ -16,18 +16,22 @@ export async function threadCreated(client: CustomClient, thread: GuildChannel) 
   if (!(thread instanceof ThreadChannel)) {
     return;
   }
-  const forum = await thread.guild.channels.fetch(thread.parentId);
+  const threadExists = thread as ThreadChannel;
+  const forum = await threadExists.guild.channels.fetch(threadExists.parentId!);
   if (!(forum instanceof ForumChannel)) {
     return;
   }
 
-  const autoPings = await client.getAutoPing(thread.guildId, thread.parentId);
+  const autoPings = await client.getAutoPing(
+    threadExists.guildId,
+    threadExists.parentId!
+  );
   for (const autoPing of autoPings) {
     const pingChannel = await client.channels.fetch(autoPing.targetChannelId);
     if (!(pingChannel instanceof TextChannel)) {
       continue;
     }
-    const pingRole = await thread.guild.roles.fetch(autoPing.roleId);
+    const pingRole = await threadExists.guild.roles.fetch(autoPing.roleId);
     if (pingRole === null) {
       continue;
     }
@@ -36,7 +40,7 @@ export async function threadCreated(client: CustomClient, thread: GuildChannel) 
       continue;
     }
     const tag = autoPing.tag.length === 0 ? "" : `with tag ${tagId.name} ${tagId.emoji}`;
-    const message = `<@&${pingRole.id}> New post <#${thread.id}> under <#${thread.parentId}>  ${tag}`;
+    const message = `<@&${pingRole.id}> New post <#${threadExists.id}> under <#${threadExists.parentId}>  ${tag}`;
     await pingChannel.send({ content: message });
   }
 }

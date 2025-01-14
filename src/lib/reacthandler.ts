@@ -31,7 +31,11 @@ export class ReactionHandler {
   }
 
   async onNewReaction(reaction: MessageReaction, user: User): Promise<void> {
-    if (!this.isReactionEmoji(reaction.emoji) || reaction.message.guildId == null) return;
+    if (
+      !this.isReactionEmoji(reaction.emoji as ReactionEmoji) ||
+      reaction.message.guildId == null
+    )
+      return;
 
     const member = await reaction.message.guild?.members.fetch(user.id).catch(() => {});
     if (!member) return;

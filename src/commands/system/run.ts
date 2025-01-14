@@ -1,6 +1,5 @@
 import { Command, PermissionLevels } from "types/command";
-
-import { EmbedBuilder } from "discord.js";
+import { EmbedBuilder, TextChannel } from "discord.js";
 
 const run: Command = {
   run: async (client, message, args) => {
@@ -14,7 +13,9 @@ const run: Command = {
         e = e.toString();
       }
 
-      message.channel.send({ embeds: [new EmbedBuilder({ description: e })] });
+      (message.channel as TextChannel).send({
+        embeds: [new EmbedBuilder({ description: e })],
+      });
     } catch (e) {
       console.error(e);
       log.error("!run command", e as Error);

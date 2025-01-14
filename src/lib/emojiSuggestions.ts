@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -291,13 +292,13 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
 
     const voteChannel = message.guild?.channels.cache.get(emojiSuggestionsConfig.voteId);
     if (voteChannel === undefined || !(voteChannel instanceof TextChannel)) {
-      await message.channel.send("Error initiating vote");
+      await (message.channel as TextChannel).send("Error initiating vote");
       return;
     }
 
     await approveSync.doSynchronized(message.id, async () => {
       if (attachment === undefined) {
-        await message.channel.send("Error accessing emoji");
+        await (message.channel as TextChannel).send("Error accessing emoji");
         return;
       }
       const voteMessage = await voteChannel.send({
@@ -381,7 +382,7 @@ export async function onReactionEvent(
           return;
         }
         if (guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap - 1) {
-          await message.channel.send(
+          await (message.channel as TextChannel).send(
             `With this emoji, the allocated quota has been filled.
           Next votes will include which emoji you want to replace.`
           );
