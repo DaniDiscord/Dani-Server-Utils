@@ -1,79 +1,8 @@
 import { LinkPermissionModel } from "models/Links";
 
 export function readMsgForLink(content: string) {
-  // Replace weird formatting to avoid link evasion (eg d i s c o r d . g g)
-  // There will probably be false positives, but nothing major.
-  let normalizedText = content
-    .toLowerCase()
-    .replace(/\s*\.\s*/g, ".")
-    .replace(/\s*\/\s*/g, "/")
-    .replace(/\s*:\s*/g, ":");
-
-  normalizedText = normalizedText.replace(/([a-z])\s+(?=[a-z](?:\s+[a-z])*)/g, "$1");
-
-  // Common TLDs
-  const tlds = [
-    "com",
-    "net",
-    "org",
-    "edu",
-    "gov",
-    "mil",
-    "biz",
-    "info",
-    "io",
-    "co",
-    "gg",
-    "me",
-    "tv",
-    "app",
-    "dev",
-    "xyz",
-    "site",
-    "web",
-    "online",
-    "tech",
-    "store",
-    "blog",
-    "cloud",
-    "ai",
-    "live",
-    "pro",
-    "shop",
-    "news",
-    "life",
-    "network",
-  ].join("|");
-
-  const urlPattern = new RegExp(
-    "(?:^|\\s|[([{'\"])" + // boundary
-      "(" +
-      // Protocol
-      "(?:https?:\\/\\/" +
-      "(?:[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\." +
-      `(?:${tlds}))` +
-      "(?:[:/?#][^\\s\"'.,!?(){}\\[\\]]*)?)" +
-      "|" +
-      // WWW
-      "(?:www\\." +
-      "(?:[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\." +
-      `(?:${tlds}))` +
-      "(?:[:/?#][^\\s\"'.,!?(){}\\[\\]]*)?)" +
-      "|" +
-      // IP address
-      "(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}" +
-      "(?:[:/?#][^\\s\"'.,!?(){}\\[\\]]*)?)" +
-      "|" +
-      // Domain format
-      "(?:[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\." +
-      `(?:${tlds})` +
-      "(?:[:/?#][^\\s\"'.,!?(){}\\[\\]]*)?)" +
-      ")" +
-      "(?=$|\\s|[.,!?(){}\\[\\]'\"])", // End with boundary
-    "gi"
-  );
-
-  const matches = Array.from(normalizedText.matchAll(urlPattern), (match) => match[0]);
+  const urlPattern = /(https?:\/\/|www\.|discord\.|[a-zA-Z0-9-]+\.)[^\s/$.?#]*\.[^\s]*/gi;
+  const matches = Array.from(content.matchAll(urlPattern), (match) => match[0]);
 
   return {
     hasUrls: matches.length > 0,

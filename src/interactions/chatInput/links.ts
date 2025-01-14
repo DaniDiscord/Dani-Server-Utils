@@ -121,6 +121,20 @@ export default class SlashCommand extends InteractionCommand {
             },
           ],
         },
+        {
+          name: "reset",
+          type: ApplicationCommandOptionType.Subcommand,
+          description: "Reset a channel's data for link settings",
+          options: [
+            {
+              name: "channel",
+              description: "The channel to reset values for.",
+              type: ApplicationCommandOptionType.Channel,
+              channel_types: [ChannelType.GuildText, ChannelType.GuildForum],
+              required: true,
+            },
+          ],
+        },
       ],
       // defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
@@ -500,7 +514,44 @@ export default class SlashCommand extends InteractionCommand {
           ],
         };
       }
+      case "reset": {
+        const channel = interaction.options.getChannel("channel", true);
 
+        const existingModel = LinkPermissionModel.findOne({
+          "channels.$.channelId": channel.id,
+        });
+
+        if (!existingModel) {
+          return {
+            embeds: [
+              embed
+                .setTitle("Not found.")
+                .setDescription(`Cannot find data for ${channel.id}.`)
+                .setColor("Red"),
+            ],
+            eph: true,
+          };
+        }
+
+        await LinkPermissionModel.updateOne(
+          { guildId },
+          {
+            $pull: { channels: { channelId: channel.id } },
+            $set: {
+              userAccess: [],
+            },
+          }
+        );
+
+        return {
+          embeds: [
+            embed
+              .setTitle("Reset Successful")
+              .setDescription(`Configuration for ${channel} has been reset to default.`)
+              .setColor("Green"),
+          ],
+        };
+      }
       default:
         return {
           embeds: [
