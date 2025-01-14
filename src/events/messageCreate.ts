@@ -10,6 +10,7 @@ import {
   Message,
   TextChannel,
 } from "discord.js";
+import { canUserSendLinks, readMsgForLink } from "lib/linkHandler";
 
 import { Command } from "types/command";
 import { CustomClient } from "../lib/client";
@@ -70,6 +71,20 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
 
   // Do whatever message filtering here
   if (level == -1) {
+    return;
+  }
+  // Check for link.
+  const hasLink = readMsgForLink(message.content);
+
+  const canSendLinks = await canUserSendLinks(
+    message.guildId ?? "",
+    message.channelId,
+    message.author.id,
+    message.member?.roles.cache.map((role) => role.id) ?? []
+  );
+
+  if (!canSendLinks && hasLink.hasUrls) {
+    await message.delete();
     return;
   }
 
@@ -191,7 +206,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     }
 
     if (!client.dirtyCooldownHandler.has(id)) {
-      let matched : string[] = [];
+      let matched: string[] = [];
       let allMatch =
         trigger.keywords.length != 0 &&
         trigger.keywords.every((keywordArr) =>
@@ -217,7 +232,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
         if (trigger.message.embed) {
           let color: ColorResolvable = "Red";
 
-          let footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`
+          let footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
 
           if (isColor(trigger.message.color)) {
             color = trigger.message.color;

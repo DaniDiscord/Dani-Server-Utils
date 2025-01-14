@@ -37,13 +37,13 @@ export interface RawSettings {
     cooldown: number;
     enabled: boolean;
     message: {
-        embed: boolean;
-        content: string;
-        title: string;
-        description: string;
-        color: string;
+      embed: boolean;
+      content: string;
+      title: string;
+      description: string;
+      color: string;
     };
-  }[],
+  }[];
   roles: {
     helper: string;
     moderator: string;
@@ -132,3 +132,23 @@ interface RawTrigger {
 }
 
 export interface ITrigger extends RawTrigger, Document {}
+
+interface RawLinkPermission {
+  guildId: string;
+  channels: Array<{
+    channelId: string;
+    roles: Array<{
+      roleId: string;
+      enabled: boolean;
+    }>;
+  }>;
+  userAccess: Array<{
+    userId: string;
+    hasAccess: boolean;
+    modifiedBy: string;
+    modifiedAt: Date;
+    reason?: string;
+  }>;
+}
+
+export interface ILinkPermission extends RawLinkPermission, Document {}

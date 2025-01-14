@@ -12,19 +12,21 @@ const SettingsSchema = new Schema(
       ignored: [String],
     },
     pollsAllowed: [String],
-    triggers: [{
-      id: String,
-      keywords: [[String]],
-      cooldown: Number,
-      enabled: Boolean,
-      message: {
-        embed: Boolean,
-        content: String,
-        title: String,
-        description: String,
-        color: String,
-      }
-    }],
+    triggers: [
+      {
+        id: String,
+        keywords: [[String]],
+        cooldown: Number,
+        enabled: Boolean,
+        message: {
+          embed: Boolean,
+          content: String,
+          title: String,
+          description: String,
+          color: String,
+        },
+      },
+    ],
     roles: {
       helper: String,
       moderator: String,
