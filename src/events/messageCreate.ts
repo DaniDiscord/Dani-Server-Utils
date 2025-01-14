@@ -84,7 +84,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   );
 
   if (!canSendLinks && hasLink.hasUrls) {
-    await message.delete();
+    await message.delete().catch(() => {});
     return;
   }
 

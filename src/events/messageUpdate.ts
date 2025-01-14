@@ -18,7 +18,7 @@ export default async (
   );
 
   if (!canSendLinks && hasLink.hasUrls) {
-    await newMessage.delete();
+    await newMessage.delete().catch(() => {});
     return;
   }
 };
