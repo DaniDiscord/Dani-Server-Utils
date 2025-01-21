@@ -1,13 +1,18 @@
 import { Client, EmbedBuilder, ForumChannel } from "discord.js";
-import { DAY, MINUTE, parseDurationToString } from "./timeParser";
+import { DAY, MINUTE, SECOND, parseDurationToString } from "./timeParser";
 
 import { AutoArchiveForumModel } from "models/AutoArchive";
 
 export async function autoArchiveInForum(channel: ForumChannel, expireDuration: number) {
-  const threads = await channel.threads.fetch();
+  const activeThreads = await channel.threads.fetchActive();
+  const archivedThreads = await channel.threads.fetchArchived();
+  const threads = [
+    ...activeThreads.threads.values(),
+    ...archivedThreads.threads.values(),
+  ];
 
   let nearestThreadLock = DAY;
-  for (const thread of threads.threads.values()) {
+  for (const thread of threads) {
     if (thread.locked) continue;
 
     const messages = await thread.messages.fetch({ limit: 1 });
@@ -20,11 +25,6 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
     const ageInMs = Date.now() - lastMessageAt.getTime();
 
     if (ageInMs > expireDuration) {
-      await thread.setLocked(
-        true,
-        `Auto-Lock after ${Math.floor(expireDuration / 1440)} days of inactivity.`
-      );
-
       try {
         const embed = new EmbedBuilder()
           .setTitle(`Post Locked`)
@@ -38,6 +38,13 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
           error as Error
         );
       }
+
+      await thread.setLocked(
+        true,
+        `Auto-Lock after ${parseDurationToString(ageInMs)} of inactivity.`
+      );
+
+      await thread.setArchived(true);
     }
 
     const timeLeft = expireDuration - ageInMs;
@@ -51,6 +58,9 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
         nearestThreadLock = DAY;
       }
     }
+
+    if (thread !== threads[threads.length - 1])
+      await new Promise((resolve) => setTimeout(resolve, SECOND * 20));
   }
 
   setTimeout(() => {
