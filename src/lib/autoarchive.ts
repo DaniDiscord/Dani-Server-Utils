@@ -2,8 +2,30 @@ import {
   AutoArchiveForumBlacklistModel,
   AutoArchiveForumModel,
 } from "models/AutoArchive";
-import { Client, EmbedBuilder, ForumChannel } from "discord.js";
+import { Client, EmbedBuilder, ForumChannel, ThreadChannel } from "discord.js";
 import { DAY, MINUTE, SECOND, parseDurationToString } from "./timeParser";
+
+async function fetchAllThreads(channel: ForumChannel, archived = false) {
+  let threads: ThreadChannel[] = [];
+  let cursor: string | undefined;
+
+  while (true) {
+    const fetched = archived
+      ? await channel.threads.fetchArchived({ limit: 100, before: cursor })
+      : await channel.threads.fetchActive();
+
+    threads = [...threads, ...fetched.threads.values()];
+
+    if (archived && fetched.threads.size === 100) {
+      cursor = fetched.threads.last()?.id;
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } else {
+      break;
+    }
+  }
+
+  return threads;
+}
 
 export async function autoArchiveInForum(channel: ForumChannel, expireDuration: number) {
   const blacklist = await AutoArchiveForumBlacklistModel.findOne({
@@ -11,12 +33,9 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
   });
   const blacklistedThreads = blacklist?.threads || [];
 
-  const activeThreads = await channel.threads.fetchActive();
-  const archivedThreads = await channel.threads.fetchArchived();
-  const threads = [
-    ...activeThreads.threads.values(),
-    ...archivedThreads.threads.values(),
-  ];
+  const activeThreads = await fetchAllThreads(channel);
+  const archivedThreads = await fetchAllThreads(channel, true);
+  const threads = [...activeThreads, ...archivedThreads];
 
   let nearestThreadLock = DAY;
   for (const thread of threads) {
