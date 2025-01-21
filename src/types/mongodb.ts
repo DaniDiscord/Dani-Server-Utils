@@ -152,3 +152,11 @@ interface RawLinkPermission {
 }
 
 export interface ILinkPermission extends RawLinkPermission, Document {}
+
+export interface IAutoArchiveForum {
+  guildId: string;
+  channels: {
+    channelId: string;
+    expireDuration: number;
+  }[];
+}

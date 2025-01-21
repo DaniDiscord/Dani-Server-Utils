@@ -17,6 +17,7 @@ import { ISettings } from "types/mongodb";
 import { SettingsModel } from "models/Settings";
 import { TimestampModel } from "models/Timestamp";
 import { TriggerModel } from "models/Trigger";
+import { WEEK } from "lib/timeParser";
 import { forumTagComplete } from "lib/autoping";
 import { onInteraction } from "lib/emojiSuggestions";
 
@@ -110,7 +111,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
   const isModalSubmit = interaction.isModalSubmit();
   if (isModalSubmit && interaction.customId == staffAppCustomId) {
     // At this point, impose a cooldown. Lets start with a week
-    const TIMESPAN_COOLDOWN = 7 * (24 * 60 * 60 * 1000);
+    const TIMESPAN_COOLDOWN = WEEK;
     const identifier = `${interaction.user.id}-staff-application`;
     const lastApplied = await TimestampModel.findOne({ identifier });
     if (

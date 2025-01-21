@@ -2,6 +2,7 @@ import { Client } from "discord.js";
 import { ISettings } from "types/mongodb";
 import { SettingsModel as Settings } from "../models/Settings";
 import _ from "lodash";
+import { handleAutoArchive } from "lib/autoarchive";
 
 export default (client: Client): void => {
   updateStuff();
@@ -92,6 +93,7 @@ export default (client: Client): void => {
     }
   }
   setInterval(updateStuff, 3000);
+  handleAutoArchive(client);
 
   log.info("Logged in", {
     action: `Ready`,
