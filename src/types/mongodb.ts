@@ -160,3 +160,8 @@ export interface IAutoArchiveForum {
     expireDuration: number;
   }[];
 }
+
+export interface IAutoArchiveForumBlacklist {
+  guildId: string;
+  threads: string[];
+}

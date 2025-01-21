@@ -1,9 +1,16 @@
+import {
+  AutoArchiveForumBlacklistModel,
+  AutoArchiveForumModel,
+} from "models/AutoArchive";
 import { Client, EmbedBuilder, ForumChannel } from "discord.js";
 import { DAY, MINUTE, SECOND, parseDurationToString } from "./timeParser";
 
-import { AutoArchiveForumModel } from "models/AutoArchive";
-
 export async function autoArchiveInForum(channel: ForumChannel, expireDuration: number) {
+  const blacklist = await AutoArchiveForumBlacklistModel.findOne({
+    guildId: channel.guildId,
+  });
+  const blacklistedThreads = blacklist?.threads || [];
+
   const activeThreads = await channel.threads.fetchActive();
   const archivedThreads = await channel.threads.fetchArchived();
   const threads = [
@@ -13,6 +20,7 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
 
   let nearestThreadLock = DAY;
   for (const thread of threads) {
+    if (blacklistedThreads.includes(thread.id)) continue;
     if (thread.locked) continue;
 
     const messages = await thread.messages.fetch({ limit: 1 });
