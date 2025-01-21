@@ -1,4 +1,4 @@
-import { Client, ForumChannel } from "discord.js";
+import { Client, EmbedBuilder, ForumChannel } from "discord.js";
 import { DAY, MINUTE, parseDurationToString } from "./timeParser";
 
 import { AutoArchiveForumModel } from "models/AutoArchive";
@@ -24,6 +24,20 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
         true,
         `Auto-Lock after ${Math.floor(expireDuration / 1440)} days of inactivity.`
       );
+
+      try {
+        const embed = new EmbedBuilder()
+          .setTitle(`Post Locked`)
+          .setDescription(`This post has been automatically locked due to inactivity.`)
+          .setColor("Red");
+
+        await thread.send({ embeds: [embed] });
+      } catch (error) {
+        log.warn(
+          `Failed to send lock embed for thread (${thread.id}) in channel (${channel.id})`,
+          error as Error
+        );
+      }
     }
 
     const timeLeft = expireDuration - ageInMs;
