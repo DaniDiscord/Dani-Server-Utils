@@ -37,8 +37,18 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
   const archivedThreads = await fetchAllThreads(channel, true);
   const threads = [...activeThreads, ...archivedThreads];
 
+  const threadCount = threads.length;
+  const logPercentage = 10;
+  let currentThread = 0;
+
+  log.info("Auto-Archive", {
+    action: "Run",
+    message: `Checking ${threadCount} threads in channel (${channel.id})`,
+  })
+
   let nearestThreadLock = DAY;
   for (const thread of threads) {
+    currentThread++;
     if (blacklistedThreads.includes(thread.id)) continue;
     if (thread.locked) continue;
 
@@ -50,6 +60,13 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
     if (!lastMessageAt) continue;
 
     const ageInMs = Date.now() - lastMessageAt.getTime();
+
+    if (currentThread % Math.floor(threadCount / logPercentage) === 0) {
+      log.info("Auto-Archive", {
+        action: "Progress",
+        message: `Checked ${currentThread} of ${threadCount} threads in channel (${channel.id})`,
+      });
+    }
 
     if (ageInMs > expireDuration) {
       try {
