@@ -137,6 +137,7 @@ const run = async () => {
       `${evtFile.name}${evtFile.ext}`
     ));
 
+    console.log(`Loading Event: ${evtFile.name}`);
     client.on(evtFile.name, event.bind(null, client));
   });
 

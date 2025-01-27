@@ -198,10 +198,6 @@ export default class SlashCommand extends InteractionCommand {
       };
     }
 
-    const highestRole = interaction.member.roles.cache
-      .sort((a, b) => b.position - a.position)
-      .first();
-
     if (permLevel < 2) {
       return {
         embeds: [
@@ -214,11 +210,9 @@ export default class SlashCommand extends InteractionCommand {
       };
     }
 
-    const permLevel = this.client.permlevel(undefined, interaction.member);
-
     const highestRole = interaction.member.roles.cache
       .sort((a, b) => b.position - a.position)
-      .first();
+      .first() ?? { position: 0 };
 
     if (permLevel < 2) {
       return {
