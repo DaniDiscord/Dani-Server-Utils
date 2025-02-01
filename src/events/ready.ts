@@ -1,3 +1,6 @@
+import { MINUTE, SECOND } from "lib/timeParser";
+
+import { CheckAnchorInactivity } from "lib/anchorHandler";
 import { Client } from "discord.js";
 import { ISettings } from "types/mongodb";
 import { SettingsModel as Settings } from "../models/Settings";
@@ -92,8 +95,9 @@ export default (client: Client): void => {
       }
     }
   }
-  setInterval(updateStuff, 3000);
+  setInterval(updateStuff, SECOND * 3);
   handleAutoArchive(client);
+  CheckAnchorInactivity(client);
 
   log.info("Logged in", {
     action: `Ready`,
