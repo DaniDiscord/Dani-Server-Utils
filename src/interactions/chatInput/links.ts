@@ -39,7 +39,11 @@ export default class SlashCommand extends InteractionCommand {
               description: "The channel to allow links in.",
               required: true,
               type: ApplicationCommandOptionType.Channel,
-              channel_types: [ChannelType.GuildText, ChannelType.GuildForum],
+              channel_types: [
+                ChannelType.GuildText,
+                ChannelType.GuildForum,
+                ChannelType.GuildVoice,
+              ],
             },
             {
               name: "role",
@@ -59,7 +63,11 @@ export default class SlashCommand extends InteractionCommand {
               description: "The channel to disallow links in.",
               required: true,
               type: ApplicationCommandOptionType.Channel,
-              channel_types: [ChannelType.GuildText, ChannelType.GuildForum],
+              channel_types: [
+                ChannelType.GuildText,
+                ChannelType.GuildForum,
+                ChannelType.GuildVoice,
+              ],
             },
             {
               name: "role",
@@ -128,7 +136,11 @@ export default class SlashCommand extends InteractionCommand {
               name: "channel",
               description: "The channel to reset values for.",
               type: ApplicationCommandOptionType.Channel,
-              channel_types: [ChannelType.GuildText, ChannelType.GuildForum],
+              channel_types: [
+                ChannelType.GuildText,
+                ChannelType.GuildForum,
+                ChannelType.GuildVoice,
+              ],
               required: true,
             },
           ],
