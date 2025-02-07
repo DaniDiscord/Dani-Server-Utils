@@ -14,6 +14,7 @@ import { canUserSendLinks, readMsgForLink } from "lib/linkHandler";
 
 import { Command } from "types/command";
 import { CustomClient } from "../lib/client";
+import { HandleAnchor } from "lib/anchorHandler";
 import { ICommand } from "types/mongodb";
 import { SettingsModel } from "../models/Settings";
 import { TriggerModel } from "models/Trigger";
@@ -91,6 +92,9 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     await message.delete().catch(() => {});
     return;
   }
+
+  // Anchor Handler
+  await HandleAnchor(client, message);
 
   if (!client.channelMessages) client.channelMessages = new Collection();
   const chMessages = client.channelMessages.get(message.channel.id);

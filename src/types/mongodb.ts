@@ -165,3 +165,20 @@ export interface IAutoArchiveForumBlacklist {
   guildId: string;
   threads: string[];
 }
+
+export interface IAnchor {
+  guildId: string;
+  channelId: string;
+  originalMessageId: string;
+  originalChannelId: string;
+  content?: string;
+  embeds?: any[];
+  lastAnchorId?: string;
+  lastAnchorTime?: Date;
+  messageCount: number;
+  config: {
+    messageThreshold: number;
+    timeThreshold: number;
+    inactivityThreshold: number;
+  };
+}
