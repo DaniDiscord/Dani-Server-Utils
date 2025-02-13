@@ -20,7 +20,7 @@ function getTLDCandidates(hostname: string): string[] {
 
 export function readMsgForLink(content: string) {
   const urlPattern =
-    /\b(?:https?|ftp|ssh|mailto):\/\/[^\s/$.?#-][^\s]*|(?:www\.|[\p{L}0-9-]+\.)+[\p{L}0-9-]+(?:[^\s]*)?/giu;
+    /\b(?:https?):\/\/[^\s/$.?#-][^\s]*|(?:www\.|[\p{L}0-9-]+\.)+[\p{L}0-9-]+(?:[^\s]*)?/giu;
   const matches = Array.from(
     content.matchAll(urlPattern),
     (match) => decodeURIComponent(match[0]) // Decode URL-encoded characters beacuse mfs can do http://example%2Ecom to bypass
