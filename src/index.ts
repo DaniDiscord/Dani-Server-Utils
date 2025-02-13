@@ -15,7 +15,6 @@ import { readdir } from "fs/promises";
 import readlineSync from "readline-sync";
 
 const BASE_DIR = path.join(__dirname);
-console.log(BASE_DIR);
 const clientSettings = new Map<string, (c: CustomClient) => void>([
   [
     "--unload",
