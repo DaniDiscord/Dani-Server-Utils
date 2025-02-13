@@ -535,7 +535,6 @@ export class CustomClient extends Client {
           }
 
           this.slashCommands.set(`${opts.type ?? 1}-${opts.name}`, custInteraction);
-          console.log(this.slashCommands.map((v) => v.options.name));
           loaded++;
         } catch (error) {
           console.error(error);
