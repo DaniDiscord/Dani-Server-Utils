@@ -10,15 +10,16 @@ import {
   Message,
   TextChannel,
 } from "discord.js";
+import { Command, GuardTextMessage } from "types/command";
 import { canUserSendLinks, readMsgForLink } from "lib/linkHandler";
+import { fuzzyMatch, isColor } from "lib/utils";
 
-import { Command } from "types/command";
 import { CustomClient } from "../lib/client";
 import { HandleAnchor } from "lib/anchorHandler";
 import { ICommand } from "types/mongodb";
+import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "../models/Settings";
 import { TriggerModel } from "models/Trigger";
-import { isColor } from "lib/utils";
 
 const chainStops = ["muck"];
 const CHAIN_STOPS_ONLY = false; // Only triggers on chainStops
@@ -32,6 +33,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   client.reactionHandler.onNewMessage(message);
   if (message.author.bot) return;
   if (!message.guild) return;
+  if (message.channel.type !== ChannelType.GuildText) return; // prevent running in dms, and use as guard clause
   if (message.guild && !client.settings.has((message.guild || {}).id)) {
     // We don't have the settings for this guild, find them or generate empty settings
     const s = await SettingsModel.findOneAndUpdate(
@@ -112,17 +114,18 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
         level < 2
       ) {
         // Just fucking delete the message
-        const chMsg = chMessages.find((o) => o.word == trimMsg(message.content))!;
+        const chMsg = chMessages.find((o) => o.word == trimMsg(message.content));
+        if (!chMsg) return;
         chMsg.count++;
         if (chMsg.count >= CHAIN_DELETE_MESSAGE_THRESHOLD) {
           await message.delete().catch(() => {});
           if (chMsg.count == CHAIN_WARN_THRESHOLD) {
-            const msg = await (message.channel as TextChannel)
+            const msg = await message.channel
               .send({ content: `Please stop chaining.` })
               .catch(() => {});
             if (msg && msg.deletable)
               setTimeout(async () => {
-                if (msg && msg.deletable) await msg.delete().catch(() => {});
+                if (msg && msg.deletable) await msg.delete().catch(() => console.error);
               }, 5000);
           }
           const logCh = message.guild.channels.cache.get(CHAIN_DELETION_LOG_CHANNEL_ID);
@@ -195,6 +198,47 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   }
 
   message.author.permLevel = level;
+
+  /** Phrase matching */
+  const foundPhrases = await PhraseMatcherModel.find();
+
+  for (const { phrases, logChannelId } of foundPhrases) {
+    for (const { content, matchThreshold } of phrases) {
+      const matches = fuzzyMatch(message.content, content);
+      if (matches >= matchThreshold) {
+        const logChannel = message.guild.channels.cache.get(logChannelId);
+        if (
+          logChannel &&
+          logChannel.guild != null &&
+          (logChannel.type === ChannelType.GuildText || logChannel.isThread())
+        ) {
+          const embed = new EmbedBuilder()
+            .setTitle("Matched message")
+            .setColor(matches === 100 ? "Green" : "Yellow")
+            .setDescription(`[Jump to message](${message.url})`)
+            .setFields([
+              {
+                name: `Message`,
+                value: message.content,
+              },
+              {
+                name: "Phrase",
+                value: content,
+              },
+              {
+                name: "Author",
+                value: message.author.id,
+              },
+              {
+                name: "Threshold match (%)",
+                value: `${Math.round(matches)}%`,
+              },
+            ]);
+          await logChannel.send({ embeds: [embed] });
+        }
+      }
+    }
+  }
 
   // Keyword triggering
   // Basically, if all of the keywords subarrays have at least one
@@ -303,7 +347,7 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
     const filter = (c: ICommand) => c.trigger == command;
     if (message.settings.commands.filter(filter).length == 1) {
       // We just send an embed with the c content
-      (message.channel as TextChannel).send({
+      message.channel.send({
         embeds: [
           new EmbedBuilder()
             .setColor("Random")
@@ -322,10 +366,10 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   if (level < client.levelCache[cmd.conf.permLevel.toString()]) {
     return next();
   }
-  const ret = await cmd.run(client, message, args);
+  const ret = await cmd.run(client, message as GuardTextMessage, args);
 
   if (ret && ret.description) {
-    await (message.channel as TextChannel).send({ embeds: [ret] });
+    await message.channel.send({ embeds: [ret] });
   }
 
   next();

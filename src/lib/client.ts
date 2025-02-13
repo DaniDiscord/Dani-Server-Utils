@@ -527,7 +527,6 @@ export class CustomClient extends Client {
           await this.application?.commands.create(opts).catch((e) => {
             console.error(e);
           });
-
           if (
             custInteraction.autocompleteOptions &&
             opts.type === ApplicationCommandType.ChatInput

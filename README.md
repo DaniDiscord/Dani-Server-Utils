@@ -26,17 +26,20 @@ To get started with this quickly, we recommend installing [Docker](https://www.d
 To get the most basic mongodb server running with this, run `docker run --name mongo -p 27017:27017 -d mongo:6.0.6`.  
 If you run it like that, your `mongodb_connection_url` will be `mongodb://localhost:27017/`
 
-After you are done with the configuration, a local instance of the bot can be hosted by using
+After you are done with the configuration, run a local docker container.
+
+## How do i setup docker?
+
+[Install Docker Desktop for easier setup](https://docs.docker.com/get-started/get-docker/), then run the following commands in a local terminal inside your folder:
 
 ```bash
-yarn dev
+docker-compose build
+
+docker compose up
 ```
 
-or [npm is not recommended and might break stuff, preferably you should be using yarn]:
-
-```bash
-npm run dev
-```
+Everything else can stay the same.
+If you open docker desktop, or [use the VSCode Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker), you should see a container called "dani_server_utils", you can run it by clicking the plus button.
 
 Some of the current commands include:
 

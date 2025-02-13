@@ -13,7 +13,7 @@ const run: Command = {
         e = e.toString();
       }
 
-      (message.channel as TextChannel).send({
+      message.channel.send({
         embeds: [new EmbedBuilder({ description: e })],
       });
     } catch (e) {

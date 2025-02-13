@@ -44,6 +44,13 @@ export interface RawSettings {
       color: string;
     };
   }[];
+  phrases: [
+    {
+      logChannelId: string;
+      matchThreshold: number;
+      phrase: string;
+    }
+  ];
   roles: {
     helper: string;
     moderator: string;
@@ -181,4 +188,14 @@ export interface IAnchor {
     timeThreshold: number;
     inactivityThreshold: number;
   };
+}
+
+export interface IPhraseMatcher {
+  phrases: {
+    phraseId: string;
+    content: string;
+    matchThreshold: number;
+  }[];
+  logChannelId: string;
+  guildId: string;
 }

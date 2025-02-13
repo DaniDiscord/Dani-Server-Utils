@@ -8,7 +8,7 @@ const addcmd: Command = {
   run: async (client, message, [command, ...content]) => {
     try {
       if (!command || content.length == 0) {
-        return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
+        return message.channel.send({ embeds: [client.errEmb(1)] });
       }
 
       console.log(message.settings.commands);
@@ -23,7 +23,7 @@ const addcmd: Command = {
         message.settings.commands.filter((c) => c.trigger == command.toLowerCase())
           .length >= 1
       ) {
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             client.errEmb(2, `Command \`${command.toLowerCase()}\` is already defined.`),
           ],
@@ -48,7 +48,7 @@ const addcmd: Command = {
           .populate("commands")
       );
 
-      return (message.channel as TextChannel).send({
+      return message.channel.send({
         embeds: [
           new EmbedBuilder()
             .setColor("Green")

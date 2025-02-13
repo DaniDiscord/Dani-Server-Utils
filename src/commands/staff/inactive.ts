@@ -20,9 +20,7 @@ const inactive: Command = {
         activeHelper,
         `[DSU] Staff Activity Change. [Re-add Helper boi]`
       );
-      (message.channel as TextChannel).send(
-        `${message.author}, you are now an active member of staff.`
-      );
+      message.channel.send(`${message.author}, you are now an active member of staff.`);
     } else if (active) {
       await message.member?.roles.add(
         inactiveHelper,
@@ -32,9 +30,7 @@ const inactive: Command = {
         activeHelper,
         `[DSU] Staff Activity Change. [Remove Helper boi]`
       );
-      (message.channel as TextChannel).send(
-        `${message.author}, you are now an inactive member of staff.`
-      );
+      message.channel.send(`${message.author}, you are now an inactive member of staff.`);
     }
   },
   conf: {

@@ -1,5 +1,6 @@
 import { LinkPermissionModel } from "models/Links";
 import TLDS from "../json/tlds.json";
+import { URL } from "url";
 
 function isIP(address: string): boolean {
   const ipv4Pattern = /^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?$/;

@@ -1,4 +1,4 @@
-import { Client, Message } from "discord.js";
+import { Client, Message, TextChannel } from "discord.js";
 
 export enum PermissionLevels {
   USER = "User",
@@ -10,8 +10,12 @@ export enum PermissionLevels {
   BOT_OWNER = "Bot Owner",
 }
 
+export interface GuardTextMessage extends Message {
+  channel: TextChannel;
+}
+
 export interface Command {
-  run: (client: Client, message: Message, args: string[]) => Promise<any>;
+  run: (client: Client, message: GuardTextMessage, args: string[]) => Promise<any>;
   init?: (client: Client) => any;
   conf: {
     aliases: string[];
