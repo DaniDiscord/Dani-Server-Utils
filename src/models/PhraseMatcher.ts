@@ -3,9 +3,15 @@ import { Model, Schema, model } from "mongoose";
 import { IPhraseMatcher } from "types/mongodb";
 
 const PhraseMatcherSchema = new Schema({
+  guildId: { type: String, required: true, unique: true },
   logChannelId: String,
-  matchThreshold: { type: Number, default: 100 },
-  phrase: { type: String, required: true },
+  phrases: [
+    {
+      phraseId: { type: String },
+      content: { type: String, required: true },
+      matchThreshold: { type: Number, default: 100 },
+    },
+  ],
 });
 
 export const PhraseMatcherModel: Model<IPhraseMatcher> = model(

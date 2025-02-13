@@ -3,6 +3,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ChannelType,
   Client,
   EmbedBuilder,
   Interaction,
@@ -378,7 +379,12 @@ export async function onReactionEvent(
         const emojiName = message.content?.split(" ")[0];
         const attachment = Array.from(message.attachments.values())[0];
         const guild = message.guild;
-        if (guild === null || attachment === undefined || emojiName === undefined) {
+        if (
+          guild === null ||
+          attachment === undefined ||
+          emojiName === undefined ||
+          message.channel.type !== ChannelType.GuildText
+        ) {
           return;
         }
         if (guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap - 1) {

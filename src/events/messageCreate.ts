@@ -200,42 +200,43 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   message.author.permLevel = level;
 
   /** Phrase matching */
-  const phrases = await PhraseMatcherModel.find();
+  const foundPhrases = await PhraseMatcherModel.find();
 
-  for (const { phrase, matchThreshold, logChannelId } of phrases) {
-    console.log(phrase);
-    const matches = fuzzyMatch(message.content, phrase);
-    console.log(`Match threshold: ${matches}`);
-    if (matches >= matchThreshold) {
-      const logChannel = message.guild.channels.cache.get(logChannelId);
-      if (
-        logChannel &&
-        logChannel.guild != null &&
-        (logChannel.type === ChannelType.GuildText || logChannel.isThread())
-      ) {
-        const embed = new EmbedBuilder()
-          .setTitle("Matched message")
-          .setColor(matches === 100 ? "Green" : "Yellow")
-          .setDescription(`[Jump to message](${message.url})`)
-          .setFields([
-            {
-              name: `Message`,
-              value: message.content,
-            },
-            {
-              name: "Phrase",
-              value: phrase,
-            },
-            {
-              name: "Author",
-              value: message.author.id,
-            },
-            {
-              name: "Threshold match (%)",
-              value: `${Math.round(matches)}%`,
-            },
-          ]);
-        const channel = await logChannel.send({ embeds: [embed] });
+  for (const { phrases, logChannelId } of foundPhrases) {
+    for (const { content, matchThreshold } of phrases) {
+      const matches = fuzzyMatch(message.content, content);
+      console.log(`Match threshold: ${matches}`);
+      if (matches >= matchThreshold) {
+        const logChannel = message.guild.channels.cache.get(logChannelId);
+        if (
+          logChannel &&
+          logChannel.guild != null &&
+          (logChannel.type === ChannelType.GuildText || logChannel.isThread())
+        ) {
+          const embed = new EmbedBuilder()
+            .setTitle("Matched message")
+            .setColor(matches === 100 ? "Green" : "Yellow")
+            .setDescription(`[Jump to message](${message.url})`)
+            .setFields([
+              {
+                name: `Message`,
+                value: message.content,
+              },
+              {
+                name: "Phrase",
+                value: content,
+              },
+              {
+                name: "Author",
+                value: message.author.id,
+              },
+              {
+                name: "Threshold match (%)",
+                value: `${Math.round(matches)}%`,
+              },
+            ]);
+          await logChannel.send({ embeds: [embed] });
+        }
       }
     }
   }

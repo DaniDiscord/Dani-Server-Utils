@@ -191,7 +191,11 @@ export interface IAnchor {
 }
 
 export interface IPhraseMatcher {
-  phrase: string;
+  phrases: {
+    phraseId: string;
+    content: string;
+    matchThreshold: number;
+  }[];
   logChannelId: string;
-  matchThreshold: number;
+  guildId: string;
 }
