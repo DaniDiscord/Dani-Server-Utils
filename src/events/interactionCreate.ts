@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 import {
   ApplicationCommandType,
+  ChannelType,
   EmbedBuilder,
   Interaction,
   TextChannel,
@@ -185,8 +186,8 @@ export default async function (client: CustomClient, interaction: Interaction) {
       ephemeral: true,
     });
     const channel = await client.channels.fetch("995792003726065684");
-    if (channel?.isTextBased()) {
-      (channel as TextChannel).send({
+    if (channel && channel.isSendable()) {
+      channel.send({
         content: `<@${authorId}> (${interaction.user.tag}) is applying for staff:`,
         embeds: [embed],
       });

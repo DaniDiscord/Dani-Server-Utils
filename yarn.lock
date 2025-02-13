@@ -258,6 +258,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@babel/helper-plugin-utils@npm:^7.18.6":
+  version: 7.26.5
+  resolution: "@babel/helper-plugin-utils@npm:7.26.5"
+  checksum: 10c0/cdaba71d4b891aa6a8dfbe5bac2f94effb13e5fa4c2c487667fdbaa04eae059b78b28d85a885071f45f7205aeb56d16759e1bed9c118b94b16e4720ef1ab0f65
+  languageName: node
+  linkType: hard
+
 "@babel/helper-remap-async-to-generator@npm:^7.14.5":
   version: 7.14.5
   resolution: "@babel/helper-remap-async-to-generator@npm:7.14.5"
@@ -561,6 +568,18 @@ __metadata:
   peerDependencies:
     "@babel/core": ^7.0.0-0
   checksum: 10c0/97e5345f3ecc6de43273632815f74d2dd4548ed5e3d75724f67c703b064d1e6edce5f76e144e500825a9ceb94c510e1943fd5ee454ed83364e74370587a07f75
+  languageName: node
+  linkType: hard
+
+"@babel/plugin-proposal-numeric-separator@npm:^7.18.6":
+  version: 7.18.6
+  resolution: "@babel/plugin-proposal-numeric-separator@npm:7.18.6"
+  dependencies:
+    "@babel/helper-plugin-utils": "npm:^7.18.6"
+    "@babel/plugin-syntax-numeric-separator": "npm:^7.10.4"
+  peerDependencies:
+    "@babel/core": ^7.0.0-0
+  checksum: 10c0/a83a65c6ec0d2293d830e9db61406d246f22d8ea03583d68460cb1b6330c6699320acce1b45f66ba3c357830720e49267e3d99f95088be457c66e6450fbfe3fa
   languageName: node
   linkType: hard
 
@@ -4453,6 +4472,7 @@ __metadata:
     "@babel/plugin-proposal-json-strings": "npm:^7.12.1"
     "@babel/plugin-proposal-logical-assignment-operators": "npm:^7.12.1"
     "@babel/plugin-proposal-nullish-coalescing-operator": "npm:^7.12.1"
+    "@babel/plugin-proposal-numeric-separator": "npm:^7.18.6"
     "@babel/plugin-proposal-optional-chaining": "npm:^7.12.7"
     "@babel/plugin-proposal-pipeline-operator": "npm:^7.12.1"
     "@babel/plugin-proposal-throw-expressions": "npm:^7.12.1"

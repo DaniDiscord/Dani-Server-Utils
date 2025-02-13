@@ -27,6 +27,13 @@ const SettingsSchema = new Schema(
         },
       },
     ],
+    phrases: [
+      {
+        logChannelId: String,
+        matchThreshold: { type: Number, default: 100 },
+        phrase: { type: String, required: true },
+      },
+    ],
     roles: {
       helper: String,
       moderator: String,

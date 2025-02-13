@@ -50,3 +50,38 @@ export function isColor(value: any): value is ColorResolvable {
 
   return false;
 }
+
+export function fuzzyMatch(message: string, phrase: string): number {
+  const msg = message.toLowerCase();
+  const phr = phrase.toLowerCase();
+
+  const lenA = msg.length;
+  const lenB = phr.length;
+
+  if (lenA === 0) return lenB === 0 ? 100 : 0;
+  if (lenB === 0) return 0;
+
+  if (msg.includes(phr)) {
+    return (lenB / lenA) * 100;
+  }
+
+  const dp = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0));
+
+  for (let i = 0; i <= lenA; i++) dp[i][0] = i;
+  for (let j = 0; j <= lenB; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= lenA; i++) {
+    for (let j = 1; j <= lenB; j++) {
+      const cost = msg[i - 1] === phr[j - 1] ? 0 : 1;
+
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+
+  const editDistance = dp[lenA][lenB];
+
+  const maxLen = Math.max(lenA, lenB);
+  const similarity = ((maxLen - editDistance) / maxLen) * 100;
+
+  return Math.max(0, similarity);
+}

@@ -14,6 +14,8 @@ import mongoose from "mongoose";
 import { readdir } from "fs/promises";
 import readlineSync from "readline-sync";
 
+const BASE_DIR = path.join(__dirname);
+console.log(BASE_DIR);
 const clientSettings = new Map<string, (c: CustomClient) => void>([
   [
     "--unload",
@@ -105,7 +107,7 @@ const run = async () => {
     )
   );
   log.debug("Commands", { action: "Load", message: "Loading commands" });
-  klaw(join(__dirname, "commands")).on("data", (item: any) => {
+  klaw(join(BASE_DIR, "commands")).on("data", (item: any) => {
     const category = item.path.match(/\w+(?=[\\/][\w\-\.]+$)/)![0];
     const cmdFile = path.parse(item.path);
 
@@ -122,17 +124,17 @@ const run = async () => {
     }
   });
 
-  const evtFiles = await readdir(join(__dirname, "events"));
+  const evtFiles = await readdir(join(BASE_DIR, "events"));
   log.debug("Events", { action: "Load", message: `Loading ${evtFiles.length} events` });
 
-  klaw(join(__dirname, "events")).on("data", (item: any) => {
+  klaw(join(BASE_DIR, "events")).on("data", (item: any) => {
     const evtFile = path.parse(item.path);
 
     if (!evtFile.ext || (evtFile.ext !== ".ts" && evtFile.ext !== ".js")) return;
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { default: event } = require(join(
-      __dirname,
+      BASE_DIR,
       "events",
       `${evtFile.name}${evtFile.ext}`
     ));

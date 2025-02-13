@@ -6,24 +6,25 @@ import { EmbedBuilder, TextChannel } from "discord.js";
 import { MentorModel } from "../../models/Mentor";
 import { SettingsModel } from "../../models/Settings";
 import _ from "lodash";
-import moment from "moment";
+import { duration } from "moment-precise-range-plugin";
 
 const subcmds = ["list", "add", "remove", "assign"];
 
 const mentor: Command = {
   run: async (client, message, [subcmd, ...args]) => {
     try {
+      const cdsKey = `Mentor-${message.channel.id}`;
       if (message.author.permLevel < 3) {
-        if (client.cds.has(`Mentor-${message.channel.id}`)) {
-          return (message.channel as TextChannel).send({
+        const lastUsed = client.cds.get(cdsKey);
+        const duration = 600000;
+        if (lastUsed && Date.now() - lastUsed < duration) {
+          const expiresIn = Math.floor((lastUsed + duration) / 1000);
+          return message.channel.send({
             embeds: [
               new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(
-                  `That command is on a cooldown for another ${moment.preciseDiff(
-                    moment(client.cds.get(`Mentor-${message.channel.id}`)).add(10, "m"),
-                    moment()
-                  )}`
+                  `That command will be available again <t:${expiresIn}:R>.`
                 ),
             ],
           });
@@ -41,14 +42,13 @@ const mentor: Command = {
 
         if (mentorAssigned.length == 0) return;
 
-        return (message.channel as TextChannel).send(
+        return message.channel.send(
           `<@&${mentorAssigned[0].roleID}> ${[subcmd, ...args].join(" ")}`
         );
       }
-      if (!subcmd)
-        return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
+      if (!subcmd) return message.channel.send({ embeds: [client.errEmb(1)] });
       if (!subcmds.includes(subcmd.toLowerCase()))
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             client.errEmb(2, `Use one of the following: \`${subcmds.join("`, `")}\``),
           ],
@@ -57,7 +57,7 @@ const mentor: Command = {
       if (i == 0) {
         // They want a list. uhhh
         // Lets just map the current mentors with their roles
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             {
               title: `Current mentor roles!`,
@@ -76,12 +76,12 @@ const mentor: Command = {
       } else if (i == 1) {
         // Add a mentor thing. We need role ID and name
         if (args.length != 2) {
-          return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
+          return message.channel.send({ embeds: [client.errEmb(1)] });
         }
 
         const match = args[0].match(/\d{17,19}/);
         if (!match) {
-          return (message.channel as TextChannel).send({
+          return message.channel.send({
             embeds: [
               client.errEmb(
                 2,
@@ -93,7 +93,7 @@ const mentor: Command = {
 
         const roleID = match[0];
         if (!message.guild!.roles.cache.has(roleID)) {
-          return (message.channel as TextChannel).send({
+          return message.channel.send({
             embeds: [
               client.errEmb(
                 2,
@@ -124,7 +124,7 @@ const mentor: Command = {
             .populate("commands")
         );
 
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             new EmbedBuilder()
               .setColor("Green")
@@ -145,12 +145,12 @@ const mentor: Command = {
         // I guess the args here should be ...channels, mentorName?
         // We need at least 2 args
         if (args.length != 2) {
-          return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
+          return message.channel.send({ embeds: [client.errEmb(1)] });
         }
 
         // Only 1 arg cannot match the channel regex
         if (args.filter((a) => /@&\d{17,19}/.test(a)).length != 1) {
-          return (message.channel as TextChannel).send({
+          return message.channel.send({
             embeds: [
               client.errEmb(
                 2,
@@ -167,7 +167,7 @@ const mentor: Command = {
         );
 
         if (!found) {
-          return (message.channel as TextChannel).send({
+          return message.channel.send({
             embeds: [
               new EmbedBuilder()
                 .setColor("Red")
@@ -185,7 +185,7 @@ const mentor: Command = {
         );
 
         // lets just see how this works for now
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             new EmbedBuilder()
               .setColor("Green")

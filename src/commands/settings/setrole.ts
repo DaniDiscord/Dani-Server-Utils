@@ -10,10 +10,9 @@ const rolesAvailable = Object.keys(SettingsModel.schema.paths)
 const setrole: Command = {
   run: async (client, message, [roleName, roleID]) => {
     try {
-      if (!roleName)
-        return (message.channel as TextChannel).send({ embeds: [client.errEmb(1)] });
+      if (!roleName) return message.channel.send({ embeds: [client.errEmb(1)] });
       if (!rolesAvailable.includes(roleName.toLowerCase())) {
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             client.errEmb(
               2,
@@ -26,7 +25,7 @@ const setrole: Command = {
       // Now lets parse the roleID
       const match = roleID.match(/\d{17,19}/);
       if (!match) {
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             client.errEmb(
               2,
@@ -38,7 +37,7 @@ const setrole: Command = {
 
       const role = match[0];
       if (!message.guild!.roles.cache.has(role)) {
-        return (message.channel as TextChannel).send({
+        return message.channel.send({
           embeds: [
             client.errEmb(
               2,
@@ -55,7 +54,7 @@ const setrole: Command = {
 
       client.settings.get(message.guild!.id)!.updatedAt = Date.now();
 
-      (message.channel as TextChannel).send({
+      message.channel.send({
         embeds: [
           new EmbedBuilder()
             .setColor("Green")

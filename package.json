@@ -1,10 +1,6 @@
 {
   "name": "gamedevbot",
-<<<<<<< HEAD
-  "version": "1.0.14",
-=======
-  "version": "1.3.3",
->>>>>>> 6f573e3f682ef24409bee295345c9f799be620df
+  "version": "1.4.1",
   "description": "Its a bot",
   "main": "src/index.ts",
   "scripts": {
@@ -63,6 +59,7 @@
     "@babel/plugin-proposal-json-strings": "^7.12.1",
     "@babel/plugin-proposal-logical-assignment-operators": "^7.12.1",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.12.1",
+    "@babel/plugin-proposal-numeric-separator": "^7.18.6",
     "@babel/plugin-proposal-optional-chaining": "^7.12.7",
     "@babel/plugin-proposal-pipeline-operator": "^7.12.1",
     "@babel/plugin-proposal-throw-expressions": "^7.12.1",

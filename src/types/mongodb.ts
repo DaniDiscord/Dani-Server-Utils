@@ -44,6 +44,13 @@ export interface RawSettings {
       color: string;
     };
   }[];
+  phrases: [
+    {
+      logChannelId: string;
+      matchThreshold: number;
+      phrase: string;
+    }
+  ];
   roles: {
     helper: string;
     moderator: string;
@@ -164,4 +171,27 @@ export interface IAutoArchiveForum {
 export interface IAutoArchiveForumBlacklist {
   guildId: string;
   threads: string[];
+}
+
+export interface IAnchor {
+  guildId: string;
+  channelId: string;
+  originalMessageId: string;
+  originalChannelId: string;
+  content?: string;
+  embeds?: any[];
+  lastAnchorId?: string;
+  lastAnchorTime?: Date;
+  messageCount: number;
+  config: {
+    messageThreshold: number;
+    timeThreshold: number;
+    inactivityThreshold: number;
+  };
+}
+
+export interface IPhraseMatcher {
+  phrase: string;
+  logChannelId: string;
+  matchThreshold: number;
 }

@@ -1,7 +1,11 @@
+import { MINUTE, SECOND } from "lib/timeParser";
+
+import { CheckAnchorInactivity } from "lib/anchorHandler";
 import { Client } from "discord.js";
 import { ISettings } from "types/mongodb";
 import { SettingsModel as Settings } from "../models/Settings";
 import _ from "lodash";
+import { fuzzyMatch } from "lib/utils";
 import { handleAutoArchive } from "lib/autoarchive";
 
 export default (client: Client): void => {
@@ -92,11 +96,26 @@ export default (client: Client): void => {
       }
     }
   }
-  setInterval(updateStuff, 3000);
+  setInterval(updateStuff, SECOND * 3);
   handleAutoArchive(client);
+  CheckAnchorInactivity(client);
 
   log.info("Logged in", {
     action: `Ready`,
     message: `Bot logged in as ${client.user?.tag}.`,
   });
+  // console.log(fuzzyMatch("accept $20 gift - fakelink.com", "20 gift"));
+  // console.log(fuzzyMatch("This includes 20 gift, not the other words", "20 gift"));
+  // console.log(fuzzyMatch("This is a $20 present", "20 gift"));
+  // console.log(fuzzyMatch("Receive 20$ as a gift", "20 gift"));
+  // console.log(fuzzyMatch("abcd", "abc"));
+  // console.log(fuzzyMatch("this phrase should match", "this phrase should match"));
+  // console.log(fuzzyMatch("this pharse should mtach", "this phrase should match"));
+  // console.log(fuzzyMatch("totally different", "this phrase should match"));
+  // console.log(
+  //   fuzzyMatch(
+  //     "test phrase test phrase test phrase ahhhhhhhhhhhhhhhhhhhhhhhh",
+  //     "test phrase"
+  //   )
+  // );
 };

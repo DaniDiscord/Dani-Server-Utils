@@ -6,7 +6,7 @@ const permlevel: Command = {
     try {
       const ID = member.match(/\d{17,19}/)![0];
       const gMember = await message.guild!.members.fetch(ID).catch(() => {});
-      (message.channel as TextChannel).send({
+      message.channel.send({
         embeds: [
           new EmbedBuilder()
             .setColor("Green")
@@ -18,7 +18,7 @@ const permlevel: Command = {
     } catch (e: any) {
       log.error("!permlevel command", e as Error);
 
-      (message.channel as TextChannel).send({
+      message.channel.send({
         embeds: [new EmbedBuilder().setColor("Red").setDescription(e.toString())],
       });
     }
