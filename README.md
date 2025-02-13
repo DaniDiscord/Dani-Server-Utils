@@ -50,7 +50,3 @@ Some of the current commands include:
   As well any other specific commands that are found to be beneficial to the community.
 
 **NOTE**: You should run `yarn install` in the root after pulling, every time in case of there being dependency changes.
-
-```
-
-```
