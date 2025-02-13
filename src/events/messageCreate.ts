@@ -205,7 +205,6 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   for (const { phrases, logChannelId } of foundPhrases) {
     for (const { content, matchThreshold } of phrases) {
       const matches = fuzzyMatch(message.content, content);
-      console.log(`Match threshold: ${matches}`);
       if (matches >= matchThreshold) {
         const logChannel = message.guild.channels.cache.get(logChannelId);
         if (
