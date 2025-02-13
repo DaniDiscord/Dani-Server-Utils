@@ -44,7 +44,7 @@ export async function autoArchiveInForum(channel: ForumChannel, expireDuration: 
   log.info("Auto-Archive", {
     action: "Run",
     message: `Checking ${threadCount} threads in channel (${channel.id})`,
-  })
+  });
 
   let nearestThreadLock = DAY;
   for (const thread of threads) {

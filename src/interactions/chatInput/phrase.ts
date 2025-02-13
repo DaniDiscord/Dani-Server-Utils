@@ -101,6 +101,12 @@ export default class PhraseCommand extends InteractionCommand {
       return { content: "Internal error" };
     }
 
+    if (interaction.user.permLevel < 3) {
+      return {
+        eph: true,
+        content: "You must be a moderator to use this command",
+      };
+    }
     const subcommandGroup = interaction.options.getSubcommandGroup();
     const subcommand = interaction.options.getSubcommand();
     if (subcommandGroup === "set") {

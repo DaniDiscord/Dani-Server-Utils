@@ -293,13 +293,13 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
 
     const voteChannel = message.guild?.channels.cache.get(emojiSuggestionsConfig.voteId);
     if (voteChannel === undefined || !(voteChannel instanceof TextChannel)) {
-      await message.channel.send("Error initiating vote");
+      await (message.channel as TextChannel).send("Error initiating vote");
       return;
     }
 
     await approveSync.doSynchronized(message.id, async () => {
       if (attachment === undefined) {
-        await message.channel.send("Error accessing emoji");
+        await (message.channel as TextChannel).send("Error accessing emoji");
         return;
       }
       const voteMessage = await voteChannel.send({
