@@ -33,7 +33,11 @@ export default async (client: CustomClient, message: Message): Promise<void> => 
   client.reactionHandler.onNewMessage(message);
   if (message.author.bot) return;
   if (!message.guild) return;
-  if (message.channel.type !== ChannelType.GuildText) return; // prevent running in dms, and use as guard clause
+  if (
+    message.channel.type !== ChannelType.GuildText &&
+    message.channel.type !== ChannelType.GuildVoice
+  )
+    return; // prevent running in dms, and use as guard clause
   if (message.guild && !client.settings.has((message.guild || {}).id)) {
     // We don't have the settings for this guild, find them or generate empty settings
     const s = await SettingsModel.findOneAndUpdate(
