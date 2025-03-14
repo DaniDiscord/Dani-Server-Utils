@@ -7,8 +7,9 @@
     "prettify": "prettier --write \"**/*.{tsx,ts,js,jsx,json,md}\"",
     "dev": "nodemon",
     "clean": "rimraf build && mkdir build",
-    "build": "yarn clean && yarn build:js",
     "build:js": "babel src --out-dir build --extensions \".ts,.tsx\" --source-maps inline",
+    "copy:json": "find src -type f -name '*.json' | while read file; do dest=\"build/$(echo \"$file\" | sed 's/^src\\///')\"; mkdir -p \"$(dirname \"$dest\")\"; cp \"$file\" \"$dest\"; done",
+    "build": "yarn clean && yarn build:js && yarn copy:json",
     "start": "node -r dotenv/config build/index.js"
   },
   "repository": {

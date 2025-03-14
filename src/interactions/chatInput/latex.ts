@@ -10,11 +10,11 @@ import {
   InteractionCommand,
 } from "../../classes/CustomInteraction";
 
-import { ApplicationCommandType } from "discord-api-types/v10";
-import { CustomClient } from "lib/client";
+import { ApplicationCommandType, MessageFlags } from "discord-api-types/v10";
 import { PermissionsBitField } from "discord.js";
-import html2image from "node-html-to-image";
 import katex from "katex";
+import { CustomClient } from "lib/client";
+import html2image from "node-html-to-image";
 
 require("katex/contrib/mhchem");
 
@@ -80,7 +80,7 @@ export default class SlashCommand extends InteractionCommand {
         },
       ]);
 
-      await interaction.reply({ embeds: [timeLeft], ephemeral: true });
+      await interaction.reply({ embeds: [timeLeft], flags: [MessageFlags.Ephemeral] });
       return {};
     }
     useCooldown.set(userId, currentMillis);

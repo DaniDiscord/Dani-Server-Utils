@@ -4,6 +4,7 @@ import {
   AutocompleteInteraction,
   CommandInteraction,
   InteractionReplyOptions,
+  MessageFlags,
 } from "discord.js";
 
 import { CustomClient } from "lib/client";
@@ -47,9 +48,9 @@ export function interpretInteractionResponse(
   if (options.content) replyOptions.content = options.content;
   else if (options.error) {
     replyOptions.content = `Error: ${options.error}`;
-    replyOptions.ephemeral = true;
+    replyOptions.flags = [MessageFlags.Ephemeral];
   }
-  if (options.eph) replyOptions.ephemeral = true;
+  if (options.eph) replyOptions.flags = [MessageFlags.Ephemeral];
   if (options.embeds) replyOptions.embeds = options.embeds;
   if (options.components) replyOptions.components = options.components;
   if (options.files) replyOptions.files = options.files;

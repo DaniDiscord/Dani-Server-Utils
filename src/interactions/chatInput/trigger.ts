@@ -415,7 +415,7 @@ export default class SlashCommand extends InteractionCommand {
       if (!interaction.settings.triggers.some((t) => t.id == id)) {
         await interaction.reply({
           embeds: [this.client.errEmb(2, `Trigger \`${id}\` does not exist.`)],
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
 
         return {};
@@ -430,7 +430,7 @@ export default class SlashCommand extends InteractionCommand {
       if (optedOut) {
         await interaction.reply({
           content: "User has already opted out in this guild",
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       } else {
         await new TriggerModel({

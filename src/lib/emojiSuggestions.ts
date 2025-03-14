@@ -8,6 +8,7 @@ import {
   EmbedBuilder,
   Interaction,
   MessageActionRowComponentBuilder,
+  MessageFlags,
   MessageReaction,
   TextChannel,
   TextInputStyle,
@@ -188,7 +189,7 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
     await client.banFromCommand(interaction.guildId ?? "", commandId, author, reason);
     await submitted.reply({
       content: `<@${author}> banned from suggesting emojis with reason "${reason}"`,
-      ephemeral: true,
+      flags: [MessageFlags.Ephemeral],
     });
     const embed = emojiEmbed(
       SuggestionAction.Ban,
@@ -248,7 +249,10 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
       cancel,
     ]);
 
-    const response = await interaction.reply({ components: [row], ephemeral: true });
+    const response = await interaction.reply({
+      components: [row],
+      flags: [MessageFlags.Ephemeral],
+    });
     let confirmed = false;
     try {
       const confirmation = await response.awaitMessageComponent({
@@ -290,16 +294,20 @@ export async function onInteraction(client: CustomClient, interaction: Interacti
     } else if (!confirmed) {
       return;
     }
+    let ch = message.channel;
+    if (!ch.isSendable()) {
+      return;
+    }
 
     const voteChannel = message.guild?.channels.cache.get(emojiSuggestionsConfig.voteId);
     if (voteChannel === undefined || !(voteChannel instanceof TextChannel)) {
-      await message.channel.send("Error initiating vote");
+      await ch.send("Error initiating vote");
       return;
     }
 
     await approveSync.doSynchronized(message.id, async () => {
       if (attachment === undefined) {
-        await message.channel.send("Error accessing emoji");
+        await ch.send("Error accessing emoji");
         return;
       }
       const voteMessage = await voteChannel.send({
@@ -402,7 +410,6 @@ export async function onReactionEvent(
         }
 
         const emojiCreate = {
-          // @ts-expect-error Data must be, and is known to be a Buffer.
           attachment: Buffer.from(emoji.data),
           name: emojiName + emojiSuffix,
         };

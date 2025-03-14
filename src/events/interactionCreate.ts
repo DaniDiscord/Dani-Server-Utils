@@ -1,15 +1,14 @@
-/* eslint-disable max-len */
 import {
   ApplicationCommandType,
-  ChannelType,
   EmbedBuilder,
   Interaction,
-  TextChannel,
+  MessageFlags,
 } from "discord.js";
 import {
   CustomInteractionReplyOptions,
   interpretInteractionResponse,
 } from "../classes/CustomInteraction";
+/* eslint-disable max-len */
 import { formatDuration, intervalToDuration } from "date-fns";
 import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
 
@@ -92,7 +91,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
         // Nuh uh
         await interaction.reply({
           content: "You have already opted out in this guild.",
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       } else {
         await new TriggerModel({
@@ -103,7 +102,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
 
         await interaction.reply({
           content: "We will not remind you in this guild again.",
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         });
       }
     }
@@ -121,7 +120,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
     ) {
       // Nah bro, deny that shit
       await interaction.reply({
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
         content:
           `Your last staff application was sent ${formatDuration(
             intervalToDuration({ start: lastApplied.timestamp, end: Date.now() })
@@ -149,7 +148,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
         if (question.required) {
           await interaction.reply({
             content: "Issue sending application, please try again.",
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
           });
 
           // Delete this users timeout, they couldn't send the application properly
@@ -173,7 +172,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
       console.error(error);
       await interaction.reply({
         content: "Issue sending application, please try again.",
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
 
       // Delete this users timeout, they couldn't send the application properly
@@ -183,7 +182,7 @@ export default async function (client: CustomClient, interaction: Interaction) {
 
     await interaction.reply({
       content: "Application sent successfully.",
-      ephemeral: true,
+      flags: [MessageFlags.Ephemeral],
     });
     const channel = await client.channels.fetch("995792003726065684");
     if (channel && channel.isSendable()) {
@@ -214,13 +213,17 @@ export default async function (client: CustomClient, interaction: Interaction) {
       (e: Error) =>
         ({
           content: `Error: ${e.message}`,
-          ephemeral: true,
+          flags: [MessageFlags.Ephemeral],
         } as CustomInteractionReplyOptions)
     );
     if (interaction.replied || interaction.deferred || response == null) return;
     const send = interpretInteractionResponse(response);
     if (Object.keys(send).length > 0) interaction.reply(send);
-    else interaction.reply({ content: "Error: No response", ephemeral: true });
+    else
+      interaction.reply({
+        content: "Error: No response",
+        flags: [MessageFlags.Ephemeral],
+      });
   } else if (interaction.isAutocomplete()) {
     const ret = client.autocompleteOptions.get(interaction.commandName);
     if (ret) {
