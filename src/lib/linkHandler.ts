@@ -19,13 +19,16 @@ function getTLDCandidates(hostname: string): string[] {
   return candidates;
 }
 
-export function readMsgForLink(content: string) {
+export function readMsgForLink(content: string): { hasUrls: boolean; urls: string[] } {
   const urlPattern =
     /\b(?:https?):\/\/[^\s/$.?#-][^\s]*|(?:www\.|[\p{L}0-9-]+\.)+[\p{L}0-9-]+(?:[^\s]*)?/giu;
-  const matches = Array.from(
-    content.matchAll(urlPattern),
-    (match) => decodeURIComponent(match[0]) // Decode URL-encoded characters beacuse mfs can do http://example%2Ecom to bypass
-  );
+  const matches = Array.from(content.matchAll(urlPattern), (match) => {
+    try {
+      return decodeURIComponent(match[0]);
+    } catch (e) {
+      return match[0]; // Decode URL-encoded characters beacuse mfs can do http://example%2Ecom to bypass
+    }
+  });
 
   const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b|\[[a-f0-9:]+\](?::\d+)?/gi;
   const ipMatches = Array.from(content.matchAll(ipPattern), (match) => match[0]);
