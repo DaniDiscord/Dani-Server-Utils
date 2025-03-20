@@ -6,12 +6,12 @@ import {
   EmbedBuilder,
   PermissionsBitField,
 } from "discord.js";
+import { ApplicationCommandType, MessageFlags } from "discord-api-types/v10";
 import {
   CustomInteractionReplyOptions,
   InteractionCommand,
 } from "../../classes/CustomInteraction";
 
-import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";

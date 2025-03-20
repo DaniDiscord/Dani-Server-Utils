@@ -8,6 +8,10 @@ export default async (
   oldMessage: Message,
   newMessage: Message
 ): Promise<void> => {
+  if (newMessage.author.bot) return;
+
+  const level = client.permlevel(newMessage, newMessage!.member!);
+
   const hasLink = readMsgForLink(newMessage.content);
 
   const canSendLinks = await canUserSendLinks(
@@ -17,7 +21,7 @@ export default async (
     newMessage.member?.roles.cache.map((role) => role.id) ?? []
   );
 
-  if (!canSendLinks && hasLink.hasUrls) {
+  if ((!canSendLinks && hasLink.hasUrls) || level < 3) {
     await newMessage.delete().catch(() => {});
     return;
   }
