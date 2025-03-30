@@ -34,8 +34,8 @@ async function translate(message: string): Promise<string>{
         alternatives: 3
     });
 
-    const dataPromise = req.then((response) => response.data)
-    return JSON.stringify(await dataPromise)
+    const dataPromise = req.then((response) => response.data);
+    return JSON.stringify(await dataPromise);
 }
 
 export default class ContextCommand extends InteractionCommand {
@@ -54,14 +54,14 @@ export default class ContextCommand extends InteractionCommand {
     interaction: CommandInteraction<CacheType>
   ): Promise<CustomInteractionReplyOptions> {
     const int = interaction as MessageContextMenuCommandInteraction;
-    const msg = int.targetMessage.content.trim()
+    const msg = int.targetMessage.content.trim();
 
     const translated: translatedData = JSON.parse(await translate(msg));
 
     const translatedText = translated.translatedText;
     const languageCode = translated.detectedLanguage.language;
     const languageNames = new Intl.DisplayNames(['en'], { type: 'language'});
-    const language = languageNames.of(languageCode)
+    const language = languageNames.of(languageCode);
 
     const confidence = translated.detectedLanguage.confidence;
     const alternatives = translated.alternatives;
