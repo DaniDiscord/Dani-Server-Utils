@@ -12,36 +12,47 @@ import { ApplicationCommandType } from "discord-api-types/v10";
 import { CustomClient } from "lib/client";
 
 import axios from "axios";
+import { z } from "zod";
 
-interface detectedLanguage {
-  confidence: number;
-  language: string;
-}
+const translatedData = z.object({
+  alternatives: z.array(z.string()),
+  detectedLanguage: z.object({
+    confidence: z.number(),
+    language: z.string()
+  }),
+  translatedText: z.string(),
+});
 
-interface translatedData {
-  alternatives: Array<string>;
-  detectedLanguage: detectedLanguage;
-  translatedText: string;
-}
+type translatedDataType = z.infer<typeof translatedData>
 
 //translation provider must be LibreTranslate format
-async function translate(message: string): Promise<string>{
-    const req = axios.post("https://lt.blitzw.in/translate", {
-        q: message,
-        source: 'auto',
-        target: 'en',
-        format: 'text',
-        alternatives: 3
-    });
+async function translate(message: string): Promise<translatedDataType> {  
+  const req = await axios.post('https://lt.blitzw.in/translate', {
+      q: message,
+      source: 'auto',
+      target: 'en',
+      format: 'text',
+      alternatives: 3
+  });
 
-    const dataPromise = req.then((response) => response.data);
-    return JSON.stringify(await dataPromise);
+  let ret: translatedDataType = req.data;
+
+  try {
+    translatedData.parse(ret);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+
+      console.log(err.issues);
+
+      ret.translatedText = 'Error';
+    }
+  }
+
+  return ret;
 }
 
 export default class ContextCommand extends InteractionCommand {
-  /**
-   *
-   */
+
   constructor(client: CustomClient) {
     super(client, {
       type: ApplicationCommandType.Message,
@@ -56,16 +67,23 @@ export default class ContextCommand extends InteractionCommand {
     const int = interaction as MessageContextMenuCommandInteraction;
     const msg = int.targetMessage.content.trim();
 
-    const translated: translatedData = JSON.parse(await translate(msg));
+    const fetchData = await translate(msg)
+    let message: string;
 
-    const translatedText = translated.translatedText;
-    const languageCode = translated.detectedLanguage.language;
-    const languageNames = new Intl.DisplayNames(['en'], { type: 'language'});
-    const language = languageNames.of(languageCode);
+    if (fetchData.translatedText === 'Error') {
+      message = 'There was an error'
+    } else {
+      const translatedText = fetchData.translatedText;
+      const languageCode = fetchData.detectedLanguage.language;
+      const languageNames = new Intl.DisplayNames(['en'], { type: 'language'});
+      const language = languageNames.of(languageCode);
+  
+      const confidence = fetchData.detectedLanguage.confidence;
+      const alternatives = fetchData.alternatives;
 
-    const confidence = translated.detectedLanguage.confidence;
-    const alternatives = translated.alternatives;
+      message = `**Text:** "${translatedText}" \n**Language:** ${language} \n**Confidence:** ${confidence}% \n**Alternatives:** ${alternatives}`;
+    }
 
-  return { content: `${`**Text:** "${translatedText}" \n**Language:** ${language} \n**Confidence:** ${confidence}% \n**Alternatives:** ${alternatives}`}`, eph: true };
+  return { content: message, eph: true };
   }
 }
