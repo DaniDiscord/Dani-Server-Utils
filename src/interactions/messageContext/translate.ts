@@ -13,6 +13,17 @@ import { CustomClient } from "lib/client";
 
 import axios from "axios";
 
+interface detectedLanguage {
+  confidence: number;
+  language: string;
+}
+
+interface translatedData {
+  alternatives: Array<string>;
+  detectedLanguage: detectedLanguage;
+  translatedText: string;
+}
+
 //translation provider must be LibreTranslate format
 async function translate(message: string): Promise<string>{
     const req = axios.post("https://lt.blitzw.in/translate", {
@@ -24,7 +35,7 @@ async function translate(message: string): Promise<string>{
     });
 
     const dataPromise = req.then((response) => response.data)
-    return dataPromise
+    return JSON.stringify(await dataPromise)
 }
 
 export default class ContextCommand extends InteractionCommand {
@@ -45,12 +56,12 @@ export default class ContextCommand extends InteractionCommand {
     const int = interaction as MessageContextMenuCommandInteraction;
     const msg = int.targetMessage.content.trim()
 
-    const translated = await translate(msg);
+    const translated: translatedData = JSON.parse(await translate(msg));
 
-    const translatedText = translated['translatedText'];
-    const detectedLanguage = translated['detectedLanguage']['language'];
-    const confidence = translated['detectedLanguage']['confidence']
-    const alternatives = translated['alternatives']
+    const translatedText = translated.translatedText;
+    const detectedLanguage = translated.detectedLanguage.language;
+    const confidence = translated.detectedLanguage.confidence;
+    const alternatives = translated.alternatives;
 
   return { content: `${`Text: "${translatedText}" \nLanguage: ${detectedLanguage} \nConfidence: ${confidence}% \nAlternatives: ${alternatives}`}` };
   }
