@@ -66,6 +66,6 @@ export default class ContextCommand extends InteractionCommand {
     const confidence = translated.detectedLanguage.confidence;
     const alternatives = translated.alternatives;
 
-  return { content: `${`Text: "${translatedText}" \nLanguage: ${language} \nConfidence: ${confidence}% \nAlternatives: ${alternatives}`}` };
+  return { content: `${`**Text:** "${translatedText}" \n**Language:** ${language} \n**Confidence:** ${confidence}% \n**Alternatives:** ${alternatives}`}`, eph: true };
   }
 }
