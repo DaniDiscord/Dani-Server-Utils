@@ -59,10 +59,13 @@ export default class ContextCommand extends InteractionCommand {
     const translated: translatedData = JSON.parse(await translate(msg));
 
     const translatedText = translated.translatedText;
-    const detectedLanguage = translated.detectedLanguage.language;
+    const languageCode = translated.detectedLanguage.language;
+    const languageNames = new Intl.DisplayNames(['en'], { type: 'language'});
+    const language = languageNames.of(languageCode)
+
     const confidence = translated.detectedLanguage.confidence;
     const alternatives = translated.alternatives;
 
-  return { content: `${`Text: "${translatedText}" \nLanguage: ${detectedLanguage} \nConfidence: ${confidence}% \nAlternatives: ${alternatives}`}` };
+  return { content: `${`Text: "${translatedText}" \nLanguage: ${language} \nConfidence: ${confidence}% \nAlternatives: ${alternatives}`}` };
   }
 }
