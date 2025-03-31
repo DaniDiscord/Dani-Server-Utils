@@ -45,7 +45,8 @@
     "path": "^0.12.7",
     "readline-sync": "^1.4.10",
     "request": "^2.88.2",
-    "serp": "^2.1.0"
+    "serp": "^2.1.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",
