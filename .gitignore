@@ -1,13 +1,3 @@
-.idea/shelf/
-.idea/workspace.xml
-.idea/httpRequests/
-
-# Custom
 .env
 node_modules
-build
-
-# TLS
-*.crt
-*.pem
-*.key
+bun.lock

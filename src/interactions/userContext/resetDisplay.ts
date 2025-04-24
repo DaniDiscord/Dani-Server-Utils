@@ -1,42 +1,43 @@
 import {
-  CacheType,
-  CommandInteraction,
+  ApplicationCommandType,
   GuildMember,
+  MessageFlags,
   PermissionsBitField,
   UserContextMenuCommandInteraction,
 } from "discord.js";
-import {
-  CustomInteractionReplyOptions,
-  InteractionCommand,
-} from "../../classes/CustomInteraction";
+import { CustomApplicationCommand } from "lib/core/command";
+import { DsuClient } from "lib/core/DsuClient";
 
-import { ApplicationCommandType } from "discord-api-types/v10";
-import { CustomClient } from "lib/client";
-
-export default class ContextCommand extends InteractionCommand {
-  /**
-   *
-   */
-  constructor(client: CustomClient) {
-    super(client, {
+export default class ResetDisplay extends CustomApplicationCommand {
+  constructor(client: DsuClient) {
+    super("Reset to Display Name", client, {
       type: ApplicationCommandType.User,
-      name: "Reset to Display Name",
+      permissionLevel: "USER",
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
-  async execute(
-    interaction: CommandInteraction<CacheType>
-  ): Promise<CustomInteractionReplyOptions> {
-    const int = interaction as UserContextMenuCommandInteraction;
-
-    if (!(int.targetMember instanceof GuildMember)) {
-      return { content: "Reset name only works on guild members", eph: true };
+  public async run(interaction: UserContextMenuCommandInteraction) {
+    const badNameUtility = this.client.utils.getUtility("badName");
+    if (!(interaction.targetMember instanceof GuildMember)) {
+      return interaction.reply({
+        content: "Reset name only works on guild members",
+        flags: MessageFlags.Ephemeral,
+      });
     }
-    if (this.client.permlevel(undefined, int.targetMember) >= 2) {
-      return { content: "Helper and above cannot be nicknamed", eph: true };
+    if (this.client.getPermLevel(undefined, interaction.targetMember) >= 2) {
+      return interaction.reply({
+        content: "Helper and above cannot be nicknamed",
+        flags: MessageFlags.Ephemeral,
+      });
     }
-    await this.client.setMemberName(int.targetMember, int.targetUser.displayName);
-    return { content: "Nickname reset successfully", eph: true };
+    await badNameUtility.setMemberName(
+      interaction.targetMember,
+      interaction.targetUser.displayName
+    );
+    return interaction.reply({
+      content: "Nickname reset successfully",
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }

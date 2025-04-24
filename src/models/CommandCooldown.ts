@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ICommandCooldown } from "types/mongodb";
+import { ICommandCooldown } from "../types/mongodb";
 
-const CommandCooldownSchema = new Schema({
+const CommandCooldownSchema = new Schema<ICommandCooldown>({
   commandId: String,
   guildId: String,
   userId: String,

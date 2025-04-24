@@ -1,89 +1,94 @@
 import {
-  CacheType,
-  CommandInteraction,
+  ApplicationCommandType,
   MessageContextMenuCommandInteraction,
+  MessageFlags,
 } from "discord.js";
-import {
-  CustomInteractionReplyOptions,
-  InteractionCommand,
-} from "../../classes/CustomInteraction";
-
-import { ApplicationCommandType } from "discord-api-types/v10";
-import { CustomClient } from "lib/client";
-
-import axios from "axios";
+import { CustomApplicationCommand } from "lib/core/command";
+import { DsuClient } from "lib/core/DsuClient";
 import { z } from "zod";
+import axios from "axios";
 
-const translatedData = z.object({
+const translationData = z.object({
   alternatives: z.array(z.string()),
   detectedLanguage: z.object({
     confidence: z.number(),
-    language: z.string()
+    language: z.string(),
   }),
   translatedText: z.string(),
 });
 
-type translatedDataType = z.infer<typeof translatedData>
+type TranslationDataType = z.infer<typeof translationData>;
 
-//translation provider must be LibreTranslate format
-async function translate(message: string): Promise<translatedDataType> {  
-  const req = await axios.post('https://lt.blitzw.in/translate', {
-      q: message,
-      source: 'auto',
-      target: 'en',
-      format: 'text',
-      alternatives: 3
+async function translate(message: string): Promise<TranslationDataType> {
+  const req = await axios.post("https://lt.blitzw.in/translate", {
+    q: message,
+    source: "auto",
+    target: "en",
+    format: "text",
+    alternatives: 3,
   });
 
-  let ret: translatedDataType = req.data;
+  let ret: TranslationDataType = req.data;
 
   try {
-    translatedData.parse(ret);
+    translationData.parse(ret);
   } catch (err) {
     if (err instanceof z.ZodError) {
-
       console.log(err.issues);
 
-      ret.translatedText = 'Error';
+      ret.translatedText = "Error";
     }
   }
 
   return ret;
 }
 
-export default class ContextCommand extends InteractionCommand {
-
-  constructor(client: CustomClient) {
-    super(client, {
+export default class Codeblock extends CustomApplicationCommand {
+  constructor(client: DsuClient) {
+    super("Translate Message", client, {
       type: ApplicationCommandType.Message,
-      name: "Translate",
-      defaultMemberPermissions: "Administrator",
+      permissionLevel: "USER",
     });
   }
 
-  async execute(
-    interaction: CommandInteraction<CacheType>
-  ): Promise<CustomInteractionReplyOptions> {
-    const int = interaction as MessageContextMenuCommandInteraction;
-    const msg = int.targetMessage.content.trim();
+  async run(interaction: MessageContextMenuCommandInteraction) {
+    const msg = interaction.targetMessage.content.trim();
 
-    const fetchData = await translate(msg)
-    let message: string;
+    let embed = this.client.utils
+      .getUtility("default")
+      .generateEmbed("success", {
+        title: "Translated Text!",
+      });
 
-    if (fetchData.translatedText === 'Error') {
-      message = 'There was an error'
+    const response = await translate(msg);
+
+    if (response.translatedText === "Error") {
+      return interaction.reply({
+        flags: MessageFlags.Ephemeral,
+        embeds: [
+          embed
+            .setTitle("Failed to translate text")
+            .setColor(this.client.config.colors.primary),
+        ],
+      });
     } else {
-      const translatedText = fetchData.translatedText;
-      const languageCode = fetchData.detectedLanguage.language;
-      const languageNames = new Intl.DisplayNames(['en'], { type: 'language'});
+      const translatedText = response.translatedText;
+      const languageCode = response.detectedLanguage.language;
+      const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
       const language = languageNames.of(languageCode);
-  
-      const confidence = fetchData.detectedLanguage.confidence;
-      const alternatives = fetchData.alternatives;
 
-      message = `**Text:** "${translatedText}" \n**Language:** ${language} \n**Confidence:** ${confidence}% \n**Alternatives:** ${alternatives}`;
+      const confidence = response.detectedLanguage.confidence;
+
+      if (language) embed.addFields([{ name: "Language", value: language }]);
+
+      embed.addFields([
+        { name: "Text", value: translatedText },
+        { name: "Confidence", value: `${confidence}%` },
+      ]);
+
+      return interaction.reply({
+        embeds: [embed],
+      });
     }
-
-  return { content: message, eph: true };
   }
 }

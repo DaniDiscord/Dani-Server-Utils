@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 /* COMMAND */
 export interface RawCommand {
@@ -198,4 +198,31 @@ export interface IPhraseMatcher {
   }[];
   logChannelId: string;
   guildId: string;
+}
+
+interface RawEmojiUsage {
+  guildId: string;
+  name: string;
+  count: number;
+  lastUsage: Date;
+}
+
+export interface IEmojiUsage extends RawEmojiUsage, Document {}
+
+interface RawSuggestionConfig {
+  guildId: string;
+  channelId: string;
+  cooldown: number;
+  deniedThreadId: string;
+  existingSubmissions: Types.ObjectId[];
+  deniedSubmissions: { messageId: string; reason?: string }[];
+}
+
+export interface ISuggestionConfig extends RawSuggestionConfig, Document {}
+
+export interface ISuggestion extends Document {
+  messageId: string;
+  content: string;
+  status: "approved" | "pending";
+  userId: string;
 }

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "ESNext",
     "module": "esnext",
     "lib": ["ESNext"],
     "moduleResolution": "node",
@@ -17,10 +17,17 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": "./src",
     "declaration": true,
-    "typeRoots": ["node_modules/@types", "src/types"]
+    "emitDeclarationOnly": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "lib/*": ["./lib/*"],
+      "models/*": ["./src/models/*"],
+      "types/*": ["./src/types/*"],
+      "constants/*": ["./src/types/constants/*"]
+    },
+    "typeRoots": ["node_modules/@types", "src/types/*"]
   },
   "exclude": ["node_modules"],
-  "include": ["src/**/*.ts", "src/**/*.tsx"]
+  "include": ["src/**/*.ts", "lib/**/*.ts"]
 }

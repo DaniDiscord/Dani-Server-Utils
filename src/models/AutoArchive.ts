@@ -1,4 +1,7 @@
-import { IAutoArchiveForum, IAutoArchiveForumBlacklist } from "types/mongodb";
+import {
+  IAutoArchiveForum,
+  IAutoArchiveForumBlacklist,
+} from "../types/mongodb";
 import { Model, Schema, model } from "mongoose";
 
 const AutoArchiveForumSchema = new Schema<IAutoArchiveForum>(
@@ -27,7 +30,5 @@ export const AutoArchiveForumModel: Model<IAutoArchiveForum> = model(
   AutoArchiveForumSchema
 );
 
-export const AutoArchiveForumBlacklistModel: Model<IAutoArchiveForumBlacklist> = model(
-  "AutoArchiveForumBlacklist",
-  AutoArchiveForumBlacklistSchema
-);
+export const AutoArchiveForumBlacklistModel: Model<IAutoArchiveForumBlacklist> =
+  model("AutoArchiveForumBlacklist", AutoArchiveForumBlacklistSchema);

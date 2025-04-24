@@ -1,11 +1,14 @@
-import { Client, MessageReaction, User } from "discord.js";
+import { MessageReaction, User } from "discord.js";
+import { DsuClient } from "lib/core/DsuClient";
+import { EventLoader } from "lib/core/loader";
 
-import { onReactionEvent } from "lib/emojiSuggestions";
+export default class MessageReactionRemove extends EventLoader {
+  constructor(client: DsuClient) {
+    super(client, "messageReactionRemove");
+  }
 
-export default async (
-  client: Client,
-  reaction: MessageReaction,
-  user: User
-): Promise<void> => {
-  onReactionEvent(client, reaction, user);
-};
+  async run(messageReaction: MessageReaction, user: User) {
+    const emojiUtility = this.client.utils.getUtility("emoji");
+    emojiUtility.onReaction(messageReaction, user);
+  }
+}

@@ -1,6 +1,6 @@
 import { Model, Schema, model } from "mongoose";
 
-import { IAnchor } from "types/mongodb";
+import { IAnchor } from "../types/mongodb";
 
 const AnchorSchema = new Schema<IAnchor>({
   guildId: { type: String, required: true },

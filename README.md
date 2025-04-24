@@ -2,22 +2,24 @@
     Dani Server Utilities
 </h1>
 <h2 align="center" style="position: relative;">
-    a discord utility bot for the Dani's Basement Discord Server.
+    <a href="https://discord.gg/danii" style="text-decoration: underline; cursor: pointer;">Dani's Discord</a> utility bot!
 </h2>
 
 ## Building & running
 
-The bots configuration is managed by `dotenv`.
+The bots configuration is managed by an environment file
 
 When you open the project, you will see a `.example.env` file. You need to rename it to just `.env`. The only fields that are essential for running the bot are `token`, `mongodb_connection_url` and `OWNER_ID`.
 
-`token` is the bots token that can be acquired from the [discord developer portal](https://discord.com/developers/applications) if you're making a local instance or from the #token channel if you're a developer on the discord server.
-
 ```env
-token = "token goes here"
-mongodb_connection_url = "mongo url goes here"
-OWNER_ID = "Your discord User ID here, or something else if you're testing permissions"
+OWNER_ID = ""
+MONGODB_URL = "mongodb+srv://[dbuser]:[password]@cluster0.[endpoint]/?retryWrites=true&w=majority"
+BOT_TOKEN = ""
 ```
+
+### Where do I get the "bot token"?
+
+The token refers to the application token, which you can get via the [Discord Developer Portal](https://discord.com/developers/applications/). Create a new one, go to the "Bot" tab, and get the token.
 
 ### Where do I get this mongodb_connection_url?
 
@@ -43,10 +45,9 @@ If you open docker desktop, or [use the VSCode Extension](https://marketplace.vi
 
 Some of the current commands include:
 
-- !g for googling queries;
-- !inactive for setting staff active and inactive roles
-- !loa for the legend of ash
-- !cb to put pre written code into code blocks
-  As well any other specific commands that are found to be beneficial to the community.
+- a manager for our staff applications (/staffapp)
+- a link detection feature
+- server channel configuration commands (like /autoslow, /poll, and /anchor)
+- and more to come!
 
-**NOTE**: You should run `yarn install` in the root after pulling, every time in case of there being dependency changes.
+**NOTE**: You should run `bun i` in the root after pulling, every time in case of there being dependency changes.

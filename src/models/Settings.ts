@@ -1,13 +1,15 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ISettings } from "types/mongodb";
+import { ISettings } from "../types/mongodb";
+import { CommandModel } from "./Command";
+import { MentorModel } from "./Mentor";
 
-const SettingsSchema = new Schema(
+const SettingsSchema = new Schema<ISettings>(
   {
     _id: String,
     prefix: { type: String, default: "!" },
-    mentorRoles: [{ type: Schema.Types.ObjectId, ref: "Mentor" }],
-    commands: [{ type: Schema.Types.ObjectId, ref: "Command" }],
+    mentorRoles: [{ type: Schema.Types.ObjectId, ref: MentorModel.modelName }],
+    commands: [{ type: Schema.Types.ObjectId, ref: CommandModel.modelName }],
     chains: {
       ignored: [String],
     },
@@ -44,4 +46,7 @@ const SettingsSchema = new Schema(
   { timestamps: true }
 );
 
-export const SettingsModel: Model<ISettings> = model("Settings", SettingsSchema);
+export const SettingsModel: Model<ISettings> = model(
+  "Settings",
+  SettingsSchema
+);

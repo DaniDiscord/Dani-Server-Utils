@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { IEmojiSuggestions } from "types/mongodb";
+import { IEmojiSuggestions } from "../types/mongodb";
 
-const EmojiSuggestionsSchema = new Schema({
+const EmojiSuggestionsSchema = new Schema<IEmojiSuggestions>({
   guildId: {
     type: String,
     default: "",
@@ -13,7 +13,7 @@ const EmojiSuggestionsSchema = new Schema({
   },
   voteId: {
     type: String,
-    default: 0,
+    default: "0",
   },
   threshold: {
     type: Number,

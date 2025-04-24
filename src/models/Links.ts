@@ -1,6 +1,6 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ILinkPermission } from "types/mongodb";
+import { ILinkPermission } from "../types/mongodb";
 
 const LinkPermissionSchema = new Schema<ILinkPermission>(
   {
