@@ -1,13 +1,15 @@
 import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader";
 
-export default class EventName extends EventLoader {
+// Needs to be default export if you plan to add it.
+
+export class EventName extends EventLoader {
   constructor(client: DsuClient) {
     /**
      * super call takes client and the eventName as keyof ClientEvents.
      * @see https://discord.js.org/docs/packages/discord.js/14.18.0/ClientEvents:Interface
      */
-    //@ts-ignore to ignore the error since "eventName" doesnt exist
+    // @ts-expect-error "eventName" doesnt exist
     super(client, "eventName");
   }
 

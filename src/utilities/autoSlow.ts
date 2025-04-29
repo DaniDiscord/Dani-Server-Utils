@@ -1,6 +1,6 @@
-import { TextChannel } from "discord.js";
-import { DsuClient } from "lib/core/DsuClient";
 import { ClientUtilities } from "lib/core/ClientUtilities";
+import { DsuClient } from "lib/core/DsuClient";
+import { TextChannel } from "discord.js";
 
 const BASE = 0.95;
 
@@ -57,7 +57,7 @@ export class AutoSlowUtility extends ClientUtilities {
     targetMsgsPerSec: number,
     minChange: number,
     minChangeRate: number,
-    enabled: boolean
+    enabled: boolean,
   ): void {
     this.minSlow = min;
     this.maxSlow = max;
@@ -101,13 +101,10 @@ export class AutoSlowUtility extends ClientUtilities {
     if (currentBalance === 0) return slowMode;
 
     const optimal = (Math.max(slowMode, 1) * currentBalance) / targetBalance;
-    const upwardsChange = Math.max(
-      this.minAbsoluteChange,
-      slowMode * this.minChangeRate
-    );
+    const upwardsChange = Math.max(this.minAbsoluteChange, slowMode * this.minChangeRate);
     const downwardsChange = Math.max(
       this.minAbsoluteChange,
-      slowMode / this.minChangeRate
+      slowMode / this.minChangeRate,
     );
 
     const min = Math.max(this.minSlow, slowMode - downwardsChange);

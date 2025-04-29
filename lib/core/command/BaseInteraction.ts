@@ -1,10 +1,11 @@
-import { APIEmbed } from "discord.js";
 import {
   BaseInteractionType,
-  InteractionGroups,
   InteractionCommandOptions,
+  InteractionGroups,
   InteractionType,
 } from "types/commands";
+
+import { APIEmbed } from "discord.js";
 import { DsuClient } from "../DsuClient";
 
 export class BaseInteraction {
@@ -18,7 +19,7 @@ export class BaseInteraction {
     name: string,
     client: DsuClient,
     type: InteractionType,
-    options?: InteractionCommandOptions
+    options?: InteractionCommandOptions,
   ) {
     this.name = name;
     this.client = client;
@@ -55,5 +56,6 @@ export class BaseInteraction {
   }
 
   /** The base function to run the interaction*/
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public async run(_interaction: InteractionGroups): Promise<any> {}
 }

@@ -1,8 +1,10 @@
+import { DsuClient } from "lib/core/DsuClient";
 import { Message } from "discord.js";
 import TextCommand from "lib/core/command/TextCommand";
-import { DsuClient } from "lib/core/DsuClient";
 import { TextCommandOptions } from "types/commands";
-export default class ExampleTextCommand extends TextCommand {
+
+// Needs to be default export if you plan to add it.
+export class ExampleTextCommand extends TextCommand {
   /**
    * Constructor takes 3 arguments (name, client, options)
    * see {@link TextCommandOptions} for option types

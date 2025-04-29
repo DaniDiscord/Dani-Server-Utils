@@ -1,21 +1,22 @@
 import {
-  PermissionsString,
-  PresenceData,
+  ClientEvents,
   GatewayIntentBits,
   GuildMember,
   Message,
-  ClientEvents,
+  PermissionsString,
+  PresenceData,
 } from "discord.js";
-import DefaultClientUtilities from "../../lib/util/defaultUtilities";
+
 import { AnchorUtility } from "../utilities/anchor";
 import { AutoArchiveUtility } from "../utilities/autoArchive";
-import { TimeParserUtility } from "../utilities/timeParser";
 import { AutoPingUtility } from "../utilities/autoPing";
 import { AutoSlowUtility } from "../utilities/autoSlow";
 import { BadNameUtility } from "../utilities/badName";
-import { LinkHandlerUtility } from "../utilities/linkHandler";
+import DefaultClientUtilities from "../../lib/util/defaultUtilities";
 import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
+import { LinkHandlerUtility } from "../utilities/linkHandler";
 import { SuggestionUtility } from "../utilities/suggestions";
+import { TimeParserUtility } from "../utilities/timeParser";
 
 export interface ClientConfig {
   ownerId: string;
@@ -32,7 +33,7 @@ export interface ClientConfig {
     name: string;
     check: (
       message: Message | undefined | null,
-      member: GuildMember | undefined | null
+      member: GuildMember | undefined | null,
     ) => boolean | undefined;
   }[];
 

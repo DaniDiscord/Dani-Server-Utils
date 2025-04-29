@@ -10,7 +10,4 @@ const AutoPingSchema = new Schema<IAutoPing>({
   targetChannelId: String,
 });
 
-export const AutoPingModel: Model<IAutoPing> = model(
-  "AutoPing",
-  AutoPingSchema
-);
+export const AutoPingModel: Model<IAutoPing> = model("AutoPing", AutoPingSchema);

@@ -1,12 +1,15 @@
 import {
   ComponentType,
+  InteractionResponse,
+  Message,
   MessageFlags,
   ModalSubmitInteraction,
 } from "discord.js";
-import { DsuClient } from "../DsuClient";
+
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
-import { Modal } from "../command";
+import { DsuClient } from "../DsuClient";
 import { InteractionType } from "types/commands";
+import { Modal } from "../command";
 
 export class ModalLoader extends BaseInteractionLoader {
   constructor(client: DsuClient) {
@@ -28,10 +31,7 @@ export class ModalLoader extends BaseInteractionLoader {
       console.log("no modal");
       return;
     }
-    const missingPermissions = modal.validate(
-      interaction,
-      InteractionType.ModalSubmit
-    );
+    const missingPermissions = modal.validate(interaction, InteractionType.ModalSubmit);
 
     if (missingPermissions)
       return interaction.reply({
@@ -56,29 +56,28 @@ export class ModalLoader extends BaseInteractionLoader {
       .join("\n");
 
     this.client.logger.info(
-      `${interaction.user.tag} [${interaction.user.id} submitted modal ${modal.name}:\n ${optionData}]`
+      `${interaction.user.tag} [${interaction.user.id} submitted modal ${modal.name}:\n ${optionData}]`,
     );
 
-    modal.run(interaction).catch(async (error: any): Promise<any> => {
-      this.client.logger.error(
-        `Error when submitting modal interaction: ${error}\n`
-      );
-      const embed = this.client.utils
-        .getUtility("default")
-        .generateEmbed("error", {
+    modal
+      .run(interaction)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .catch(async (error: any): Promise<InteractionResponse | Message> => {
+        this.client.logger.error(`Error when submitting modal interaction: ${error}\n`);
+        const embed = this.client.utils.getUtility("default").generateEmbed("error", {
           title: "An error has occured!",
           description: "An unexpected error has occured.",
         });
-      if (interaction.replied)
-        return interaction.followUp({
+        if (interaction.replied)
+          return interaction.followUp({
+            embeds: [embed],
+            flags: [MessageFlags.Ephemeral],
+          });
+
+        return interaction.reply({
           embeds: [embed],
           flags: [MessageFlags.Ephemeral],
         });
-
-      return interaction.reply({
-        embeds: [embed],
-        flags: [MessageFlags.Ephemeral],
       });
-    });
   }
 }

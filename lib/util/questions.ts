@@ -15,7 +15,7 @@ export class Question {
     customId: string,
     label: string,
     required: boolean,
-    textInputStyle: TextInputStyle
+    textInputStyle: TextInputStyle,
   ) {
     this.customId = customId;
     this.label = label;
@@ -29,36 +29,31 @@ export class Question {
         .setCustomId(this.customId)
         .setLabel(this.label)
         .setRequired(this.required)
-        .setStyle(this.textInputStyle)
+        .setStyle(this.textInputStyle),
     );
   }
 }
 
 export const staffAppCustomId = "staffApp";
 export const staffAppQuestions = [
-  new Question(
-    "Why",
-    "Why should we pick you?",
-    true,
-    TextInputStyle.Paragraph
-  ),
+  new Question("Why", "Why should we pick you?", true, TextInputStyle.Paragraph),
   new Question(
     "Experience",
     "Do you have prior staff/relevant experience?",
     true,
-    TextInputStyle.Paragraph
+    TextInputStyle.Paragraph,
   ),
   new Question("Age", "How old are you?", true, TextInputStyle.Short),
   new Question(
     "Who",
     "Who are you? Give us a brief description.",
     true,
-    TextInputStyle.Paragraph
+    TextInputStyle.Paragraph,
   ),
   new Question(
     "Timezone",
     "Which timezone do you operate under?",
     true,
-    TextInputStyle.Short
+    TextInputStyle.Short,
   ),
 ];

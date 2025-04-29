@@ -1,7 +1,8 @@
 import { Message, TextChannel } from "discord.js";
-import { DsuClient } from "lib/core/DsuClient";
-import { ClientUtilities } from "lib/core/ClientUtilities";
+
 import { AnchorModel } from "models/Anchor";
+import { ClientUtilities } from "lib/core/ClientUtilities";
+import { DsuClient } from "lib/core/DsuClient";
 import { Times } from "../types/index";
 
 export class AnchorUtility extends ClientUtilities {
@@ -26,9 +27,7 @@ export class AnchorUtility extends ClientUtilities {
       anchor.messageCount++;
 
       const timeThresholdMs = anchor.config.timeThreshold;
-      const lastAnchorTime = anchor.lastAnchorTime
-        ? anchor.lastAnchorTime.getTime()
-        : 0;
+      const lastAnchorTime = anchor.lastAnchorTime ? anchor.lastAnchorTime.getTime() : 0;
 
       if (now - lastAnchorTime < timeThresholdMs) {
         await anchor.save();
@@ -43,15 +42,10 @@ export class AnchorUtility extends ClientUtilities {
       try {
         if (anchor.lastAnchorId) {
           try {
-            const oldAnchor = await message.channel.messages.fetch(
-              anchor.lastAnchorId
-            );
+            const oldAnchor = await message.channel.messages.fetch(anchor.lastAnchorId);
             if (oldAnchor) await oldAnchor.delete();
           } catch (err) {
-            this.client.logger.error(
-              "Failed to delete the old anchor message:",
-              err
-            );
+            this.client.logger.error("Failed to delete the old anchor message:", err);
           }
         }
 
@@ -111,7 +105,7 @@ export class AnchorUtility extends ClientUtilities {
           } catch (err) {
             this.client.logger.error(
               "Error deleting old anchor on inactivity check:",
-              err
+              err,
             );
           }
         }
@@ -132,23 +126,20 @@ export class AnchorUtility extends ClientUtilities {
       } catch (err) {
         this.client.logger.error(
           `Error processing inactivity for anchor ${anchor._id}:`,
-          err
+          err,
         );
       }
     }
 
     const nextAnchor = anchors
       .filter((a) => a.config.inactivityThreshold > 0)
-      .sort(
-        (a, b) => a.config.inactivityThreshold - b.config.inactivityThreshold
-      )[0];
+      .sort((a, b) => a.config.inactivityThreshold - b.config.inactivityThreshold)[0];
 
     if (nextAnchor) {
       const lastAnchorTime = nextAnchor.lastAnchorTime
         ? nextAnchor.lastAnchorTime.getTime()
         : now;
-      const nextCheck =
-        nextAnchor.config.inactivityThreshold - (now - lastAnchorTime);
+      const nextCheck = nextAnchor.config.inactivityThreshold - (now - lastAnchorTime);
       setTimeout(() => this.checkAnchorInactivity(), nextCheck);
     } else {
       setTimeout(() => this.checkAnchorInactivity(), Times.MINUTE * 5);

@@ -1,7 +1,8 @@
 import { ButtonInteraction, MessageFlags } from "discord.js";
-import { DsuClient } from "../DsuClient";
-import { Button } from "../command/";
+
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
+import { Button } from "../command/";
+import { DsuClient } from "../DsuClient";
 import { InteractionType } from "types/commands";
 
 export class ButtonLoader extends BaseInteractionLoader {
@@ -19,9 +20,7 @@ export class ButtonLoader extends BaseInteractionLoader {
    * @returns The found button, or undefined.
    */
   private fetchButton(customId: string): Button | undefined {
-    return this.client.buttons.find((button) =>
-      customId.startsWith(button.name)
-    );
+    return this.client.buttons.find((button) => customId.startsWith(button.name));
   }
 
   handle(interaction: ButtonInteraction) {
@@ -29,8 +28,7 @@ export class ButtonLoader extends BaseInteractionLoader {
 
     if (!button) return;
     if (
-      interaction.message.interactionMetadata?.user.id !==
-        interaction.user.id &&
+      interaction.message.interactionMetadata?.user.id !== interaction.user.id &&
       !button.global
     ) {
       return interaction.reply({
@@ -39,10 +37,7 @@ export class ButtonLoader extends BaseInteractionLoader {
       });
     }
 
-    const missingPermissions = button.validate(
-      interaction,
-      InteractionType.Button
-    );
+    const missingPermissions = button.validate(interaction, InteractionType.Button);
     if (missingPermissions)
       return interaction.reply({
         embeds: [
@@ -59,12 +54,10 @@ export class ButtonLoader extends BaseInteractionLoader {
     await button.run(interaction).catch((error) => {
       this.client.logger.error(error);
 
-      const embed = this.client.utils
-        .getUtility("default")
-        .generateEmbed("error", {
-          title: "An error has occured!",
-          description: "An unexpected error has occured.",
-        });
+      const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+        title: "An error has occured!",
+        description: "An unexpected error has occured.",
+      });
 
       interaction.deferReply();
       return interaction.followUp({

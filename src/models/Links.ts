@@ -26,10 +26,10 @@ const LinkPermissionSchema = new Schema<ILinkPermission>(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const LinkPermissionModel: Model<ILinkPermission> = model(
   "LinkPermission",
-  LinkPermissionSchema
+  LinkPermissionSchema,
 );

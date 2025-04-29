@@ -6,6 +6,7 @@ import {
   MessageFlags,
   PermissionsBitField,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { EmojiSuggestions } from "../../utilities/emojiSuggestions";
@@ -127,7 +128,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
     if (!interaction.guild) return;
 
     const emojiSuggestionsConfig = await emojiUtility.getEmojiSuggestions(
-      interaction.guild.id
+      interaction.guild.id,
     );
 
     switch (subcommand) {
@@ -151,11 +152,9 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
         });
       case CONFIG:
         const sourceId =
-          interaction.options.get(APPROVAL)?.value ??
-          emojiSuggestionsConfig?.sourceId;
+          interaction.options.get(APPROVAL)?.value ?? emojiSuggestionsConfig?.sourceId;
         const voteId =
-          interaction.options.get(VOTE)?.value ??
-          emojiSuggestionsConfig?.voteId;
+          interaction.options.get(VOTE)?.value ?? emojiSuggestionsConfig?.voteId;
         const threshold =
           interaction.options.get(THRESHOLD)?.value ??
           emojiSuggestionsConfig?.threshold ??
@@ -165,11 +164,9 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
           emojiSuggestionsConfig?.bias ??
           biasDefault;
         const cap =
-          interaction.options.get(CAP)?.value ??
-          emojiSuggestionsConfig?.emojiCap;
+          interaction.options.get(CAP)?.value ?? emojiSuggestionsConfig?.emojiCap;
         const cooldown =
-          interaction.options.get(COOLDOWN)?.value ??
-          emojiSuggestionsConfig?.cooldown;
+          interaction.options.get(COOLDOWN)?.value ?? emojiSuggestionsConfig?.cooldown;
 
         if (
           typeof sourceId !== "string" ||
@@ -191,7 +188,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
           threshold,
           bias,
           cap,
-          cooldown
+          cooldown,
         );
         await emojiUtility.setEmojiSuggestions(newEmojiSuggestions);
         return interaction.reply({
@@ -203,7 +200,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
         await emojiUtility.unbanFromSuggestion(
           interaction.guild.id,
           "emojisuggest",
-          user.id
+          user.id,
         );
         return interaction.reply({
           content: `<@${user.id}> unbanned`,
@@ -227,9 +224,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
                 `${page * 5 + index + 1}. **${emoji.name}** (used **${
                   emoji.count
                 }** times)
-                  last used <t:${Math.floor(
-                    emoji.lastUsage.getTime() / 1000
-                  )}:D>`
+                  last used <t:${Math.floor(emoji.lastUsage.getTime() / 1000)}:D>`,
             )
             .join("\n");
         };

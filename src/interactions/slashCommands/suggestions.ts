@@ -7,6 +7,7 @@ import {
   GuildTextBasedChannel,
   MessageFlags,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { SuggestionConfigModel } from "models/Suggestion";
@@ -111,11 +112,11 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
           cooldown,
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     await suggestionUtility.createDeniedSuggestionThread(
-      channel as GuildTextBasedChannel
+      channel as GuildTextBasedChannel,
     );
 
     await interaction.reply({
@@ -179,11 +180,7 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
 
     timestamps.set(interaction.user.id, now + cooldownAmount);
 
-    await suggestionUtility.sendAnonymousSuggestion(
-      interaction,
-      content,
-      config
-    );
+    await suggestionUtility.sendAnonymousSuggestion(interaction, content, config);
 
     interaction.reply({
       embeds: [

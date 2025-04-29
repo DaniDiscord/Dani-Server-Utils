@@ -3,10 +3,11 @@ import {
   MessageContextMenuCommandInteraction,
   MessageFlags,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { z } from "zod";
 import axios from "axios";
+import { z } from "zod";
 
 const translationData = z.object({
   alternatives: z.array(z.string()),
@@ -54,11 +55,9 @@ export default class Codeblock extends CustomApplicationCommand {
   async run(interaction: MessageContextMenuCommandInteraction) {
     const msg = interaction.targetMessage.content.trim();
 
-    let embed = this.client.utils
-      .getUtility("default")
-      .generateEmbed("success", {
-        title: "Translated Text!",
-      });
+    let embed = this.client.utils.getUtility("default").generateEmbed("success", {
+      title: "Translated Text!",
+    });
 
     const response = await translate(msg);
 

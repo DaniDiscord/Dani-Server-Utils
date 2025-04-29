@@ -1,6 +1,6 @@
+import { DsuClient } from "lib/core/DsuClient";
 import { Message } from "discord.js";
 import TextCommand from "lib/core/command/TextCommand";
-import { DsuClient } from "lib/core/DsuClient";
 
 export default class PingTextCommand extends TextCommand {
   constructor(client: DsuClient) {

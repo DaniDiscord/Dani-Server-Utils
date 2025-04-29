@@ -1,7 +1,8 @@
-import { ButtonInteraction } from "discord.js";
 import { InteractionCommandOptions, InteractionType } from "types/commands";
-import { DsuClient } from "../DsuClient";
+
 import { BaseInteraction } from "./BaseInteraction";
+import { ButtonInteraction } from "discord.js";
+import { DsuClient } from "../DsuClient";
 
 export class Button extends BaseInteraction {
   global?: boolean;
@@ -9,7 +10,7 @@ export class Button extends BaseInteraction {
   constructor(
     name: string,
     client: DsuClient,
-    options: InteractionCommandOptions & { global?: boolean }
+    options: InteractionCommandOptions & { global?: boolean },
   ) {
     super(name, client, InteractionType.Button, options);
     this.global = options.global;

@@ -7,12 +7,13 @@ import {
   ForumChannel,
   PermissionsBitField,
 } from "discord.js";
-import { CustomApplicationCommand } from "lib/core/command";
-import { DsuClient } from "lib/core/DsuClient";
 import {
   AutoArchiveForumBlacklistModel,
   AutoArchiveForumModel,
 } from "models/AutoArchive";
+
+import { CustomApplicationCommand } from "lib/core/command";
+import { DsuClient } from "lib/core/DsuClient";
 
 export default class AutoArchive extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -136,31 +137,31 @@ export default class AutoArchive extends CustomApplicationCommand {
 
           const thread = await interaction.guild?.channels.fetch(threadId);
           if (!thread?.isThread()) {
-            return {
+            return await interaction.reply({
               embeds: [
                 embed
                   .setTitle("Invalid Thread")
                   .setDescription("Could not find a thread with that ID")
                   .setColor("Red"),
               ],
-            };
+            });
           }
 
           await AutoArchiveForumBlacklistModel.findOneAndUpdate(
             { guildId },
             { $addToSet: { threads: threadId } },
-            { upsert: true, new: true }
+            { upsert: true, new: true },
           );
 
-          return {
+          return await interaction.reply({
             embeds: [
               embed
                 .setDescription(
-                  `Thread ${thread.toString()} (ID: \`${threadId}\`) has been blacklisted`
+                  `Thread ${thread.toString()} (ID: \`${threadId}\`) has been blacklisted`,
                 )
                 .setColor("Green"),
             ],
-          };
+          });
         }
 
         case "remove": {
@@ -169,67 +170,57 @@ export default class AutoArchive extends CustomApplicationCommand {
           const result = await AutoArchiveForumBlacklistModel.findOneAndUpdate(
             { guildId, threads: threadId },
             { $pull: { threads: threadId } },
-            { new: true }
+            { new: true },
           );
 
           if (!result) {
-            return {
+            return await interaction.reply({
               embeds: [
                 embed
-                  .setDescription(
-                    `Thread ID \`${threadId}\` is not in the blacklist`
-                  )
+                  .setDescription(`Thread ID \`${threadId}\` is not in the blacklist`)
                   .setColor("Red"),
               ],
-            };
+            });
           }
 
           if (result.threads.length === 0) {
             await AutoArchiveForumBlacklistModel.deleteOne({ guildId });
           }
 
-          return {
+          return await interaction.reply({
             embeds: [
               embed
                 .setDescription(
-                  `Thread ID \`${threadId}\` has been removed from the blacklist`
+                  `Thread ID \`${threadId}\` has been removed from the blacklist`,
                 )
                 .setColor("Green"),
             ],
-          };
+          });
         }
 
         default:
-          return {
+          return await interaction.reply({
             embeds: [
-              embed
-                .setDescription("Invalid blacklist subcommand")
-                .setColor("Red"),
+              embed.setDescription("Invalid blacklist subcommand").setColor("Red"),
             ],
-          };
+          });
       }
     }
 
     switch (subcommand) {
       case "add": {
-        const channel: ForumChannel = interaction.options.getChannel(
-          "channel",
-          true
-        );
-        const expireDuration = interaction.options.getString(
-          "expire_duration",
-          true
-        );
+        const channel: ForumChannel = interaction.options.getChannel("channel", true);
+        const expireDuration = interaction.options.getString("expire_duration", true);
 
         if (!channel.isThreadOnly()) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
                 .setTitle("Invalid Channel")
                 .setDescription("The selected channel is not a forum channel.")
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         let config = await AutoArchiveForumModel.findOne({ guildId });
@@ -237,109 +228,96 @@ export default class AutoArchive extends CustomApplicationCommand {
           config = new AutoArchiveForumModel({ guildId, channels: [] });
         }
 
-        const existingChannel = config.channels.find(
-          (ch) => ch.channelId === channel.id
-        );
+        const existingChannel = config.channels.find((ch) => ch.channelId === channel.id);
         if (existingChannel) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
                 .setDescription(`Channel ${channel} is already in the list.`)
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         config.channels.push({
           channelId: channel.id,
-          expireDuration: timeParserUtility.parseDuration(
-            expireDuration.toString()
-          ),
+          expireDuration: timeParserUtility.parseDuration(expireDuration.toString()),
         });
         await config.save();
 
-        return {
+        return await interaction.reply({
           embeds: [
             embed
               .setDescription(
-                `Channel ${channel} has been added to the auto-archive list with an expiration duration of ${expireDuration}.`
+                `Channel ${channel} has been added to the auto-archive list with an expiration duration of ${expireDuration}.`,
               )
               .setColor("Green"),
           ],
-        };
+        });
       }
 
       case "remove": {
-        const channel: ForumChannel = interaction.options.getChannel(
-          "channel",
-          true
-        );
+        const channel: ForumChannel = interaction.options.getChannel("channel", true);
 
         if (!channel.isThreadOnly()) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
                 .setTitle("Invalid Channel")
                 .setDescription("The selected channel is not a forum channel.")
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         const config = await AutoArchiveForumModel.findOne({ guildId });
         if (!config) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
-                .setDescription(
-                  "No auto-archive configuration found for this guild."
-                )
+                .setDescription("No auto-archive configuration found for this guild.")
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         const channelIndex = config.channels.findIndex(
-          (ch) => ch.channelId === channel.id
+          (ch) => ch.channelId === channel.id,
         );
         if (channelIndex === -1) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
-                .setDescription(
-                  `Channel ${channel} is not in the auto-archive list.`
-                )
+                .setDescription(`Channel ${channel} is not in the auto-archive list.`)
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         config.channels.splice(channelIndex, 1);
         await config.save();
 
-        return {
+        return await interaction.reply({
           embeds: [
             embed
               .setDescription(
-                `Channel ${channel} has been removed from the auto-archive list.`
+                `Channel ${channel} has been removed from the auto-archive list.`,
               )
               .setColor("Green"),
           ],
-        };
+        });
       }
 
       case "list": {
         const config = await AutoArchiveForumModel.findOne({ guildId });
         if (!config || !config.channels.length) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
-                .setDescription(
-                  "There are no channels configured for auto-archive."
-                )
+                .setDescription("There are no channels configured for auto-archive.")
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         const channelsList = config.channels
@@ -348,95 +326,81 @@ export default class AutoArchive extends CustomApplicationCommand {
               `<#${
                 ch.channelId
               }> - Expire after ${timeParserUtility.parseDurationToString(
-                ch.expireDuration
-              )}`
+                ch.expireDuration,
+              )}`,
           )
           .join("\n");
 
-        return {
+        return await interaction.reply({
           embeds: [
             embed
               .setDescription(`List of auto-archive channels:\n${channelsList}`)
               .setColor("Blue"),
           ],
-        };
+        });
       }
 
       case "edit": {
-        const channel: ForumChannel = interaction.options.getChannel(
-          "channel",
-          true
-        );
-        const expireDuration = interaction.options.getString(
-          "expire_duration",
-          true
-        );
+        const channel: ForumChannel = interaction.options.getChannel("channel", true);
+        const expireDuration = interaction.options.getString("expire_duration", true);
 
         if (!channel.isThreadOnly()) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
                 .setTitle("Invalid Channel")
                 .setDescription("The selected channel is not a forum channel.")
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         const config = await AutoArchiveForumModel.findOne({ guildId });
         if (!config) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
-                .setDescription(
-                  "No auto-archive configuration found for this guild."
-                )
+                .setDescription("No auto-archive configuration found for this guild.")
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
-        const existingChannel = config.channels.find(
-          (ch) => ch.channelId === channel.id
-        );
+        const existingChannel = config.channels.find((ch) => ch.channelId === channel.id);
 
         if (!existingChannel) {
-          return {
+          return await interaction.reply({
             embeds: [
               embed
-                .setDescription(
-                  `Channel ${channel} is not in the auto-archive list.`
-                )
+                .setDescription(`Channel ${channel} is not in the auto-archive list.`)
                 .setColor("Red"),
             ],
-          };
+          });
         }
 
         existingChannel.expireDuration = timeParserUtility.parseDuration(
-          expireDuration.toString()
+          expireDuration.toString(),
         );
         await config.save();
 
-        return {
+        return await interaction.reply({
           embeds: [
             embed
               .setDescription(
-                `Channel ${channel} has been updated with a new expiration duration of ${expireDuration}.`
+                `Channel ${channel} has been updated with a new expiration duration of ${expireDuration}.`,
               )
               .setColor("Green"),
           ],
-        };
+        });
       }
 
       default:
-        return {
+        return await interaction.reply({
           embeds: [
-            embed
-              .setDescription("Invalid subcommand. Please try again.")
-              .setColor("Red"),
+            embed.setDescription("Invalid subcommand. Please try again.").setColor("Red"),
           ],
-          eph: true,
-        };
+          flags: "Ephemeral",
+        });
     }
   }
 }

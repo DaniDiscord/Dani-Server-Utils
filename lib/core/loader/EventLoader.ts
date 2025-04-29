@@ -1,5 +1,5 @@
-import { DsuClient } from "../DsuClient";
 import { AllEvents } from "types/index";
+import { DsuClient } from "../DsuClient";
 
 export class EventLoader {
   /**
@@ -20,11 +20,10 @@ export class EventLoader {
   constructor(client: DsuClient, name: AllEvents) {
     this.name = name;
     this.client = client;
-
     this._listener = this._run.bind(this);
   }
 
-  private async _run(...args: any[]) {
+  private async _run(...args: unknown[]) {
     try {
       await this.run(...args);
     } catch (error) {
@@ -32,7 +31,8 @@ export class EventLoader {
     }
   }
 
-  public async run(..._args: any): Promise<any> {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public async run(..._args: unknown[]): Promise<any> {}
 
   public listen() {
     // The names typings will be fine within each defined class, however "raw" and "voiceServerUpdate" are not provided within ClientEvents.

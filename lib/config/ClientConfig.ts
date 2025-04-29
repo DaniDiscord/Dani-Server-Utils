@@ -1,6 +1,5 @@
 import {
   ActivityType,
-  GatewayIntentBits,
   GuildMember,
   IntentsBitField,
   Message,
@@ -8,6 +7,7 @@ import {
   PresenceData,
   Role,
 } from "discord.js";
+
 import { ClientConfig } from "../../src/types/index";
 import { IMentor } from "types/mongodb";
 
@@ -68,7 +68,7 @@ export const clientConfig = {
         // If somehow either Message or GuildMember is not provided we'll just return that the user is not a mentor.
         if (!data) return false;
         mentorRoles = data!.settings.mentorRoles.filter(
-          (r) => data?.guild && data?.guild.roles.resolve(r.roleID)
+          (r) => data?.guild && data?.guild.roles.resolve(r.roleID),
         );
 
         const mentorRoleIDs = mentorRoles.map((r) => r.roleID);
@@ -93,7 +93,7 @@ export const clientConfig = {
         return Boolean(
           helperRole &&
             ((msg && msg.member && msg.member.roles.cache.has(helperRole.id)) ||
-              (member && member.roles.cache.has(helperRole.id)))
+              (member && member.roles.cache.has(helperRole.id))),
         );
       },
     },
@@ -110,7 +110,7 @@ export const clientConfig = {
         return Boolean(
           modRole &&
             ((msg && msg.member && msg.member.roles.cache.has(modRole.id)) ||
-              (member && member.roles.cache.has(modRole.id)))
+              (member && member.roles.cache.has(modRole.id))),
         );
       },
     },
@@ -129,7 +129,7 @@ export const clientConfig = {
             (member && member.permissions.has("ManageGuild")) ||
             (admRole &&
               ((msg && msg.member && msg.member.roles.cache.has(admRole.id)) ||
-                (member && member.roles.cache.has(admRole.id))))
+                (member && member.roles.cache.has(admRole.id)))),
         );
       },
     },
@@ -139,7 +139,7 @@ export const clientConfig = {
       check: (msg, member) =>
         Boolean(
           (msg && msg.member && msg.guild?.ownerId === msg.author.id) ||
-            (member && member.guild.ownerId === member.id)
+            (member && member.guild.ownerId === member.id),
         ),
     },
     {
@@ -148,7 +148,7 @@ export const clientConfig = {
       check: (message, member) =>
         Boolean(
           (message && message.author.id === clientConfig.ownerId) ||
-            (member && member.id === clientConfig.ownerId)
+            (member && member.id === clientConfig.ownerId),
         ),
     },
   ],

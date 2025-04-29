@@ -1,6 +1,6 @@
-import { ModalSubmitInteraction } from "discord.js";
-import { Modal } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { Modal } from "lib/core/command";
+import { ModalSubmitInteraction } from "discord.js";
 
 export default class StaffAppModalSubmit extends Modal {
   constructor(client: DsuClient) {

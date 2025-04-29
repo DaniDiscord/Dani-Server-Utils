@@ -7,6 +7,7 @@ import {
   MessageFlags,
   PermissionsBitField,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { LinkPermissionModel } from "models/Links";
@@ -159,23 +160,21 @@ export default class Links extends CustomApplicationCommand {
     });
     const permLevel = this.client.getPermLevel(
       undefined,
-      interaction.member as GuildMember
+      interaction.member as GuildMember,
     );
     const modCmds = ["enable", "disable"];
     const helperCmds = ["check", "allow", "revoke"];
     const coOwnerOnly = ["reset"];
 
     if (permLevel < 10 && coOwnerOnly.includes(subcommand)) {
-      return {
+      return await interaction.reply({
         embeds: [
           embed
             .setTitle("Insufficient Permissions")
-            .setDescription(
-              "Must be perm level 10 (Bot Owner) to use this command."
-            ),
+            .setDescription("Must be perm level 10 (Bot Owner) to use this command."),
         ],
         flags: MessageFlags.Ephemeral,
-      };
+      });
     }
 
     if (permLevel < 3 && modCmds.includes(subcommand)) {
@@ -183,38 +182,32 @@ export default class Links extends CustomApplicationCommand {
         embeds: [
           embed
             .setTitle("Insufficient Permissions")
-            .setDescription(
-              "Must be perm level 3 (Moderator) to use this command."
-            ),
+            .setDescription("Must be perm level 3 (Moderator) to use this command."),
         ],
         flags: MessageFlags.Ephemeral,
       });
     }
 
     if (permLevel < 2 && helperCmds.includes(subcommand)) {
-      return {
+      return await interaction.reply({
         embeds: [
           embed
             .setTitle("Insufficient Permissions")
-            .setDescription(
-              "Must be perm level 2 (Helper) to use this command."
-            ),
+            .setDescription("Must be perm level 2 (Helper) to use this command."),
         ],
         flags: MessageFlags.Ephemeral,
-      };
+      });
     }
 
     if (permLevel < 2) {
-      return {
+      return await interaction.reply({
         embeds: [
           embed
             .setTitle("Insufficient Permissions")
-            .setDescription(
-              "Must be perm level 2 (Helper) to use this command."
-            ),
+            .setDescription("Must be perm level 2 (Helper) to use this command."),
         ],
         flags: MessageFlags.Ephemeral,
-      };
+      });
     }
 
     const highestRole = (interaction.member as GuildMember)!.roles.cache
@@ -232,7 +225,7 @@ export default class Links extends CustomApplicationCommand {
               embed
                 .setTitle("Insufficient Permissions")
                 .setDescription(
-                  "You can not edit the permissions of a role equal to or higher than your highest role."
+                  "You can not edit the permissions of a role equal to or higher than your highest role.",
                 ),
             ],
             flags: MessageFlags.Ephemeral,
@@ -240,18 +233,16 @@ export default class Links extends CustomApplicationCommand {
         }
 
         const channelConfig = permissions.channels.find(
-          (c) => c.channelId === channel.id
+          (c) => c.channelId === channel.id,
         );
         if (channelConfig) {
-          const roleConfig = channelConfig.roles.find(
-            (r) => r.roleId === role.id
-          );
+          const roleConfig = channelConfig.roles.find((r) => r.roleId === role.id);
           if (roleConfig?.enabled) {
             return interaction.reply({
               embeds: [
                 embed
                   .setDescription(
-                    `Links are already enabled in ${channel} for role ${role}.`
+                    `Links are already enabled in ${channel} for role ${role}.`,
                   )
                   .setColor("Red"),
               ],
@@ -283,15 +274,13 @@ export default class Links extends CustomApplicationCommand {
             ? {
                 arrayFilters: [{ "channel.channelId": channel.id }],
               }
-            : {}
+            : {},
         );
 
         return interaction.reply({
           embeds: [
             embed
-              .setDescription(
-                `Links have been enabled in ${channel} for role ${role}.`
-              )
+              .setDescription(`Links have been enabled in ${channel} for role ${role}.`)
               .setColor("Green"),
           ],
         });
@@ -307,7 +296,7 @@ export default class Links extends CustomApplicationCommand {
               embed
                 .setTitle("Insufficient Permissions")
                 .setDescription(
-                  "You can not edit the permissions of a role equal to or higher than your highest role."
+                  "You can not edit the permissions of a role equal to or higher than your highest role.",
                 ),
             ],
             flags: MessageFlags.Ephemeral,
@@ -315,18 +304,16 @@ export default class Links extends CustomApplicationCommand {
         }
 
         const channelConfig = permissions.channels.find(
-          (c) => c.channelId === channel.id
+          (c) => c.channelId === channel.id,
         );
-        const roleConfig = channelConfig?.roles.find(
-          (r) => r.roleId === role.id
-        );
+        const roleConfig = channelConfig?.roles.find((r) => r.roleId === role.id);
 
         if (!channelConfig || !roleConfig?.enabled) {
           return interaction.reply({
             embeds: [
               embed
                 .setDescription(
-                  `${channel} does not have a configuration for role ${role}.`
+                  `${channel} does not have a configuration for role ${role}.`,
                 )
                 .setColor("Red"),
             ],
@@ -350,14 +337,14 @@ export default class Links extends CustomApplicationCommand {
               { "channel.channelId": channel.id },
               { "role.roleId": role.id },
             ],
-          }
+          },
         );
 
         return interaction.reply({
           embeds: [
             embed
               .setDescription(
-                `Links have been disabled in ${channel} for role <@&${role.id}>.`
+                `Links have been disabled in ${channel} for role <@&${role.id}>.`,
               )
               .setColor("Green"),
           ],
@@ -367,9 +354,7 @@ export default class Links extends CustomApplicationCommand {
       case "revoke": {
         const user = interaction.options.getUser("user", true);
         const reason = interaction.options.getString("reason");
-        const userAccess = permissions.userAccess.find(
-          (a) => a.userId === user.id
-        );
+        const userAccess = permissions.userAccess.find((a) => a.userId === user.id);
 
         if (user.permLevel >= permLevel) {
           return interaction.reply({
@@ -377,7 +362,7 @@ export default class Links extends CustomApplicationCommand {
               embed
                 .setTitle("Insufficient perms.")
                 .setDescription(
-                  `Cannot manage user with same or higher permission level (${user.permLevel} vs ${permLevel})`
+                  `Cannot manage user with same or higher permission level (${user.permLevel} vs ${permLevel})`,
                 )
                 .setColor("Red"),
             ],
@@ -389,9 +374,7 @@ export default class Links extends CustomApplicationCommand {
           return interaction.reply({
             embeds: [
               embed
-                .setDescription(
-                  `Link access is already revoked for user ${user}.`
-                )
+                .setDescription(`Link access is already revoked for user ${user}.`)
                 .setColor("Red"),
             ],
             flags: MessageFlags.Ephemeral,
@@ -402,7 +385,7 @@ export default class Links extends CustomApplicationCommand {
           { guildId },
           {
             $pull: { userAccess: { userId: user.id } },
-          }
+          },
         );
 
         await LinkPermissionModel.findOneAndUpdate(
@@ -417,7 +400,7 @@ export default class Links extends CustomApplicationCommand {
                 reason,
               },
             },
-          }
+          },
         );
 
         return interaction.reply({
@@ -431,9 +414,7 @@ export default class Links extends CustomApplicationCommand {
 
       case "allow": {
         const user = interaction.options.getUser("user", true);
-        const userAccess = permissions.userAccess.find(
-          (a) => a.userId === user.id
-        );
+        const userAccess = permissions.userAccess.find((a) => a.userId === user.id);
 
         if (user.permLevel >= permLevel) {
           return interaction.reply({
@@ -441,7 +422,7 @@ export default class Links extends CustomApplicationCommand {
               embed
                 .setTitle("Insufficient perms.")
                 .setDescription(
-                  `Cannot manage user with same or higher permission level (${user.permLevel} vs ${permLevel})`
+                  `Cannot manage user with same or higher permission level (${user.permLevel} vs ${permLevel})`,
                 )
                 .setColor("Red"),
             ],
@@ -472,7 +453,7 @@ export default class Links extends CustomApplicationCommand {
               "userAccess.$.modifiedAt": new Date(),
               "userAccess.$.reason": "",
             },
-          }
+          },
         );
 
         return interaction.reply({
@@ -501,18 +482,14 @@ export default class Links extends CustomApplicationCommand {
           });
         }
 
-        const userAccess = permissions.userAccess.find(
-          (a) => a.userId === user.id
-        );
+        const userAccess = permissions.userAccess.find((a) => a.userId === user.id);
 
         if (userAccess?.hasAccess === false) {
           return interaction.reply({
             embeds: [
               embed
                 .setTitle("No Link Permissions")
-                .setDescription(
-                  `User ${user} has had their link access revoked.`
-                )
+                .setDescription(`User ${user} has had their link access revoked.`)
                 .addFields([
                   {
                     name: "Updated by:",
@@ -536,7 +513,7 @@ export default class Links extends CustomApplicationCommand {
         }
 
         const channelConfig = permissions.channels.find(
-          (c) => c.channelId === channel.id
+          (c) => c.channelId === channel.id,
         );
 
         if (!channelConfig) {
@@ -545,7 +522,7 @@ export default class Links extends CustomApplicationCommand {
               embed
                 .setTitle("No Link Permissions")
                 .setDescription(
-                  `No link permissions are configured for channel ${channel}.`
+                  `No link permissions are configured for channel ${channel}.`,
                 )
                 .setColor("Red"),
             ],
@@ -557,7 +534,7 @@ export default class Links extends CustomApplicationCommand {
           .map((r) => r.roleId);
 
         const hasPermission = member.roles.cache.some((role) =>
-          allowedRoles.includes(role.id)
+          allowedRoles.includes(role.id),
         );
 
         return interaction.reply({
@@ -567,7 +544,7 @@ export default class Links extends CustomApplicationCommand {
               .setDescription(
                 hasPermission
                   ? `User ${user} can send links in ${channel}.`
-                  : `User ${user} cannot send links in ${channel}. (Role not allowed)`
+                  : `User ${user} cannot send links in ${channel}. (Role not allowed)`,
               )
               .setColor(hasPermission ? "Green" : "Red"),
           ],
@@ -600,16 +577,14 @@ export default class Links extends CustomApplicationCommand {
             $set: {
               userAccess: [],
             },
-          }
+          },
         );
 
         return interaction.reply({
           embeds: [
             embed
               .setTitle("Reset Successful")
-              .setDescription(
-                `Configuration for ${channel} has been reset to default.`
-              )
+              .setDescription(`Configuration for ${channel} has been reset to default.`)
               .setColor("Green"),
           ],
         });
@@ -618,9 +593,7 @@ export default class Links extends CustomApplicationCommand {
       default:
         return interaction.reply({
           embeds: [
-            embed
-              .setDescription("Invalid subcommand. Please try again.")
-              .setColor("Red"),
+            embed.setDescription("Invalid subcommand. Please try again.").setColor("Red"),
           ],
           flags: MessageFlags.Ephemeral,
         });

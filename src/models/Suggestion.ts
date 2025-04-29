@@ -1,6 +1,5 @@
-import { Model, Schema, model } from "mongoose";
-
 import { ISuggestion, ISuggestionConfig } from "../types/mongodb";
+import { Model, Schema, model } from "mongoose";
 
 const SuggestionGuildConfigSchema = new Schema<ISuggestionConfig>({
   guildId: { type: String, required: true, unique: true },
@@ -19,7 +18,7 @@ const SuggestionGuildConfigSchema = new Schema<ISuggestionConfig>({
 
 export const SuggestionConfigModel: Model<ISuggestionConfig> = model(
   "SuggestionConfig",
-  SuggestionGuildConfigSchema
+  SuggestionGuildConfigSchema,
 );
 
 const SuggestionSchema = new Schema<ISuggestion>({
@@ -29,7 +28,4 @@ const SuggestionSchema = new Schema<ISuggestion>({
   userId: { type: String, required: true },
 });
 
-export const SuggestionModel = model<ISuggestion>(
-  "Suggestion",
-  SuggestionSchema
-);
+export const SuggestionModel = model<ISuggestion>("Suggestion", SuggestionSchema);

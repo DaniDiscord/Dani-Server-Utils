@@ -6,9 +6,10 @@ import {
   PermissionsBitField,
   TextChannel,
 } from "discord.js";
+
+import { AnchorModel } from "models/Anchor";
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { AnchorModel } from "models/Anchor";
 import { PermissionLevels } from "types/commands";
 
 export default class AnchorCommand extends CustomApplicationCommand {
@@ -38,8 +39,7 @@ export default class AnchorCommand extends CustomApplicationCommand {
             },
             {
               name: "time_threshold",
-              description:
-                "Minimum minutes before re-anchoring (ex: 5m, 1h, 2d)",
+              description: "Minimum minutes before re-anchoring (ex: 5m, 1h, 2d)",
               type: ApplicationCommandOptionType.String,
               required: false,
             },
@@ -75,6 +75,7 @@ export default class AnchorCommand extends CustomApplicationCommand {
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
+
   async run(interaction: ChatInputCommandInteraction) {
     const subcommand = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
@@ -84,39 +85,45 @@ export default class AnchorCommand extends CustomApplicationCommand {
       case "add": {
         const messageLink = interaction.options.getString("message", true);
 
-        // Parse the message link (expected format: /channels/<guildId>/<channelId>/<messageId>)
         const regex = /\/channels\/(\d+)\/(\d+)\/(\d+)/;
         const match = messageLink.match(regex);
         if (!match) {
-          return { content: "Invalid message link format" };
+          await interaction.reply({ content: "Invalid message link format" });
+          return;
         }
         const [, guildIdFromLink, originalChannelId, originalMessageId] = match;
         if (guildIdFromLink !== guildId) {
-          return {
+          await interaction.reply({
             content: "The message link does not belong to this server",
-          };
+          });
+          return;
         }
 
         let originalChannel;
         try {
-          originalChannel = await interaction.client.channels.fetch(
-            originalChannelId
-          );
-        } catch (err) {
-          return { content: "Unable to fetch the original channel" };
+          originalChannel = await interaction.client.channels.fetch(originalChannelId);
+        } catch (_err) {
+          await interaction.reply({
+            content: "Unable to fetch the original channel",
+          });
+          return;
         }
 
         if (!(originalChannel instanceof TextChannel)) {
-          return { content: "The original channel is not a text channel" };
+          await interaction.reply({
+            content: "The original channel is not a text channel",
+          });
+          return;
         }
 
         let originalMessage;
         try {
-          originalMessage = await originalChannel.messages.fetch(
-            originalMessageId
-          );
-        } catch (err) {
-          return { content: "Unable to fetch the original message" };
+          originalMessage = await originalChannel.messages.fetch(originalMessageId);
+        } catch (_) {
+          await interaction.reply({
+            content: "Unable to fetch the original message",
+          });
+          return;
         }
 
         const targetChannelId = originalChannel.id;
@@ -127,10 +134,8 @@ export default class AnchorCommand extends CustomApplicationCommand {
             ? originalMessage.embeds.map((e) => e.toJSON())
             : [];
 
-        const messageThreshold =
-          interaction.options.getNumber("message_threshold") ?? 1;
-        const timeThreshold =
-          interaction.options.getString("time_threshold") ?? "0s";
+        const messageThreshold = interaction.options.getNumber("message_threshold") ?? 1;
+        const timeThreshold = interaction.options.getString("time_threshold") ?? "0s";
         const inactivityThreshold =
           interaction.options.getString("inactivity_threshold") ?? "0s";
 
@@ -144,23 +149,29 @@ export default class AnchorCommand extends CustomApplicationCommand {
           config: {
             messageThreshold,
             timeThreshold: timeParserUtility.parseDuration(timeThreshold),
-            inactivityThreshold:
-              timeParserUtility.parseDuration(inactivityThreshold),
+            inactivityThreshold: timeParserUtility.parseDuration(inactivityThreshold),
           },
         });
 
         try {
           await anchorDoc.save();
-        } catch (err) {
-          return { content: "Failed to add the anchor" };
+        } catch (_) {
+          await interaction.reply({ content: "Failed to add the anchor" });
+          return;
         }
-        return { content: `Anchor added with ID \`${anchorDoc._id}\`` };
+        await interaction.reply({
+          content: `Anchor added with ID \`${anchorDoc._id}\``,
+        });
+        return;
       }
 
       case "list": {
         const anchors = await AnchorModel.find({ guildId });
         if (anchors.length === 0) {
-          return { content: "No anchors set up for this server" };
+          await interaction.reply({
+            content: "No anchors set up for this server",
+          });
+          return;
         }
 
         const embed = new EmbedBuilder().setTitle("Anchors");
@@ -173,27 +184,34 @@ export default class AnchorCommand extends CustomApplicationCommand {
               `**Config:**\n` +
               `Message Threshold: ${anchor.config.messageThreshold} message\n` +
               `\tTime Threshold: ${timeParserUtility.parseDurationToString(
-                anchor.config.timeThreshold
+                anchor.config.timeThreshold,
               )}\n` +
               `\tInactivity Threshold: ${timeParserUtility.parseDurationToString(
-                anchor.config.inactivityThreshold
+                anchor.config.inactivityThreshold,
               )}`,
           });
         });
-        return { embeds: [embed] };
+        await interaction.reply({ embeds: [embed] });
+        return;
       }
 
       case "remove": {
         const anchorId = interaction.options.getString("anchor_id", true);
         const result = await AnchorModel.deleteOne({ _id: anchorId, guildId });
         if (result.deletedCount === 0) {
-          return { content: "Anchor not found or already removed" };
+          await interaction.reply({
+            content: "Anchor not found or already removed",
+          });
+          return;
         }
-        return { content: "Anchor removed successfully" };
+        await interaction.reply({ content: "Anchor removed successfully" });
+        return;
       }
 
-      default:
-        return { content: "Unknown subcommand" };
+      default: {
+        await interaction.reply({ content: "Unknown subcommand" });
+        return;
+      }
     }
   }
 }

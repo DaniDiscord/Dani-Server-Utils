@@ -3,23 +3,20 @@ import {
   AutocompleteFocusedOption,
   AutocompleteInteraction,
   CommandInteraction,
-  UserContextMenuCommandInteraction,
   MessageContextMenuCommandInteraction,
+  UserContextMenuCommandInteraction,
 } from "discord.js";
+import { InteractionCommandOptions, InteractionType } from "types/commands";
+
 import { BaseInteraction } from "./BaseInteraction";
 import { DsuClient } from "../DsuClient";
-import { InteractionCommandOptions, InteractionType } from "types/commands";
 
 export class CustomApplicationCommand extends BaseInteraction {
   public readonly description: string;
   public readonly commandType: ApplicationCommandType;
   public readonly options: InteractionCommandOptions;
 
-  constructor(
-    name: string,
-    client: DsuClient,
-    options: InteractionCommandOptions
-  ) {
+  constructor(name: string, client: DsuClient, options: InteractionCommandOptions) {
     const type = options.type ?? ApplicationCommandType.ChatInput;
     super(name, client, InteractionType.ApplicationCommand, options);
 
@@ -35,13 +32,13 @@ export class CustomApplicationCommand extends BaseInteraction {
     interaction:
       | CommandInteraction
       | UserContextMenuCommandInteraction
-      | MessageContextMenuCommandInteraction
+      | MessageContextMenuCommandInteraction,
   ) {
     return super.run(interaction);
   }
 
   public async autoComplete(
     _interaction: AutocompleteInteraction,
-    _option: AutocompleteFocusedOption
+    _option: AutocompleteFocusedOption,
   ): Promise<void> {}
 }

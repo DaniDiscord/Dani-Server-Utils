@@ -12,7 +12,4 @@ const EmojiUsageSchema = new Schema<IEmojiUsage>({
   lastUsage: Date,
 });
 
-export const EmojiUsageModel: Model<IEmojiUsage> = model(
-  "EmojiUsage",
-  EmojiUsageSchema
-);
+export const EmojiUsageModel: Model<IEmojiUsage> = model("EmojiUsage", EmojiUsageSchema);

@@ -6,6 +6,7 @@ import {
   EmbedBuilder,
   GuildMember,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { SettingsModel } from "models/Settings";
@@ -65,11 +66,14 @@ export default class PollsCommand extends CustomApplicationCommand {
   async run(interaction: ChatInputCommandInteraction) {
     const permLevel = this.client.getPermLevel(
       undefined,
-      interaction.member as GuildMember
+      interaction.member as GuildMember,
     );
 
     if (permLevel < 4) {
-      return { content: "Insufficient Permissions", eph: true };
+      return await interaction.reply({
+        content: "Insufficient Permissions",
+        flags: "Ephemeral",
+      });
     }
 
     const subcmd = interaction.options.getSubcommand();
@@ -88,8 +92,8 @@ export default class PollsCommand extends CustomApplicationCommand {
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { $push: { pollsAllowed: channel.id }, toUpdate: true },
-            { upsert: true, setDefaultsOnInsert: true, new: true }
-          )
+            { upsert: true, setDefaultsOnInsert: true, new: true },
+          ),
         );
 
         await interaction.reply({
@@ -116,8 +120,8 @@ export default class PollsCommand extends CustomApplicationCommand {
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { $pull: { pollsAllowed: channel.id }, toUpdate: true },
-            { upsert: true, setDefaultsOnInsert: true, new: true }
-          )
+            { upsert: true, setDefaultsOnInsert: true, new: true },
+          ),
         );
 
         await interaction.reply({

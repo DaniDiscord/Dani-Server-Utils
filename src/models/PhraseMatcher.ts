@@ -16,5 +16,5 @@ const PhraseMatcherSchema = new Schema<IPhraseMatcher>({
 
 export const PhraseMatcherModel: Model<IPhraseMatcher> = model(
   "PhraseMatcher",
-  PhraseMatcherSchema
+  PhraseMatcherSchema,
 );

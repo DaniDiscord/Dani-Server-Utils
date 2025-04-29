@@ -1,14 +1,10 @@
-import {
-  Collection,
-  Interaction,
-  InteractionType,
-  MessageFlags,
-} from "discord.js";
+import { Collection, Interaction, InteractionType, MessageFlags } from "discord.js";
+
 import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader/EventLoader";
+import { ISettings } from "types/mongodb";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
-import { ISettings } from "types/mongodb";
 
 export default class InteractionCreate extends EventLoader {
   constructor(client: DsuClient) {
@@ -17,10 +13,7 @@ export default class InteractionCreate extends EventLoader {
 
   override async run(interaction: Interaction) {
     if (!interaction.guild) return;
-    if (
-      interaction.guild &&
-      !this.client.settings.has((interaction.guild || {}).id)
-    ) {
+    if (interaction.guild && !this.client.settings.has((interaction.guild || {}).id)) {
       // We don't have the settings for this guild, find them or generate empty settings
       const s: ISettings = await SettingsModel.findOneAndUpdate(
         { _id: interaction.guild.id },
@@ -29,20 +22,20 @@ export default class InteractionCreate extends EventLoader {
           upsert: true,
           setDefaultsOnInsert: true,
           new: true,
-        }
+        },
       )
         .populate("mentorRoles")
         .populate("commands");
 
       this.client.logger.info(
-        `Setting sync: Fetch Database -> Client (${interaction.guild.id})`
+        `Setting sync: Fetch Database -> Client (${interaction.guild.id})`,
       );
 
       this.client.settings.set(interaction.guild.id, s);
       interaction.settings = s;
     } else {
       const s = this.client.settings.get(
-        interaction.guild ? interaction.guild.id : "default"
+        interaction.guild ? interaction.guild.id : "default",
       );
       if (!s) return;
       interaction.settings = s;
@@ -51,20 +44,16 @@ export default class InteractionCreate extends EventLoader {
     const isAutocomplete = interaction.isAutocomplete();
 
     if (isAutocomplete) {
-      await this.client.utils
-        .getUtility("autoPing")
-        .onForumTagComplete(interaction);
+      await this.client.utils.getUtility("autoPing").onForumTagComplete(interaction);
     }
 
-    //TODO emojis
+    // TODO emojis
 
     const isButton = interaction.isButton();
 
     // can't be moved since its dynamic
     if (isButton) {
-      const triggerIds = interaction.settings.triggers.map(
-        (t) => `trigger-${t.id}`
-      );
+      const triggerIds = interaction.settings.triggers.map((t) => `trigger-${t.id}`);
 
       for (const id of triggerIds) {
         if (interaction.customId != id) {
@@ -106,23 +95,23 @@ export default class InteractionCreate extends EventLoader {
           interaction.type === InteractionType.ApplicationCommand
             ? `: ${interaction.toString()}`
             : ""
-        }`
+        }`,
       );
       if (interaction.isCommand()) {
         if (!cooldowns.has(interaction.commandName)) {
           cooldowns.set(interaction.commandName, new Collection());
         }
         const command = this.client.applicationCommandLoader.fetchCommand(
-          interaction.commandName
+          interaction.commandName,
         );
         if (!command) {
           return this.client.logger.error(
-            `Exception: Cannot find command to add cooldown (${interaction.commandName})`
+            `Exception: Cannot find command to add cooldown (${interaction.commandName})`,
           );
         }
         const now = Date.now();
         const timestamps = this.client.applicationCommandLoader.cooldowns.get(
-          interaction.commandName
+          interaction.commandName,
         );
 
         if (!timestamps) {
@@ -131,17 +120,14 @@ export default class InteractionCreate extends EventLoader {
         const cooldownTimer = (command.options.cooldown ?? 0) * 1000;
 
         if (timestamps?.has(interaction.user.id)) {
-          const expiration =
-            timestamps.get(interaction.user.id) ?? 0 + cooldownTimer;
+          const expiration = timestamps.get(interaction.user.id) ?? 0 + cooldownTimer;
           if (now < expiration) {
             return interaction.reply({
               flags: [MessageFlags.Ephemeral],
               embeds: [
                 this.client.utils.getUtility("default").generateEmbed("error", {
                   title: "Command on cooldown",
-                  description: `Try again in <t:${Math.round(
-                    expiration / 1000
-                  )}:R>`,
+                  description: `Try again in <t:${Math.round(expiration / 1000)}:R>`,
                 }),
               ],
             });
@@ -164,9 +150,7 @@ export default class InteractionCreate extends EventLoader {
         this.client.applicationCommandLoader.handle(interaction);
       }
     } catch (error) {
-      this.client.logger.error(
-        `Failed to handle command ${interaction.id}: ${error}`
-      );
+      this.client.logger.error(`Failed to handle command ${interaction.id}: ${error}`);
     }
   }
 }

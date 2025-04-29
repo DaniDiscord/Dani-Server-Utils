@@ -1,32 +1,27 @@
 import {
-  Client,
-  ClientOptions,
-  Collection,
-  GuildMember,
-  Message,
-} from "discord.js";
-import { clientConfig } from "../config/ClientConfig";
+  ApplicationCommandLoader,
+  AutoCompleteLoader,
+  ButtonLoader,
+  ModalLoader,
+  SelectMenuLoader,
+  TextCommandLoader,
+} from "./loader";
+import { Button, CustomApplicationCommand, Modal, SelectMenu } from "./command";
+import { Client, ClientOptions, Collection, GuildMember, Message } from "discord.js";
+
+import { EmojiSuggestions } from "../../src/utilities/emojiSuggestions";
+import { EventLoader } from "./loader/EventLoader";
+import { ISettings } from "../../src/types/mongodb";
 import { Logger } from "./Logger";
 import { SettingsModel } from "../../src/models/Settings";
-import mongoose from "mongoose";
+import TextCommand from "./command/TextCommand";
+import { TimeoutHandler } from "./TimeoutHandler";
 import { UtilitiesManager } from "lib/util/manager";
+import { clientConfig } from "../config/ClientConfig";
+import { existsSync } from "fs";
+import mongoose from "mongoose";
 import { pathToFileURL } from "url";
 import { resolve } from "path";
-import { EventLoader } from "./loader/EventLoader";
-import { existsSync } from "fs";
-import { ISettings } from "../../src/types/mongodb";
-import { Button, Modal, SelectMenu, CustomApplicationCommand } from "./command";
-import TextCommand from "./command/TextCommand";
-import {
-  ButtonLoader,
-  AutoCompleteLoader,
-  SelectMenuLoader,
-  ApplicationCommandLoader,
-  TextCommandLoader,
-  ModalLoader,
-} from "./loader";
-import { TimeoutHandler } from "./TimeoutHandler";
-import { EmojiSuggestions } from "../../src/utilities/emojiSuggestions";
 
 export class DsuClient extends Client {
   /** A more location accurate replacement for __dirname that matches the source correctly. */
@@ -161,8 +156,8 @@ export class DsuClient extends Client {
       await SettingsModel.findOneAndUpdate(
         { _id: "default" },
         { toUpdate: true },
-        { upsert: true, setDefaultsOnInsert: true, new: true }
-      )
+        { upsert: true, setDefaultsOnInsert: true, new: true },
+      ),
     );
   }
 
@@ -189,7 +184,7 @@ export class DsuClient extends Client {
             this.events.set(event.name, event);
           } else {
             this.logger.warn(
-              `Event file ${eventFilePath} does not export a valid EventLoader class.`
+              `Event file ${eventFilePath} does not export a valid EventLoader class.`,
             );
           }
         }
@@ -207,7 +202,7 @@ export class DsuClient extends Client {
 
     if (member) {
       const settings = this.settings.get(member.guild.id);
-      if (settings) member.settings;
+      if (settings) member.settings = settings;
     }
 
     const permOrder = this.config.permLevels

@@ -1,7 +1,7 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ISettings } from "../types/mongodb";
 import { CommandModel } from "./Command";
+import { ISettings } from "../types/mongodb";
 import { MentorModel } from "./Mentor";
 
 const SettingsSchema = new Schema<ISettings>(
@@ -43,10 +43,7 @@ const SettingsSchema = new Schema<ISettings>(
     },
     toUpdate: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const SettingsModel: Model<ISettings> = model(
-  "Settings",
-  SettingsSchema
-);
+export const SettingsModel: Model<ISettings> = model("Settings", SettingsSchema);

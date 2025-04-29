@@ -5,8 +5,9 @@ import {
   TextChannel,
   ThreadChannel,
 } from "discord.js";
-import { ClientUtilities } from "lib/core/ClientUtilities";
+
 import { AutoPingModel } from "models/AutoPing";
+import { ClientUtilities } from "lib/core/ClientUtilities";
 import { IAutoPing } from "../types/mongodb";
 
 export class AutoPingUtility extends ClientUtilities {
@@ -18,21 +19,17 @@ export class AutoPingUtility extends ClientUtilities {
       return;
     }
     const threadExists = thread as ThreadChannel;
-    const forum = await threadExists.guild.channels.fetch(
-      threadExists.parentId!
-    );
+    const forum = await threadExists.guild.channels.fetch(threadExists.parentId!);
     if (!(forum instanceof ForumChannel)) {
       return;
     }
 
     const autoPings = await this.getAutoPing(
       threadExists.guildId,
-      threadExists.parentId!
+      threadExists.parentId!,
     );
     for (const autoPing of autoPings) {
-      const pingChannel = await this.client.channels.fetch(
-        autoPing.targetChannelId
-      );
+      const pingChannel = await this.client.channels.fetch(autoPing.targetChannelId);
       if (!(pingChannel instanceof TextChannel)) {
         continue;
       }
@@ -45,9 +42,7 @@ export class AutoPingUtility extends ClientUtilities {
         continue;
       }
       const tag =
-        autoPing.tag.length === 0
-          ? ""
-          : `with tag ${tagId.name} ${tagId.emoji}`;
+        autoPing.tag.length === 0 ? "" : `with tag ${tagId.name} ${tagId.emoji}`;
       const message = `<@&${pingRole.id}> New post <#${threadExists.id}> under <#${threadExists.parentId}>  ${tag}`;
       await pingChannel.send({ content: message });
     }
@@ -78,13 +73,11 @@ export class AutoPingUtility extends ClientUtilities {
         ...channel.availableTags.map((tag) => ({
           name: tag.name,
           value: tag.id,
-        }))
+        })),
       );
     }
     await interaction.respond(
-      suggestions.filter((suggestion) =>
-        suggestion.name.startsWith(focus.value)
-      )
+      suggestions.filter((suggestion) => suggestion.name.startsWith(focus.value)),
     );
   }
 }

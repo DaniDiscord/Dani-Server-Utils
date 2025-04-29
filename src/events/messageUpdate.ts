@@ -1,6 +1,6 @@
-import { Message } from "discord.js";
 import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader";
+import { Message } from "discord.js";
 
 export default class MessageUpdate extends EventLoader {
   constructor(client: DsuClient) {
@@ -18,14 +18,14 @@ export default class MessageUpdate extends EventLoader {
       newMessage.guildId ?? "",
       newMessage.channelId,
       newMessage.author.id,
-      newMessage.member?.roles.cache.map((role) => role.id) ?? []
+      newMessage.member?.roles.cache.map((role) => role.id) ?? [],
     );
 
     if ((!canSendLinks && link.hasUrls) || level < 3) {
       await newMessage
         .delete()
         .catch(() =>
-          this.client.logger.error(`Failed to delete message containing link.`)
+          this.client.logger.error(`Failed to delete message containing link.`),
         );
       return;
     }

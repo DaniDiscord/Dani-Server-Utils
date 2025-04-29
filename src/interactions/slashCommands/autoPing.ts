@@ -6,9 +6,10 @@ import {
   ForumChannel,
   PermissionsBitField,
 } from "discord.js";
+
+import { AutoPingModel } from "models/AutoPing";
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { AutoPingModel } from "models/AutoPing";
 import { PermissionLevels } from "types/commands";
 
 const register = "register";
@@ -128,15 +129,14 @@ export default class AutoPingCommand extends CustomApplicationCommand {
         let validTag = tagId === allTag;
         if (forumChannel instanceof ForumChannel) {
           validTag =
-            forumChannel.availableTags.find((tag) => tag.id === tagId) !==
-            undefined;
+            forumChannel.availableTags.find((tag) => tag.id === tagId) !== undefined;
         }
 
         if (!validTag) {
-          return {
+          return await interaction.reply({
             content: "The tag ID is not valid for this forum",
-            eph: true,
-          };
+            flags: "Ephemeral",
+          });
         }
         const data = {
           guildId,
@@ -146,10 +146,10 @@ export default class AutoPingCommand extends CustomApplicationCommand {
           targetChannelId: targetChannelId.id,
         };
         await AutoPingModel.replaceOne(data, data, { upsert: true });
-        return {
+        return await interaction.reply({
           content: "Successfully registered automatic pings",
-          eph: true,
-        };
+          flags: "Ephemeral",
+        });
       case list:
         const autoPings = await AutoPingModel.find({
           guildId: guildId,
@@ -175,20 +175,16 @@ export default class AutoPingCommand extends CustomApplicationCommand {
           autoPingMessage.push({
             name: `auto-ping ${index}`,
             value: `<#${autoPing.forumId}> with tag ${tags.get(
-              autoPing.tag
-            )} pings <@&${autoPing.roleId}> in <#${
-              autoPing.targetChannelId
-            }>\n`,
+              autoPing.tag,
+            )} pings <@&${autoPing.roleId}> in <#${autoPing.targetChannelId}>\n`,
           });
           index += 1;
         }
-        const embed = new EmbedBuilder()
-          .setTitle(title)
-          .addFields(autoPingMessage);
-        return {
+        const embed = new EmbedBuilder().setTitle(title).addFields(autoPingMessage);
+        return await interaction.reply({
           embeds: [embed],
-          eph: true,
-        };
+          flags: "Ephemeral",
+        });
       case remove:
         const roleId2 = interaction.options.getRole(role, false)?.id;
         const forumId2 = interaction.options.getChannel(forum, false)?.id;
@@ -202,9 +198,12 @@ export default class AutoPingCommand extends CustomApplicationCommand {
         if (tagId2) filter.tag = tagId2;
         if (targetChannelId2) filter.targetChannelId = targetChannelId2.id;
         await AutoPingModel.deleteMany(filter);
-        return { content: "Removed automatic pings", eph: true };
+        return await interaction.reply({
+          content: "Removed automatic pings",
+          flags: "Ephemeral",
+        });
     }
 
-    return {};
+    return;
   }
 }

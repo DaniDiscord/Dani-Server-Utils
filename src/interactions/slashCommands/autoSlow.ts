@@ -6,10 +6,11 @@ import {
   MessageFlags,
   PermissionsBitField,
 } from "discord.js";
+
+import { AutoSlowUtility } from "../../utilities/autoSlow";
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
-import { AutoSlowUtility } from "../../utilities/autoSlow";
 
 const MIN = "min";
 const MAX = "max";
@@ -111,9 +112,7 @@ export default class AutoSlow extends CustomApplicationCommand {
       });
     }
 
-    const currentAutoSlow = await defaultUtility.getAutoSlow(
-      interaction.channelId
-    );
+    const currentAutoSlow = await defaultUtility.getAutoSlow(interaction.channelId);
 
     const commandMin = interaction.options.getNumber(MIN);
     const commandMax = interaction.options.getNumber(MAX);
@@ -241,7 +240,7 @@ export default class AutoSlow extends CustomApplicationCommand {
       freq,
       minChange,
       minChangeRate,
-      enabled
+      enabled,
     );
 
     const params = this.paramEmbed(autoSlow);

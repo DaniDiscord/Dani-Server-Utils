@@ -1,8 +1,8 @@
-import { Times } from "types/index";
 import { DsuClient } from "../../lib/core/DsuClient";
-import { SettingsModel } from "models/Settings";
-import { ISettings } from "types/mongodb";
 import { EventLoader } from "../../lib/core/loader/EventLoader";
+import { ISettings } from "types/mongodb";
+import { SettingsModel } from "models/Settings";
+import { Times } from "types/index";
 import _ from "lodash";
 
 export default class Ready extends EventLoader {
@@ -12,7 +12,7 @@ export default class Ready extends EventLoader {
 
   private async ensureGuildConfig(
     client: DsuClient,
-    guildId: string
+    guildId: string,
   ): Promise<ISettings> {
     const existing = await SettingsModel.findById(guildId)
       .populate("commands")
@@ -25,6 +25,7 @@ export default class Ready extends EventLoader {
         .save()
         .then((doc) => doc.populate("mentorRoles"))
         .then((doc) => doc.populate("commands"));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.code === 11000) {
         const existingConfig = await SettingsModel.findById(guildId)
@@ -33,7 +34,7 @@ export default class Ready extends EventLoader {
 
         if (!existingConfig) {
           throw new Error(
-            `Failed to find config for guild ${guildId} after duplicate key error`
+            `Failed to find config for guild ${guildId} after duplicate key error`,
           );
         }
         return existingConfig;
@@ -52,10 +53,7 @@ export default class Ready extends EventLoader {
       !_.isEqual(cachedSettings, dbSettings) ||
       dbSettings.toUpdate
     ) {
-      if (
-        cachedSettings?.mentorRoles.toString() !==
-        dbSettings.mentorRoles.toString()
-      ) {
+      if (cachedSettings?.mentorRoles.toString() !== dbSettings.mentorRoles.toString()) {
         client.logger.info("Setting sync", {
           action: "Fetch",
           message: `Database.mentorRoles -> Client.mentorRoles (${guildId})`,
@@ -74,9 +72,9 @@ export default class Ready extends EventLoader {
       await Promise.all(
         Array.from(client.settings.keys()).map((guildId) =>
           this.syncSettings(client, guildId).catch((e) =>
-            client.logger.error("Sync failed for guild", { guildId, error: e })
-          )
-        )
+            client.logger.error("Sync failed for guild", { guildId, error: e }),
+          ),
+        ),
       );
     };
 
@@ -84,10 +82,8 @@ export default class Ready extends EventLoader {
 
     const interval = setInterval(
       () =>
-        updateSettings().catch((e) =>
-          client.logger.error("Periodic update failed", e)
-        ),
-      Times.SECOND * 3
+        updateSettings().catch((e) => client.logger.error("Periodic update failed", e)),
+      Times.SECOND * 3,
     );
 
     client.once("destroy", () => clearInterval(interval));

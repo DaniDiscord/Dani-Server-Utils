@@ -9,9 +9,10 @@ import {
   TextChannel,
   ThreadChannel,
 } from "discord.js";
+import { SuggestionConfigModel, SuggestionModel } from "models/Suggestion";
+
 import { ClientUtilities } from "lib/core/ClientUtilities";
 import { DsuClient } from "lib/core/DsuClient";
-import { SuggestionConfigModel, SuggestionModel } from "models/Suggestion";
 import { ISuggestionConfig } from "types/mongodb";
 
 export class SuggestionUtility extends ClientUtilities {
@@ -62,11 +63,11 @@ export class SuggestionUtility extends ClientUtilities {
     }
 
     const originalChannel = await interaction.guild!.channels.fetch(
-      suggestionConfig.channelId
+      suggestionConfig.channelId,
     );
-    const originalMessage = await (
-      originalChannel as TextChannel
-    ).messages.fetch(messageId);
+    const originalMessage = await (originalChannel as TextChannel).messages.fetch(
+      messageId,
+    );
 
     if (!originalMessage) {
       return interaction.reply({
@@ -76,7 +77,7 @@ export class SuggestionUtility extends ClientUtilities {
     }
 
     const thread = (await interaction.guild!.channels.fetch(
-      suggestionConfig.deniedThreadId!
+      suggestionConfig.deniedThreadId!,
     )) as ThreadChannel;
 
     // Lock suggestion discussion thread
@@ -89,14 +90,11 @@ export class SuggestionUtility extends ClientUtilities {
     });
 
     await originalMessage.forward(thread.id);
-    await thread.send(
-      `The above submission has been denied!\nReason: ${reason}`
-    );
+    await thread.send(`The above submission has been denied!\nReason: ${reason}`);
 
-    suggestionConfig.existingSubmissions =
-      suggestionConfig.existingSubmissions.filter(
-        (id) => !id.equals(suggestion._id as string)
-      );
+    suggestionConfig.existingSubmissions = suggestionConfig.existingSubmissions.filter(
+      (id) => !id.equals(suggestion._id as string),
+    );
 
     suggestionConfig.deniedSubmissions.push({
       messageId,
@@ -132,14 +130,14 @@ export class SuggestionUtility extends ClientUtilities {
       },
       {
         deniedThreadId: thread.id,
-      }
+      },
     );
   }
 
   async sendAnonymousSuggestion(
     interaction: ChatInputCommandInteraction,
     content: string,
-    model: ISuggestionConfig
+    model: ISuggestionConfig,
   ) {
     const channelId = model.channelId;
 
@@ -182,7 +180,7 @@ export class SuggestionUtility extends ClientUtilities {
         { guildId: interaction.guildId },
         {
           $push: { existingSubmissions: suggestion._id },
-        }
+        },
       );
     } catch (error) {
       console.error("Failed to send anonymous suggestion:", error);

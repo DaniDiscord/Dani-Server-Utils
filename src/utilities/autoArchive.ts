@@ -1,10 +1,11 @@
-import { EmbedBuilder, ForumChannel, ThreadChannel } from "discord.js";
-import { DsuClient } from "lib/core/DsuClient";
-import { ClientUtilities } from "lib/core/ClientUtilities";
 import {
   AutoArchiveForumBlacklistModel,
   AutoArchiveForumModel,
 } from "models/AutoArchive";
+import { EmbedBuilder, ForumChannel, ThreadChannel } from "discord.js";
+
+import { ClientUtilities } from "lib/core/ClientUtilities";
+import { DsuClient } from "lib/core/DsuClient";
 import { Times } from "../types/index";
 
 export class AutoArchiveUtility extends ClientUtilities {
@@ -79,16 +80,14 @@ export class AutoArchiveUtility extends ClientUtilities {
         try {
           const embed = new EmbedBuilder()
             .setTitle(`Post Locked`)
-            .setDescription(
-              `This post has been automatically locked due to inactivity.`
-            )
+            .setDescription(`This post has been automatically locked due to inactivity.`)
             .setColor("Red");
 
           await thread.send({ embeds: [embed] });
         } catch (error) {
           this.client.logger.warn(
             `Failed to send lock embed for thread (${thread.id}) in channel (${channel.id})`,
-            error as Error
+            error as Error,
           );
         }
 
@@ -96,7 +95,7 @@ export class AutoArchiveUtility extends ClientUtilities {
           true,
           `Auto-Lock after ${this.client.utils
             .getUtility("timeParser")
-            .parseDurationToString(ageInMs)} of inactivity.`
+            .parseDurationToString(ageInMs)} of inactivity.`,
         );
 
         await thread.setArchived(true);

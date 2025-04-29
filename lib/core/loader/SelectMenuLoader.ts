@@ -1,8 +1,9 @@
 import { AnySelectMenuInteraction, MessageFlags } from "discord.js";
-import { DsuClient } from "../DsuClient";
+
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
-import { SelectMenu } from "../command/SelectMenu";
+import { DsuClient } from "../DsuClient";
 import { InteractionType } from "types/commands";
+import { SelectMenu } from "../command/SelectMenu";
 
 export class SelectMenuLoader extends BaseInteractionLoader {
   constructor(client: DsuClient) {
@@ -13,9 +14,7 @@ export class SelectMenuLoader extends BaseInteractionLoader {
     return super.load("selectMenus");
   }
   private fetchMenu(customId: string) {
-    return this.client.selectMenus.find((menu) =>
-      customId.startsWith(menu.name)
-    );
+    return this.client.selectMenus.find((menu) => customId.startsWith(menu.name));
   }
 
   public handle(interaction: AnySelectMenuInteraction) {
@@ -23,14 +22,11 @@ export class SelectMenuLoader extends BaseInteractionLoader {
 
     if (!menu) {
       return this.client.logger.error(
-        `${interaction.user.tag} [${interaction.user.id}] invoked select menu ${interaction.customId} even though it doesn't exist.`
+        `${interaction.user.tag} [${interaction.user.id}] invoked select menu ${interaction.customId} even though it doesn't exist.`,
       );
     }
 
-    const missingPermissions = menu.validate(
-      interaction,
-      InteractionType.SelectMenu
-    );
+    const missingPermissions = menu.validate(interaction, InteractionType.SelectMenu);
 
     if (missingPermissions) {
       return interaction.reply({
@@ -49,12 +45,10 @@ export class SelectMenuLoader extends BaseInteractionLoader {
     await menu.run(interaction).catch((error) => {
       this.client.logger.error(error);
 
-      const embed = this.client.utils
-        .getUtility("default")
-        .generateEmbed("error", {
-          title: "An error has occured!",
-          description: "An unexpected error has occured.",
-        });
+      const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+        title: "An error has occured!",
+        description: "An unexpected error has occured.",
+      });
 
       interaction.deferReply();
       return interaction.followUp({

@@ -5,6 +5,7 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
@@ -101,7 +102,7 @@ export default class PhraseCommand extends CustomApplicationCommand {
                 phrases: { content, matchThreshold: threshold, phraseId },
               },
             },
-            { upsert: true, new: true }
+            { upsert: true, new: true },
           );
 
           await interaction.reply({
@@ -122,7 +123,7 @@ export default class PhraseCommand extends CustomApplicationCommand {
           await PhraseMatcherModel.findOneAndUpdate(
             { guildId: interaction.guildId },
             { logChannelId: channel.id },
-            { upsert: true }
+            { upsert: true },
           );
 
           await interaction.reply({
@@ -148,7 +149,7 @@ export default class PhraseCommand extends CustomApplicationCommand {
               phrases: { phraseId },
             },
           },
-          { new: true }
+          { new: true },
         );
 
         if (phraseMatcher) {
@@ -196,7 +197,7 @@ export default class PhraseCommand extends CustomApplicationCommand {
                 name: "No configured phrases",
                 value: "Add one with /phrase set",
               },
-            ]
+            ],
       );
 
       await interaction.reply({ embeds: [embed] });

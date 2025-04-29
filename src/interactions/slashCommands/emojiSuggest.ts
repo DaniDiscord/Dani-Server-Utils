@@ -10,9 +10,10 @@ import {
   TextChannel,
 } from "discord.js";
 import { ApplicationCommandType, MessageFlags } from "discord-api-types/v10";
+import { EMOJI_APPROVE, EMOJI_BAN, EMOJI_DENY } from "types/constants/emoji";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { EMOJI_APPROVE, EMOJI_BAN, EMOJI_DENY } from "types/constants/emoji";
 
 export const commandId = "emojisuggest";
 const NAME = "name";
@@ -60,7 +61,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
     const emojiUtility = this.client.utils.getUtility("emoji");
     if (!interaction.guild) return;
     const emojiSuggestionsConfig = await emojiUtility.getEmojiSuggestions(
-      interaction.guildId ?? ""
+      interaction.guildId ?? "",
     );
 
     if (emojiSuggestionsConfig === null) {
@@ -69,9 +70,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
         flags: MessageFlags.Ephemeral,
       });
     }
-    if (
-      interaction.guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap
-    ) {
+    if (interaction.guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap) {
       return interaction.reply({
         content: "Emoji cap has been hit, wait for updates",
         flags: MessageFlags.Ephemeral,
@@ -81,7 +80,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
     const banReason = await emojiUtility.getBanReason(
       interaction.guild.id,
       commandId,
-      interaction.user.id
+      interaction.user.id,
     );
     console.log(banReason);
     if (banReason !== undefined) {
@@ -96,7 +95,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
     const lastUse = await emojiUtility.getLastCommandUse(
       interaction.guild.id,
       commandId,
-      interaction.user.id
+      interaction.user.id,
     );
     if (lastUse !== null) {
       const deltaTime = Date.now() - lastUse;
@@ -166,7 +165,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
     }
 
     const approvalChannel = await interaction.guild.channels.cache.get(
-      emojiSuggestionsConfig.sourceId
+      emojiSuggestionsConfig.sourceId,
     );
     if (approvalChannel === undefined) {
       return interaction.reply({
@@ -194,13 +193,11 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
       .setCustomId("ban")
       .setStyle(ButtonStyle.Danger);
 
-    // eslint-disable-next-line max-len
-    const row =
-      new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents([
-        approveButton,
-        denyButton,
-        banButton,
-      ]);
+    const row = new ActionRowBuilder<MessageActionRowComponentBuilder>().setComponents([
+      approveButton,
+      denyButton,
+      banButton,
+    ]);
 
     await approvalChannel.send({
       content: `${name} from <@${interaction.user.id}>`,

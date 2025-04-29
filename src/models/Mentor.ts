@@ -1,6 +1,7 @@
 import { Model, Schema, model } from "mongoose";
 
 import { IMentor } from "../types/mongodb";
+
 const MentorSchema = new Schema<IMentor>({
   guild: { type: String, ref: "Settings" },
   roleID: String,

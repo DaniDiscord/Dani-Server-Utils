@@ -1,16 +1,21 @@
-import path from "path";
-import { readdirSync } from "fs";
 import {
+  ApplicationCommandData,
+  ApplicationCommandDataResolvable,
   ApplicationCommandType,
   Collection,
   CommandInteraction,
+  InteractionResponse,
+  Message,
   MessageFlags,
   RESTPostAPIApplicationCommandsJSONBody,
 } from "discord.js";
-import { DsuClient } from "../DsuClient";
+
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
-import { InteractionType } from "types/commands";
 import { CustomApplicationCommand } from "../command";
+import { DsuClient } from "../DsuClient";
+import { InteractionType } from "types/commands";
+import path from "path";
+import { readdirSync } from "fs";
 
 export class ApplicationCommandLoader extends BaseInteractionLoader {
   public cooldowns = new Collection<string, Collection<string, number>>();
@@ -24,15 +29,12 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
     await Promise.all([
       this.loadFrom(
         path.join(basePath, "slashCommands"),
-        ApplicationCommandType.ChatInput
+        ApplicationCommandType.ChatInput,
       ),
-      this.loadFrom(
-        path.join(basePath, "userContext"),
-        ApplicationCommandType.User
-      ),
+      this.loadFrom(path.join(basePath, "userContext"), ApplicationCommandType.User),
       this.loadFrom(
         path.join(basePath, "messageContext"),
-        ApplicationCommandType.Message
+        ApplicationCommandType.Message,
       ),
     ]);
 
@@ -56,7 +58,7 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
               name: cmd.name,
               type: ApplicationCommandType.ChatInput,
               description: cmd.description,
-              // @ts-ignore
+              // @ts-expect-error Discord.js uses too specific of typing.
               options: cmd.options.applicationData ?? [],
             };
 
@@ -75,36 +77,36 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
           default:
             throw new Error(`Unknown command type: ${cmd.commandType}`);
         }
-      }
+      },
     );
   }
 
   private async registerGuildCommands(
-    commandData: RESTPostAPIApplicationCommandsJSONBody[]
+    commandData: RESTPostAPIApplicationCommandsJSONBody[],
   ) {
     this.client.logger.info(`[DEVELOPMENT] Registering commands to guilds.`);
-
     await Promise.all(
       this.client.guilds.cache.map(async (guild) => {
         try {
           await guild.commands.set(commandData);
           this.client.logger.info(`Registered guild commands in ${guild.name}`);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           if (error.code === 50001) {
             this.client.logger.error(
               null,
-              `Missing access in ${guild.name} (${guild.id}) when setting commands.`
+              `Missing access in ${guild.name} (${guild.id}) when setting commands.`,
             );
           } else {
             this.client.logger.error(error);
           }
         }
-      })
+      }),
     );
   }
 
   private async registerGlobalCommands(
-    commandData: RESTPostAPIApplicationCommandsJSONBody[]
+    commandData: RESTPostAPIApplicationCommandsJSONBody[],
   ) {
     try {
       await this.client.application?.commands.set(commandData);
@@ -114,13 +116,10 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
     }
   }
 
-  private async loadFrom(
-    dirPath: string,
-    expectedType: ApplicationCommandType
-  ) {
+  private async loadFrom(dirPath: string, expectedType: ApplicationCommandType) {
     try {
       const files = readdirSync(dirPath).filter(
-        (f) => f.endsWith(".ts") || f.endsWith(".js")
+        (f) => f.endsWith(".ts") || f.endsWith(".js"),
       );
 
       for (const file of files) {
@@ -128,33 +127,26 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
           const module = await import(path.join(dirPath, file));
           const CommandClass = module.default;
           if (!CommandClass) continue;
-          const command: CustomApplicationCommand = new CommandClass(
-            this.client
-          );
+          const command: CustomApplicationCommand = new CommandClass(this.client);
           if (command.type !== InteractionType.ApplicationCommand) continue;
           if (command.commandType !== expectedType) {
             this.client.logger.warn(
-              `Command ${command.name} in ${dirPath} has type ${command.commandType} but expected ${expectedType}`
+              `Command ${command.name} in ${dirPath} has type ${command.commandType} but expected ${expectedType}`,
             );
             continue;
           }
 
           this.client.applicationCommands.set(command.name, command);
         } catch (error) {
-          this.client.logger.error(
-            `Error loading command from ${file}:`,
-            error
-          );
+          this.client.logger.error(`Error loading command from ${file}:`, error);
         }
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.code === "ENOENT") {
         this.client.logger.warn(`Command directory not found: ${dirPath}`);
       } else {
-        this.client.logger.error(
-          `Error loading commands from ${dirPath}:`,
-          error
-        );
+        this.client.logger.error(`Error loading commands from ${dirPath}:`, error);
       }
     }
   }
@@ -172,13 +164,13 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
     const command = this.fetchCommand(interaction.commandName);
     if (!command) {
       return this.client.logger.error(
-        `${interaction.user.tag} [${interaction.user.id}] invoked unknown command ${interaction.commandName}`
+        `${interaction.user.tag} [${interaction.user.id}] invoked unknown command ${interaction.commandName}`,
       );
     }
 
     const missingPermissions = command.validate(
       interaction,
-      InteractionType.ApplicationCommand
+      InteractionType.ApplicationCommand,
     );
     if (missingPermissions) {
       return interaction.reply({
@@ -193,19 +185,14 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
     this.run(command, interaction);
   }
 
-  private run(
-    command: CustomApplicationCommand,
-    interaction: CommandInteraction
-  ) {
-    command.run(interaction).catch((error): Promise<any> => {
+  private run(command: CustomApplicationCommand, interaction: CommandInteraction) {
+    command.run(interaction).catch((error): Promise<Message | InteractionResponse> => {
       this.client.logger.error(error);
 
-      const embed = this.client.utils
-        .getUtility("default")
-        .generateEmbed("error", {
-          title: "An error has occurred!",
-          description: "Something went wrong executing the command.",
-        });
+      const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+        title: "An error has occurred!",
+        description: "Something went wrong executing the command.",
+      });
 
       interaction.deferReply();
 

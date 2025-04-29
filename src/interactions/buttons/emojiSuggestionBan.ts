@@ -1,6 +1,7 @@
 import { ButtonInteraction, ModalBuilder, TextInputStyle } from "discord.js";
-import { DsuClient } from "lib/core/DsuClient";
+
 import { Button } from "lib/core/command";
+import { DsuClient } from "lib/core/DsuClient";
 import { Question } from "lib/util/questions";
 import { SuggestionAction } from "../../utilities/emojiSuggestions";
 
@@ -26,7 +27,7 @@ export default class EmojiSuggestionDeny extends Button {
       reasonId,
       "Reason for ban",
       true,
-      TextInputStyle.Paragraph
+      TextInputStyle.Paragraph,
     );
     const modal = new ModalBuilder()
       .setCustomId("emojiBan")
@@ -51,7 +52,7 @@ export default class EmojiSuggestionDeny extends Button {
       interaction.guildId!,
       "emojisuggest",
       author,
-      reason
+      reason,
     );
 
     await submitted.reply({
@@ -63,7 +64,7 @@ export default class EmojiSuggestionDeny extends Button {
       SuggestionAction.Ban,
       interaction.user.id,
       attachment.url,
-      author
+      author,
     );
     await message.edit({
       content: "",

@@ -1,7 +1,7 @@
 import { AutocompleteInteraction } from "discord.js";
-import { DsuClient } from "../DsuClient";
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
 import { CustomApplicationCommand } from "../command/ApplicationCommand";
+import { DsuClient } from "../DsuClient";
 
 export class AutoCompleteLoader extends BaseInteractionLoader {
   constructor(client: DsuClient) {
@@ -14,7 +14,7 @@ export class AutoCompleteLoader extends BaseInteractionLoader {
 
   private fetchAutoComplete(name: string) {
     return this.client.applicationCommands.find(
-      (autoComplete) => autoComplete.name == name
+      (autoComplete) => autoComplete.name == name,
     );
   }
 
@@ -27,13 +27,13 @@ export class AutoCompleteLoader extends BaseInteractionLoader {
 
   async run(
     autoComplete: CustomApplicationCommand,
-    interaction: AutocompleteInteraction
+    interaction: AutocompleteInteraction,
   ) {
     const focused = interaction.options.getFocused(true);
 
     autoComplete
       .autoComplete(interaction, focused)
-      .catch(async (error): Promise<any> => {
+      .catch(async (error): Promise<void> => {
         this.client.logger.error(error);
         if (!interaction.responded) return interaction.respond([]);
       });

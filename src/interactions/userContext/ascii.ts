@@ -5,6 +5,7 @@ import {
   PermissionsBitField,
   UserContextMenuCommandInteraction,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 
@@ -32,9 +33,7 @@ export default class AsciiName extends CustomApplicationCommand {
       });
     }
     const unicodeName = interaction.targetMember.user.username;
-    const name = this.client.utils
-      .getUtility("default")
-      .unicodeToAscii(unicodeName);
+    const name = this.client.utils.getUtility("default").unicodeToAscii(unicodeName);
     if (name.length < 3) {
       return interaction.reply({
         content: "Name couldn't be converted to ASCII",

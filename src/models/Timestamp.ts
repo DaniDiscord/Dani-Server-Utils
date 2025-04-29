@@ -8,7 +8,4 @@ const TimestampSchema = new Schema<ITimestamp>({
   timestamp: Date,
 });
 
-export const TimestampModel: Model<ITimestamp> = model(
-  "Timestamp",
-  TimestampSchema
-);
+export const TimestampModel: Model<ITimestamp> = model("Timestamp", TimestampSchema);

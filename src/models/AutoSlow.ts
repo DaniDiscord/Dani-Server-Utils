@@ -12,7 +12,4 @@ const AutoSlowSchema = new Schema<IAutoSlow>({
   enabled: Boolean,
 });
 
-export const AutoSlowModel: Model<IAutoSlow> = model(
-  "AutoSlow",
-  AutoSlowSchema
-);
+export const AutoSlowModel: Model<IAutoSlow> = model("AutoSlow", AutoSlowSchema);

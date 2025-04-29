@@ -5,6 +5,7 @@ import {
   PermissionsBitField,
   UserContextMenuCommandInteraction,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 
@@ -33,7 +34,7 @@ export default class ResetDisplay extends CustomApplicationCommand {
     }
     await badNameUtility.setMemberName(
       interaction.targetMember,
-      interaction.targetUser.displayName
+      interaction.targetUser.displayName,
     );
     return interaction.reply({
       content: "Nickname reset successfully",

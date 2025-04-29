@@ -1,5 +1,7 @@
 import { Document, Types } from "mongoose";
 
+import { APIEmbed } from "discord.js";
+
 /* COMMAND */
 export interface RawCommand {
   guild: string;
@@ -49,7 +51,7 @@ export interface RawSettings {
       logChannelId: string;
       matchThreshold: number;
       phrase: string;
-    }
+    },
   ];
   roles: {
     helper: string;
@@ -179,7 +181,7 @@ export interface IAnchor {
   originalMessageId: string;
   originalChannelId: string;
   content?: string;
-  embeds?: any[];
+  embeds?: APIEmbed[];
   lastAnchorId?: string;
   lastAnchorTime?: Date;
   messageCount: number;

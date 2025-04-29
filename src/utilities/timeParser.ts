@@ -1,6 +1,7 @@
-import { DsuClient } from "lib/core/DsuClient";
-import { ClientUtilities } from "lib/core/ClientUtilities";
 import { Times, units } from "../types/index";
+
+import { ClientUtilities } from "lib/core/ClientUtilities";
+import { DsuClient } from "lib/core/DsuClient";
 
 export class TimeParserUtility extends ClientUtilities {
   constructor(client: DsuClient) {

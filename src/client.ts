@@ -1,6 +1,6 @@
+import { DsuClient } from "lib/core/DsuClient";
 import { Partials } from "discord.js";
 import { clientConfig } from "lib/config/ClientConfig";
-import { DsuClient } from "lib/core/DsuClient";
 
 const client = new DsuClient({
   allowedMentions: { parse: ["users"] },

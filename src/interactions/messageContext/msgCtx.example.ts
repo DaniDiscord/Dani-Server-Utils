@@ -1,13 +1,14 @@
-import {
-  ApplicationCommandType,
-  MessageContextMenuCommandInteraction,
-} from "discord.js";
+import { ApplicationCommandType, MessageContextMenuCommandInteraction } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { InteractionCommandOptions } from "types/commands";
-export default class Example extends CustomApplicationCommand {
+
+// Needs to be default export if you plan to add it.
+
+export class Example extends CustomApplicationCommand {
   /**
-   * Constructor call takes 3 arguments (name, client, options)
+   * Constructor call takes 3 arguments (customId, client, options)
    * {@link InteractionCommandOptions} for options
    */
   constructor(client: DsuClient) {

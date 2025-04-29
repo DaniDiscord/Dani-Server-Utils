@@ -1,19 +1,10 @@
-import {
-  GuildEmoji,
-  Message,
-  MessageReaction,
-  ReactionEmoji,
-  User,
-} from "discord.js";
-import { DsuClient } from "lib/core/DsuClient";
+import { GuildEmoji, Message, MessageReaction, ReactionEmoji, User } from "discord.js";
+
 import { ClientUtilities } from "lib/core/ClientUtilities";
+import { DsuClient } from "lib/core/DsuClient";
 
 export class ReactionHandler extends ClientUtilities {
-  closePollsRoles = [
-    "707248297290629120",
-    "580770272521617446",
-    "502973976428150784",
-  ];
+  closePollsRoles = ["707248297290629120", "580770272521617446", "502973976428150784"];
   autoReactChannels = [
     "664579652261773333",
     "601476169312763904",
@@ -46,9 +37,7 @@ export class ReactionHandler extends ClientUtilities {
     )
       return;
 
-    const member = await reaction.message.guild?.members
-      .fetch(user.id)
-      .catch(() => {});
+    const member = await reaction.message.guild?.members.fetch(user.id).catch(() => {});
     if (!member) return;
 
     if (
@@ -57,16 +46,12 @@ export class ReactionHandler extends ClientUtilities {
     ) {
       const shouldRemove = reaction.message.reactions.cache.size > 1;
       if (!shouldRemove) return;
-      const removed = await reaction.message.reactions
-        .removeAll()
-        .catch(() => {});
+      const removed = await reaction.message.reactions.removeAll().catch(() => {});
       if (removed) await reaction.message.react(this.autoReactions[2]);
     }
   }
 
-  private isReactionEmoji(
-    emoji: ReactionEmoji | GuildEmoji
-  ): emoji is ReactionEmoji {
+  private isReactionEmoji(emoji: ReactionEmoji | GuildEmoji): emoji is ReactionEmoji {
     return emoji.id == null;
   }
 }

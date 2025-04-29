@@ -1,10 +1,8 @@
 import { Collection } from "discord.js";
 
 export class TimeoutHandler {
-  coll: Collection<
-    string,
-    { set: Date; duration: number; timeout: NodeJS.Timeout }
-  > = new Collection();
+  coll: Collection<string, { set: Date; duration: number; timeout: NodeJS.Timeout }> =
+    new Collection();
   has(str: string) {
     return this.coll.has(str);
   }

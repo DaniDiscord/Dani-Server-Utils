@@ -6,6 +6,7 @@ import {
   GuildMember,
   MessageFlags,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { SettingsModel } from "models/Settings";
@@ -187,7 +188,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
     const subcommand = interaction.options.getSubcommand();
     const permLevel = this.client.getPermLevel(
       undefined,
-      interaction.member as GuildMember
+      interaction.member as GuildMember,
     );
 
     const adminOnly = ["add", "remove", "enable", "disable", "get"];
@@ -196,11 +197,17 @@ export default class TriggerCommand extends CustomApplicationCommand {
     const defaultUtility = this.client.utils.getUtility("default");
 
     if (permLevel < 4 && adminOnly.includes(subcommand)) {
-      return { content: "Insufficient Permissions", eph: true };
+      return await interaction.reply({
+        content: "Insufficient Permissions",
+        flags: "Ephemeral",
+      });
     }
 
     if (permLevel < 2 && staffOnly.includes(subcommand)) {
-      return { content: "Insufficient Permissions", eph: true };
+      return await interaction.reply({
+        content: "Insufficient Permissions",
+        flags: "Ephemeral",
+      });
     }
 
     if (subcommand == "add") {
@@ -256,8 +263,8 @@ export default class TriggerCommand extends CustomApplicationCommand {
         await SettingsModel.findOneAndUpdate(
           { _id: interaction.settings._id },
           { $push: { triggers: trigger }, toUpdate: true },
-          { upsert: true, setDefaultsOnInsert: true, new: true }
-        )
+          { upsert: true, setDefaultsOnInsert: true, new: true },
+        ),
       );
 
       await interaction.reply({
@@ -277,8 +284,8 @@ export default class TriggerCommand extends CustomApplicationCommand {
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { $pull: { triggers: { id: id } }, toUpdate: true },
-            { upsert: true, setDefaultsOnInsert: true, new: true }
-          )
+            { upsert: true, setDefaultsOnInsert: true, new: true },
+          ),
         );
 
         if (clear) {
@@ -324,8 +331,8 @@ export default class TriggerCommand extends CustomApplicationCommand {
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { triggers: newTriggers, toUpdate: true },
-            { upsert: true, setDefaultsOnInsert: true, new: true }
-          )
+            { upsert: true, setDefaultsOnInsert: true, new: true },
+          ),
         );
 
         await interaction.reply({
@@ -373,8 +380,8 @@ export default class TriggerCommand extends CustomApplicationCommand {
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { triggers: newTriggers, toUpdate: true },
-            { upsert: true, setDefaultsOnInsert: true, new: true }
-          )
+            { upsert: true, setDefaultsOnInsert: true, new: true },
+          ),
         );
 
         await interaction.reply({
@@ -417,7 +424,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
             new EmbedBuilder()
               .setColor("Green")
               .setDescription(
-                `**ID**: ${trigger.id}\n**Cooldown**: ${trigger.cooldown}\n**Enabled**: ${trigger.enabled}\n**Keywords**: ${keywords}`
+                `**ID**: ${trigger.id}\n**Cooldown**: ${trigger.cooldown}\n**Enabled**: ${trigger.enabled}\n**Keywords**: ${keywords}`,
               ),
           ],
         });
@@ -437,7 +444,10 @@ export default class TriggerCommand extends CustomApplicationCommand {
       const triggerId = `trigger-${id}`;
 
       if (!member) {
-        return { content: "User is not a member of this guild", eph: true };
+        return await interaction.reply({
+          content: "User is not a member of this guild",
+          flags: "Ephemeral",
+        });
       }
 
       if (!interaction.settings.triggers.some((t) => t.id == id)) {

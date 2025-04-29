@@ -5,6 +5,7 @@ import {
   ModalBuilder,
   TextInputStyle,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { Question } from "lib/util/questions";
@@ -21,7 +22,7 @@ export default class Codeblock extends CustomApplicationCommand {
   async run(interaction: MessageContextMenuCommandInteraction) {
     const suggestionUtility = this.client.utils.getUtility("suggestions");
     const isSuggestion = await suggestionUtility.isSuggestionMessage(
-      interaction.targetMessage
+      interaction.targetMessage,
     );
     if (!isSuggestion) {
       return interaction.reply({
@@ -42,12 +43,12 @@ export default class Codeblock extends CustomApplicationCommand {
       "reason",
       "Reason for denial",
       false,
-      TextInputStyle.Paragraph
+      TextInputStyle.Paragraph,
     );
 
     suggestionUtility.modalContextCache.set(
       interaction.user.id,
-      interaction.targetMessage.id
+      interaction.targetMessage.id,
     );
 
     modal.addComponents(submissionDenialQuestion.toActionRow());

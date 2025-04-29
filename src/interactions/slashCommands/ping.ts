@@ -1,7 +1,5 @@
-import {
-  ApplicationCommandType,
-  ChatInputCommandInteraction,
-} from "discord.js";
+import { ApplicationCommandType, ChatInputCommandInteraction } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 

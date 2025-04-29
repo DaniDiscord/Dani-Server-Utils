@@ -1,10 +1,13 @@
-import { ButtonInteraction } from "discord.js";
 import { Button } from "lib/core/command";
+import { ButtonInteraction } from "discord.js";
 import { DsuClient } from "lib/core/DsuClient";
 import { InteractionCommandOptions } from "types/commands";
-export default class ExampleButton extends Button {
+
+// Needs to be default export if you plan to add it.
+
+export class ExampleButton extends Button {
   /**
-   * super call takes 3 args (name, client, options);
+   * super call takes 3 args (customId, client, options);
    * See {@link InteractionCommandOptions} for data, only permissionLevel is required.
    * Global defines if button can be used by anyone, or only the interaction author.
    * applicationData defines the options of the interaction.

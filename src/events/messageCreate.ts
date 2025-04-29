@@ -10,6 +10,7 @@ import {
   Message,
   TextChannel,
 } from "discord.js";
+
 import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader/EventLoader";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
@@ -45,21 +46,19 @@ export default class MessageCreate extends EventLoader {
           upsert: true,
           setDefaultsOnInsert: true,
           new: true,
-        }
+        },
       )
         .populate("mentorRoles")
         .populate("commands");
 
       this.client.logger.info(
-        `Setting sync: Fetch Database -> Client (${message.guild.id})`
+        `Setting sync: Fetch Database -> Client (${message.guild.id})`,
       );
 
       this.client.settings.set(message.guild.id, s);
       message.settings = s;
     } else {
-      const s = this.client.settings.get(
-        message.guild ? message.guild.id : "default"
-      );
+      const s = this.client.settings.get(message.guild ? message.guild.id : "default");
       if (!s) return;
       message.settings = s;
     }
@@ -69,11 +68,7 @@ export default class MessageCreate extends EventLoader {
 
     const autoSlowManager = await defaultUtility.getAutoSlow(message.channelId);
 
-    if (
-      autoSlowManager != null &&
-      level < 1 &&
-      message.channel instanceof TextChannel
-    ) {
+    if (autoSlowManager != null && level < 1 && message.channel instanceof TextChannel) {
       autoSlowManager.messageSent();
       autoSlowManager.setOptimalSlowMode(message.channel);
     }
@@ -91,15 +86,13 @@ export default class MessageCreate extends EventLoader {
       message.guildId ?? "",
       message.channelId,
       message.author.id,
-      message.member?.roles.cache.map((role) => role.id) ?? []
+      message.member?.roles.cache.map((role) => role.id) ?? [],
     );
 
     if (!canSendLinks && hasLink.hasUrls && level < 3) {
       await message
         .delete()
-        .catch(() =>
-          this.client.logger.error("Failed to delete message with link")
-        );
+        .catch(() => this.client.logger.error("Failed to delete message with link"));
       return;
     }
 
@@ -115,31 +108,24 @@ export default class MessageCreate extends EventLoader {
     ) {
       if (chMessages && !chainIgnoredChannels.includes(message.channelId)) {
         if (
-          ((CHAIN_STOPS_ONLY &&
-            chainStops.some((o) => o == trimMsg(message.content))) ||
+          ((CHAIN_STOPS_ONLY && chainStops.some((o) => o == trimMsg(message.content))) ||
             !CHAIN_STOPS_ONLY) &&
           chMessages.some((o) => o.word == trimMsg(message.content)) &&
           message.deletable &&
           level < 2
         ) {
-          const chMsg = chMessages.find(
-            (o) => o.word == trimMsg(message.content)
-          );
+          const chMsg = chMessages.find((o) => o.word == trimMsg(message.content));
           if (!chMsg) return;
           chMsg.count++;
           if (chMsg.count >= CHAIN_DELETE_MESSAGE_THRESHOLD) {
             await message
               .delete()
-              .catch(() =>
-                this.client.logger.error("Failed to delete chain message")
-              );
+              .catch(() => this.client.logger.error("Failed to delete chain message"));
             if (chMsg.count == CHAIN_WARN_THRESHOLD) {
               const msg = await message.channel
                 .send({ content: `Please stop chaining.` })
                 .catch(() =>
-                  this.client.logger.error(
-                    "Failed to send chain warning message"
-                  )
+                  this.client.logger.error("Failed to send chain warning message"),
                 );
               if (msg && msg.deletable)
                 setTimeout(async () => {
@@ -148,14 +134,12 @@ export default class MessageCreate extends EventLoader {
                       .delete()
                       .catch(() =>
                         this.client.logger.error(
-                          "Failed to delete chain warning message"
-                        )
+                          "Failed to delete chain warning message",
+                        ),
                       );
                 }, 5000);
             }
-            const logCh = message.guild.channels.cache.get(
-              CHAIN_DELETION_LOG_CHANNEL_ID
-            );
+            const logCh = message.guild.channels.cache.get(CHAIN_DELETION_LOG_CHANNEL_ID);
             if (
               logCh &&
               logCh.guild != null &&
@@ -190,7 +174,7 @@ export default class MessageCreate extends EventLoader {
                     {
                       name: "Date",
                       value: new Date(message.createdTimestamp).toString(),
-                    }
+                    },
                   );
                 const messageChunks = [];
                 if (message.content) {
@@ -199,13 +183,13 @@ export default class MessageCreate extends EventLoader {
                       message.content
                         .replace(/\"/g, '"')
                         .replace(/`/g, "")
-                        .substring(0, 1023)
+                        .substring(0, 1023),
                     );
                     messageChunks.push(
                       message.content
                         .replace(/\"/g, '"')
                         .replace(/`/g, "")
-                        .substring(1024, message.content.length)
+                        .substring(1024, message.content.length),
                     );
                   } else {
                     messageChunks.push(message.content);
@@ -223,13 +207,11 @@ export default class MessageCreate extends EventLoader {
                   .send({ embeds: [emb] })
                   .catch(() =>
                     this.client.logger.error(
-                      "Failed to send chain message to log channel"
-                    )
+                      "Failed to send chain message to log channel",
+                    ),
                   );
               } catch (_) {
-                this.client.logger.error(
-                  "Failed resolving chaining GuildMember."
-                );
+                this.client.logger.error("Failed resolving chaining GuildMember.");
                 logCh.send({
                   embeds: [
                     defaultUtility.generateEmbed("error", {
@@ -314,17 +296,14 @@ export default class MessageCreate extends EventLoader {
           trigger.keywords.length != 0 &&
           trigger.keywords.every((keywordArr) =>
             keywordArr
-              .map(
-                (v) =>
-                  new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i")
-              )
+              .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
               .some(
                 (k) =>
                   message.content.match(k) &&
                   matched.push(k.source) &&
                   // Ignore trigger content if matched trigger is a custom emoji's name.
-                  message.content.match(/<a?:.+?:\d+>/)?.length == 0
-              )
+                  message.content.match(/<a?:.+?:\d+>/)?.length == 0,
+              ),
           );
 
         if (allMatch) {
@@ -332,7 +311,7 @@ export default class MessageCreate extends EventLoader {
             new ButtonBuilder()
               .setCustomId(id)
               .setLabel("Don't remind me again")
-              .setStyle(ButtonStyle.Primary)
+              .setStyle(ButtonStyle.Primary),
           );
 
           let reply: {
@@ -344,9 +323,7 @@ export default class MessageCreate extends EventLoader {
           if (trigger.message.embed) {
             let color: ColorResolvable = "Red";
 
-            const footer = `Matched: ${matched
-              .map((m) => `"${m}"`)
-              .join(", ")}`;
+            const footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
 
             if (defaultUtility.isColor(trigger.message.color)) {
               color = trigger.message.color;
@@ -383,9 +360,7 @@ export default class MessageCreate extends EventLoader {
 
     // auto-resolve discord urls
     if (message.content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
-      const matches = [
-        ...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g),
-      ];
+      const matches = [...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
 
       matches.forEach(async (match) => {
         const code = match[1];
@@ -394,28 +369,24 @@ export default class MessageCreate extends EventLoader {
           const server = await this.client.fetchInvite(code);
           if (!server.guild) return;
 
-          const embed = this.client.utils
-            .getUtility("default")
-            .generateEmbed("success", {
-              title: "Resolved guild",
-              description: `Name: ${server.guild.name}`,
-              fields: [
-                {
-                  name: "NSFW Level",
-                  value: `${GuildNSFWLevel[server.guild.nsfwLevel]}`,
-                },
-              ],
-            });
+          const embed = this.client.utils.getUtility("default").generateEmbed("success", {
+            title: "Resolved guild",
+            description: `Name: ${server.guild.name}`,
+            fields: [
+              {
+                name: "NSFW Level",
+                value: `${GuildNSFWLevel[server.guild.nsfwLevel]}`,
+              },
+            ],
+          });
           await message.reply({ embeds: [embed] }).then((msg) => {
             msg.reply(`Server avatar: ||${server.guild?.iconURL()}||`);
           });
-        } catch (e) {
-          const embed = this.client.utils
-            .getUtility("default")
-            .generateEmbed("error", {
-              title: "Failed to resolve guild",
-              description: `Guild may be banned, deleted, or the invite expired.`,
-            });
+        } catch (_) {
+          const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+            title: "Failed to resolve guild",
+            description: `Guild may be banned, deleted, or the invite expired.`,
+          });
           message.reply({ embeds: [embed] });
         }
       });

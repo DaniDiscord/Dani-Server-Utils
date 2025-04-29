@@ -1,19 +1,15 @@
-import { DsuClient } from "lib/core/DsuClient";
+import { ChannelType, EmbedBuilder, Message, MessageReaction, User } from "discord.js";
+import { EMOJI_APPROVE, EMOJI_DENY } from "types/constants/emoji";
+
 import { ClientUtilities } from "lib/core/ClientUtilities";
-import { Mutex } from "async-mutex";
-import {
-  ChannelType,
-  EmbedBuilder,
-  Message,
-  MessageReaction,
-  User,
-} from "discord.js";
-import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
 import { CommandCooldownModel } from "models/CommandCooldown";
+import { DsuClient } from "lib/core/DsuClient";
+import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
+import { EmojiUsageModel } from "models/EmojiUsage";
+import { Mutex } from "async-mutex";
 import axios from "axios";
 import { emojiSuffix } from "../interactions/slashCommands/emojiSuggest";
-import { EMOJI_APPROVE, EMOJI_DENY } from "types/constants/emoji";
-import { EmojiUsageModel } from "models/EmojiUsage";
+
 export class SynchronizeById {
   private lock: Mutex;
   private lockMap: Map<string, Mutex>;
@@ -71,7 +67,7 @@ export class EmojiSuggestions {
     threshold: number,
     bias: number,
     emojiCap: number,
-    cooldown: number
+    cooldown: number,
   ) {
     if (sourceId === voteId) {
       throw new Error("Source channel cannot be the same as the Vote channel ");
@@ -107,7 +103,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     actionType: SuggestionAction,
     userId: string,
     emojiUrl: string,
-    creatorId: string
+    creatorId: string,
   ) {
     let action;
     switch (actionType) {
@@ -160,7 +156,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     guildId: string,
     commandId: string,
     userId: string,
-    reason: string
+    reason: string,
   ) {
     const filter = { guildId: guildId, commandId: commandId, userId: userId };
     await CommandCooldownModel.findOneAndUpdate(
@@ -172,15 +168,11 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
         banned: true,
         reason: reason,
       },
-      { upsert: true, setDefaultsOnInsert: true }
+      { upsert: true, setDefaultsOnInsert: true },
     );
   }
 
-  async unbanFromSuggestion(
-    guildId: string,
-    commandId: string,
-    userId: string
-  ) {
+  async unbanFromSuggestion(guildId: string, commandId: string, userId: string) {
     const filter = { guildId: guildId, commandId: commandId, userId: userId };
     await CommandCooldownModel.findOneAndUpdate(
       filter,
@@ -188,7 +180,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
         banned: false,
         reason: undefined,
       },
-      { upsert: true, setDefaultsOnInsert: true }
+      { upsert: true, setDefaultsOnInsert: true },
     );
   }
 
@@ -204,9 +196,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     });
   }
 
-  async removeEmojiSuggestions(
-    guildId: string
-  ): Promise<EmojiSuggestions | null> {
+  async removeEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null> {
     this.client.emojiEventCache.delete(guildId);
     return await EmojiSuggestionsModel.findOneAndDelete({ guildId: guildId });
   }
@@ -223,7 +213,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
   async getLastCommandUse(
     guildId: string,
     commandId: string,
-    userId: string
+    userId: string,
   ): Promise<number | null> {
     const filter = { guildId: guildId, commandId: commandId, userId: userId };
     const command = await CommandCooldownModel.findOne(filter);
@@ -251,8 +241,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     if (guild === null) {
       return;
     }
-    const emojiLimitFull =
-      guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap;
+    const emojiLimitFull = guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap;
     if (message.channelId === voteChannelId && !emojiLimitFull) {
       if (reaction.partial) {
         await reaction.fetch();
@@ -291,7 +280,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
           if (guild.emojis.cache.size >= emojiSuggestionsConfig.emojiCap - 1) {
             await message.channel.send(
               `With this emoji, the allocated quota has been filled.
-            Next votes will include which emoji you want to replace.`
+            Next votes will include which emoji you want to replace.`,
             );
           }
           const emoji = await axios.get(attachment.proxyURL, {
@@ -355,7 +344,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
       {
         returnOriginal: false,
         upsert: true,
-      }
+      },
     );
 
     emojiUsage.count++;

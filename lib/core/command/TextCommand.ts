@@ -1,6 +1,7 @@
-import { Message } from "discord.js";
 import { PermissionLevels, TextCommandOptions } from "types/commands";
+
 import { DsuClient } from "../DsuClient";
+import { Message } from "discord.js";
 
 export default class TextCommand {
   name: string;
@@ -16,10 +17,7 @@ export default class TextCommand {
   }
 
   public async validate(message: Message) {
-    if (
-      this.permLevel === "BOT_OWNER" &&
-      message.author.id != process.env.OWNER_ID
-    ) {
+    if (this.permLevel === "BOT_OWNER" && message.author.id != process.env.OWNER_ID) {
       return this.client.utils.getUtility("default").generateEmbed("error", {
         title: "Missing Permissions",
         description: "Must be bot developer to use this command",

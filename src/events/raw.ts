@@ -6,6 +6,7 @@ export default class Raw extends EventLoader {
     super(client, "raw");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async run(packet: any) {
     const data = packet.d;
 
@@ -30,8 +31,7 @@ export default class Raw extends EventLoader {
         return;
       }
       if (
-        this.client.getPermLevel(message, message.member!) >=
-        permLevelToForwardMessage
+        this.client.getPermLevel(message, message.member!) >= permLevelToForwardMessage
       ) {
         return;
       }

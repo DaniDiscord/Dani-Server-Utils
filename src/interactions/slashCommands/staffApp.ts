@@ -5,9 +5,10 @@ import {
   ModalBuilder,
   PermissionsBitField,
 } from "discord.js";
+import { staffAppCustomId, staffAppQuestions } from "lib/util/questions";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { staffAppCustomId, staffAppQuestions } from "lib/util/questions";
 
 export default class StaffApplicationCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -27,9 +28,7 @@ export default class StaffApplicationCommand extends CustomApplicationCommand {
   }
 
   async run(interaction: ChatInputCommandInteraction) {
-    const modal = new ModalBuilder()
-      .setCustomId(staffAppCustomId)
-      .setTitle("Staff App");
+    const modal = new ModalBuilder().setCustomId(staffAppCustomId).setTitle("Staff App");
 
     modal.addComponents(staffAppQuestions.map((q) => q.toActionRow()));
 

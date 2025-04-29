@@ -5,8 +5,9 @@ import {
   ButtonStyle,
   MessageFlags,
 } from "discord.js";
-import { DsuClient } from "lib/core/DsuClient";
+
 import { Button } from "lib/core/command";
+import { DsuClient } from "lib/core/DsuClient";
 import { SuggestionAction } from "../../utilities/emojiSuggestions";
 
 const confirmationTimeoutPeriod = 15000;
@@ -38,7 +39,7 @@ export default class EmojiSuggestionDeny extends Button {
       new ButtonBuilder()
         .setCustomId("cancel")
         .setLabel("Cancel")
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
     );
 
     await interaction.reply({
@@ -51,8 +52,7 @@ export default class EmojiSuggestionDeny extends Button {
 
     const collector = interaction.channel!.createMessageComponentCollector({
       filter: (i) =>
-        i.user.id === interaction.user.id &&
-        ["confirm", "cancel"].includes(i.customId),
+        i.user.id === interaction.user.id && ["confirm", "cancel"].includes(i.customId),
       time: confirmationTimeoutPeriod,
       max: 1,
     });
@@ -89,7 +89,7 @@ export default class EmojiSuggestionDeny extends Button {
         SuggestionAction.Deny,
         interaction.user.id,
         attachment.url,
-        author
+        author,
       );
       await message.edit({
         content: "",

@@ -35,5 +35,5 @@ const EmojiSuggestionsSchema = new Schema<IEmojiSuggestions>({
 
 export const EmojiSuggestionsModel: Model<IEmojiSuggestions> = model(
   "EmojiSuggestions",
-  EmojiSuggestionsSchema
+  EmojiSuggestionsSchema,
 );

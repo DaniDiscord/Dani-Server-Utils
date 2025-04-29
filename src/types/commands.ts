@@ -31,10 +31,7 @@ export type InteractionCommandOptions = BaseCommandOptions & {
   type?: ApplicationCommandData["type"];
 };
 
-export type TextCommandOptions = Omit<
-  InteractionCommandOptions,
-  "applicationData"
->;
+export type TextCommandOptions = Omit<InteractionCommandOptions, "applicationData">;
 
 export enum InteractionType {
   AutoComplete,

@@ -1,0 +1,8 @@
+{
+  "eslint.useFlatConfig": true,
+  "eslint.packageManager": "bun",
+  "eslint.validate": ["javascript", "typescript"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
+}

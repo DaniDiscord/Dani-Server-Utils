@@ -1,10 +1,6 @@
-import { DsuClient } from "../core/DsuClient";
-import { readdirSync } from "fs";
-import { resolve } from "path";
-import { ClientUtilities } from "lib/core/ClientUtilities";
 import {
-  ActionRowBuilder,
   APIEmbed,
+  ActionRowBuilder,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
@@ -13,9 +9,14 @@ import {
   CommandInteraction,
   EmbedBuilder,
 } from "discord.js";
+
 import { AutoSlowModel } from "models/AutoSlow";
 import { AutoSlowUtility } from "../../src/utilities/autoSlow";
+import { ClientUtilities } from "lib/core/ClientUtilities";
+import { DsuClient } from "../core/DsuClient";
 import { NameModel } from "models/Name";
+import { readdirSync } from "fs";
+import { resolve } from "path";
 
 export default class DefaultClientUtilities extends ClientUtilities {
   constructor(client: DsuClient) {
@@ -49,9 +50,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @returns string
    */
   unicodeToAscii(name: string): string {
-    const asciiNameNfkd = name
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "");
+    const asciiNameNfkd = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
     const finalNameNfkd = this.eliminateUnicode(asciiNameNfkd);
     if (finalNameNfkd.length > 2) {
       return finalNameNfkd;
@@ -74,6 +73,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
     return finalName;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   isColor(value: any): value is ColorResolvable {
     if (value == null || value == undefined) {
       return false;
@@ -83,10 +83,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
       return true;
     }
 
-    if (
-      typeof value === "string" &&
-      /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(value)
-    ) {
+    if (typeof value === "string" && /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(value)) {
       return true;
     }
 
@@ -137,11 +134,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
 
         const cost = msg[i - 1] === phr[j - 1] ? 0 : areSimilar ? 0.5 : 1;
 
-        dp[i][j] = Math.min(
-          dp[i - 1][j] + 1,
-          dp[i][j - 1] + 1,
-          dp[i - 1][j - 1] + cost
-        );
+        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
       }
     }
 
@@ -174,7 +167,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
     ];
 
     return similarPairs.some(
-      ([x, y]) => (a === x[0] && b === x[1]) || (a === y[0] && b === y[1])
+      ([x, y]) => (a === x[0] && b === x[1]) || (a === y[0] && b === y[1]),
     );
   };
 
@@ -184,10 +177,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param data The embed content
    * @returns APIEmbed
    */
-  generateEmbed(
-    type: "success" | "warning" | "error" | "general",
-    data: APIEmbed
-  ) {
+  generateEmbed(type: "success" | "warning" | "error" | "general", data: APIEmbed) {
     const embed = new EmbedBuilder(data);
     switch (type) {
       case "success":
@@ -223,7 +213,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
     targetMsgsPerSec: number,
     minChange: number,
     minChangeRate: number,
-    enabled: boolean
+    enabled: boolean,
   ) {
     const autoSlow = new AutoSlowUtility(this.client);
     autoSlow.setAutoSlowParams(
@@ -232,7 +222,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
       targetMsgsPerSec,
       minChange,
       minChangeRate,
-      enabled
+      enabled,
     );
 
     autoSlow.addToCache(channelId);
@@ -244,7 +234,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
         new: true,
         upsert: true,
         setDefaultsOnInsert: true,
-      }
+      },
     );
 
     return autoSlow;
@@ -265,9 +255,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @returns Promise\<AutoSlowUtility\> | null
    */
   async getAutoSlow(channelId: string) {
-    let autoSlow = this.client.utils
-      .getUtility("autoSlow")
-      .cache.get(channelId);
+    let autoSlow = this.client.utils.getUtility("autoSlow").cache.get(channelId);
     if (!autoSlow) {
       const autoSlowConfig = await AutoSlowModel.findOne({
         channelId,
@@ -283,7 +271,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
         targetMsgsPerSec,
         minChange,
         minChangeRate,
-        enabled
+        enabled,
       );
 
       this.client.utils.getUtility("autoSlow").cache.set(channelId, autoSlow);
@@ -340,17 +328,15 @@ export default class DefaultClientUtilities extends ClientUtilities {
     totalPages: number,
     currentPage: number,
     itemsPerPage: number,
-    formatPage: (pageItems: T[], index: number) => string
+    formatPage: (pageItems: T[], index: number) => string,
   ) {
     const createEmb = (page: number) => {
       const embed = new EmbedBuilder()
         .setTitle(`Page ${page + 1} of ${totalPages}`)
         .setColor("Blurple")
         .setDescription(
-          formatPage(
-            items.slice(page * itemsPerPage, (page + 1) * itemsPerPage),
-            page
-          ) || "No items to display."
+          formatPage(items.slice(page * itemsPerPage, (page + 1) * itemsPerPage), page) ||
+            "No items to display.",
         );
       return embed;
     };
@@ -366,7 +352,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
           .setCustomId("page_fwd")
           .setLabel("Next")
           .setStyle(ButtonStyle.Primary)
-          .setDisabled(currentPage === totalPages - 1)
+          .setDisabled(currentPage === totalPages - 1),
       );
     };
 
@@ -376,11 +362,10 @@ export default class DefaultClientUtilities extends ClientUtilities {
       withResponse: true,
     });
 
-    const collector =
-      initalResponse.resource?.message?.createMessageComponentCollector({
-        time: 6000000,
-        filter: (msg) => msg.user.id == interaction.user.id,
-      });
+    const collector = initalResponse.resource?.message?.createMessageComponentCollector({
+      time: 6000000,
+      filter: (msg) => msg.user.id == interaction.user.id,
+    });
 
     collector?.on("collect", async (btn: ButtonInteraction) => {
       if (!btn.isButton()) return;
@@ -408,7 +393,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
           .setCustomId("page_fwd")
           .setLabel("Next")
           .setStyle(ButtonStyle.Primary)
-          .setDisabled(true)
+          .setDisabled(true),
       );
 
       await interaction.editReply({

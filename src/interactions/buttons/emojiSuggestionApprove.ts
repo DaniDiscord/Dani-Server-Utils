@@ -6,13 +6,11 @@ import {
   MessageFlags,
   TextChannel,
 } from "discord.js";
+import { EMOJI_APPROVE, EMOJI_DENY } from "types/constants/emoji";
+import { SuggestionAction, approveSync } from "../../utilities/emojiSuggestions";
+
 import { Button } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import {
-  approveSync,
-  SuggestionAction,
-} from "../../utilities/emojiSuggestions";
-import { EMOJI_APPROVE, EMOJI_DENY } from "types/constants/emoji";
 
 const confirmationTimeoutPeriod = 15000;
 
@@ -43,7 +41,7 @@ export default class EmojiSuggestionApprove extends Button {
       new ButtonBuilder()
         .setCustomId("cancel")
         .setLabel("Cancel")
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
     );
 
     await interaction.reply({
@@ -55,8 +53,7 @@ export default class EmojiSuggestionApprove extends Button {
     const messageComponentCollector =
       interaction.channel!.createMessageComponentCollector({
         filter: (i) =>
-          i.user.id === interaction.user.id &&
-          ["confirm", "cancel"].includes(i.customId),
+          i.user.id === interaction.user.id && ["confirm", "cancel"].includes(i.customId),
         time: confirmationTimeoutPeriod,
         max: 1,
       });
@@ -118,7 +115,7 @@ export default class EmojiSuggestionApprove extends Button {
           SuggestionAction.Approve,
           interaction.user.id,
           attachment.url,
-          author
+          author,
         );
         await message.edit({
           content: "",

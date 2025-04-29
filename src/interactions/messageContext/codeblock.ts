@@ -5,6 +5,7 @@ import {
   MessageContextMenuCommandInteraction,
   MessageFlags,
 } from "discord.js";
+
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 
@@ -39,8 +40,8 @@ export default class Codeblock extends CustomApplicationCommand {
               .setColor("Red")
               .setDescription(
                 `That command will be available again <t:${Math.floor(
-                  expirationTime / 1000
-                )}:R>.`
+                  expirationTime / 1000,
+                )}:R>.`,
               ),
           ],
           flags: MessageFlags.Ephemeral,

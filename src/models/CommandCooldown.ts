@@ -22,5 +22,5 @@ const CommandCooldownSchema = new Schema<ICommandCooldown>({
 
 export const CommandCooldownModel: Model<ICommandCooldown> = model(
   "CommandCooldown",
-  CommandCooldownSchema
+  CommandCooldownSchema,
 );

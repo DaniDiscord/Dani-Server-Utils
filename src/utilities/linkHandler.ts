@@ -1,7 +1,7 @@
-import { DsuClient } from "lib/core/DsuClient";
 import { ClientUtilities } from "lib/core/ClientUtilities";
-import TLDS from "constants/tlds.json";
+import { DsuClient } from "lib/core/DsuClient";
 import { LinkPermissionModel } from "models/Links";
+import TLDS from "constants/tlds.json";
 
 export class LinkHandlerUtility extends ClientUtilities {
   constructor(client: DsuClient) {
@@ -31,17 +31,13 @@ export class LinkHandlerUtility extends ClientUtilities {
     const matches = Array.from(content.matchAll(urlPattern), (match) => {
       try {
         return decodeURIComponent(match[0]);
-      } catch (e) {
+      } catch (_) {
         return match[0]; // Decode URL-encoded characters beacuse mfs can do http://example%2Ecom to bypass
       }
     });
 
-    const ipPattern =
-      /\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b|\[[a-f0-9:]+\](?::\d+)?/gi;
-    const ipMatches = Array.from(
-      content.matchAll(ipPattern),
-      (match) => match[0]
-    );
+    const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?\b|\[[a-f0-9:]+\](?::\d+)?/gi;
+    const ipMatches = Array.from(content.matchAll(ipPattern), (match) => match[0]);
 
     if (matches.length === 0 && ipMatches.length === 0) {
       return { hasUrls: false, urls: [] };
@@ -50,19 +46,15 @@ export class LinkHandlerUtility extends ClientUtilities {
     const validUrls = matches.filter((url) => {
       try {
         const parsedUrl = new URL(
-          url.startsWith("http") || url.startsWith("ftp")
-            ? url
-            : `http://${url}`
+          url.startsWith("http") || url.startsWith("ftp") ? url : `http://${url}`,
         );
         const hostname = parsedUrl.hostname.replace(/^www\./, "");
 
         if (this.isIPAddress(hostname)) return false;
 
         const candidates = this.getTLDCandidates(hostname);
-        return candidates.some((candidate) =>
-          TLDS.includes(candidate.toLowerCase())
-        );
-      } catch (e) {
+        return candidates.some((candidate) => TLDS.includes(candidate.toLowerCase()));
+      } catch (_) {
         return false;
       }
     });
@@ -76,7 +68,7 @@ export class LinkHandlerUtility extends ClientUtilities {
     guildId: string,
     channelId: string,
     userId: string,
-    memberRoles: string[]
+    memberRoles: string[],
   ) {
     const shouldLog = process.env.NODE_ENV === "development";
     const permissions = await LinkPermissionModel.findOne({ guildId });
@@ -87,14 +79,12 @@ export class LinkHandlerUtility extends ClientUtilities {
     if (shouldLog) console.log("User access: ", userAccess);
     if (userAccess?.hasAccess === false) return false;
 
-    const channelConfig = permissions.channels.find(
-      (c) => c.channelId === channelId
-    );
+    const channelConfig = permissions.channels.find((c) => c.channelId === channelId);
     if (shouldLog) console.log("Channel settings: ", channelConfig);
     if (!channelConfig) return true;
 
     return memberRoles.some((roleId) =>
-      channelConfig.roles.some((r) => r.roleId === roleId && r.enabled)
+      channelConfig.roles.some((r) => r.roleId === roleId && r.enabled),
     );
   }
 }

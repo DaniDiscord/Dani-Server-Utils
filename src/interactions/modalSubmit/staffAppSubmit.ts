@@ -1,9 +1,10 @@
 import { MessageFlags, ModalSubmitInteraction } from "discord.js";
-import { Modal } from "lib/core/command";
+import { staffAppCustomId, staffAppQuestions } from "lib/util/questions";
+
 import { DsuClient } from "lib/core/DsuClient";
-import { staffAppQuestions, staffAppCustomId } from "lib/util/questions";
-import { TimestampModel } from "models/Timestamp";
+import { Modal } from "lib/core/command";
 import { Times } from "types/index";
+import { TimestampModel } from "models/Timestamp";
 
 export default class StaffAppModalSubmit extends Modal {
   constructor(client: DsuClient) {
@@ -23,11 +24,9 @@ export default class StaffAppModalSubmit extends Modal {
       lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN >= Date.now()
     ) {
       // use discord relative formatting instead of date-fns formatting
-      const lastAppliedUnix = Math.floor(
-        lastApplied.timestamp.valueOf() / 1000
-      );
+      const lastAppliedUnix = Math.floor(lastApplied.timestamp.valueOf() / 1000);
       const nextAllowedUnix = Math.floor(
-        (lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN) / 1000
+        (lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN) / 1000,
       );
 
       await interaction.reply({
@@ -42,7 +41,7 @@ export default class StaffAppModalSubmit extends Modal {
       await TimestampModel.updateOne(
         { identifier },
         { timestamp: new Date() },
-        { upsert: true }
+        { upsert: true },
       );
     }
 
