@@ -1,9 +1,8 @@
 {
-  "editor.formatOnSave": true,
-  "editor.formatOnPaste": false,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "eslint.packageManager": "yarn",
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "eslint.useFlatConfig": true,
+  "eslint.packageManager": "bun",
+  "eslint.validate": ["javascript", "typescript"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
   }
 }

@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ITimestamp } from "types/mongodb";
+import { ITimestamp } from "../types/mongodb";
 
-const TimestampSchema = new Schema({
+const TimestampSchema = new Schema<ITimestamp>({
   _id: String,
   identifier: String,
   timestamp: Date,

@@ -3,378 +3,394 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
-  Collection,
   ColorResolvable,
   EmbedBuilder,
   GuildChannel,
+  GuildNSFWLevel,
   Message,
   TextChannel,
 } from "discord.js";
-import { Command, GuardTextMessage } from "types/command";
-import { canUserSendLinks, readMsgForLink } from "lib/linkHandler";
-import { fuzzyMatch, isColor } from "lib/utils";
 
-import { CustomClient } from "../lib/client";
-import { HandleAnchor } from "lib/anchorHandler";
-import { ICommand } from "types/mongodb";
+import { DsuClient } from "lib/core/DsuClient";
+import { EventLoader } from "lib/core/loader/EventLoader";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
-import { SettingsModel } from "../models/Settings";
+import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
 
 const chainStops = ["muck"];
-const CHAIN_STOPS_ONLY = false; // Only triggers on chainStops
 const chainIgnoredChannels = ["594178859453382696", "970968834372698163"];
+const CHAIN_STOPS_ONLY = false;
 const CHAIN_DETECTION_LENGTH = 5;
 const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
 const CHAIN_WARN_THRESHOLD = 3;
 const CHAIN_DELETION_LOG_CHANNEL_ID = "989203228749099088";
+export default class MessageCreate extends EventLoader {
+  constructor(client: DsuClient) {
+    super(client, "messageCreate");
+  }
 
-export default async (client: CustomClient, message: Message): Promise<void> => {
-  client.reactionHandler.onNewMessage(message);
-  if (message.author.bot) return;
-  if (!message.guild) return;
-  if (
-    message.channel.type !== ChannelType.GuildText &&
-    message.channel.type !== ChannelType.GuildVoice
-  )
-    return; // prevent running in dms, and use as guard clause
-  if (message.guild && !client.settings.has((message.guild || {}).id)) {
-    // We don't have the settings for this guild, find them or generate empty settings
-    const s = await SettingsModel.findOneAndUpdate(
-      { _id: message.guild.id },
-      { toUpdate: true },
-      {
-        upsert: true,
-        setDefaultsOnInsert: true,
-        new: true,
-      }
+  override async run(message: Message) {
+    if (message.author.bot) return;
+    if (!message.guild) return;
+    if (
+      message.channel.type !== ChannelType.GuildText &&
+      message.channel.type !== ChannelType.GuildVoice
     )
-      .populate("mentorRoles")
-      .populate("commands");
-
-    log.debug("Setting sync", {
-      action: "Fetch",
-      message: `Database -> Client (${message.guild.id})`,
-    });
-
-    client.settings.set(message.guild.id, s);
-    message.settings = s;
-  } else {
-    const s = client.settings.get(message.guild ? message.guild.id : "default");
-    if (!s) return;
-    message.settings = s;
-  }
-
-  const level = client.permlevel(message, message!.member!);
-
-  /*
-  Auto Slow will go here
-  */
-  const autoSlowManager = await client.getAutoSlow(message.channelId);
-  if (autoSlowManager !== null && level < 1 && message.channel instanceof TextChannel) {
-    autoSlowManager.messageSent();
-    autoSlowManager.setOptimalSlowMode(message.channel);
-  }
-
-  // Do whatever message filtering here
-  if (level == -1) {
-    return;
-  }
-  // Check for link.
-  const hasLink = readMsgForLink(message.content);
-
-  const canSendLinks = await canUserSendLinks(
-    message.guildId ?? "",
-    message.channelId,
-    message.author.id,
-    message.member?.roles.cache.map((role) => role.id) ?? []
-  );
-
-  if (
-    !canSendLinks &&
-    hasLink.hasUrls &&
-    level < 3 // Moderators can post links anywhere
-  ) {
-    await message.delete().catch(() => {});
-    return;
-  }
-
-  // Anchor Handler
-  await HandleAnchor(client, message);
-
-  if (!client.channelMessages) client.channelMessages = new Collection();
-  const chMessages = client.channelMessages.get(message.channel.id);
-  const trimMsg = (str: string) => str.toLowerCase().trim();
-  if (
-    message.content != "" &&
-    !message.settings.chains?.ignored?.includes(trimMsg(message.content))
-  ) {
-    if (chMessages && !chainIgnoredChannels.includes(message.channelId)) {
-      if (
-        ((CHAIN_STOPS_ONLY && chainStops.some((o) => o == trimMsg(message.content))) ||
-          !CHAIN_STOPS_ONLY) &&
-        chMessages.some((o) => o.word == trimMsg(message.content)) &&
-        message.deletable &&
-        level < 2
-      ) {
-        // Just fucking delete the message
-        const chMsg = chMessages.find((o) => o.word == trimMsg(message.content));
-        if (!chMsg) return;
-        chMsg.count++;
-        if (chMsg.count >= CHAIN_DELETE_MESSAGE_THRESHOLD) {
-          await message.delete().catch(() => {});
-          if (chMsg.count == CHAIN_WARN_THRESHOLD) {
-            const msg = await message.channel
-              .send({ content: `Please stop chaining.` })
-              .catch(() => {});
-            if (msg && msg.deletable)
-              setTimeout(async () => {
-                if (msg && msg.deletable) await msg.delete().catch(() => console.error);
-              }, 5000);
-          }
-          const logCh = message.guild.channels.cache.get(CHAIN_DELETION_LOG_CHANNEL_ID);
-          if (
-            logCh &&
-            logCh.guild != null &&
-            (logCh.type === ChannelType.GuildText || logCh.isThread())
-          ) {
-            const emb = new EmbedBuilder()
-              .setAuthor({
-                name: `${message.author.username}#${message.author.discriminator} ${
-                  message.member?.nickname ? `(${message.member.nickname})` : ""
-                }`,
-                iconURL:
-                  message.author.avatarURL() ??
-                  "https://cdn.discordapp.com/embed/avatars/0.png",
-              })
-              .setColor("Random")
-              .setDescription(`Chain detection in <#${message.channelId}>`)
-              .addFields(
-                {
-                  name: "Channel",
-                  value: `<#${message.channel.id}> (${
-                    (message.channel as GuildChannel)?.name ?? "Unknown"
-                  })`,
-                },
-                {
-                  name: "ID",
-                  value: `\`\`\`ini\nUser = ${message.author.id}\nMessage = ${message.id}\`\`\``,
-                },
-                { name: "Date", value: new Date(message.createdTimestamp).toString() }
-              );
-            const messageChunks = [];
-            if (message.content) {
-              if (message.content.length > 1024) {
-                messageChunks.push(
-                  message.content.replace(/\"/g, '"').replace(/`/g, "").substring(0, 1023)
-                );
-                messageChunks.push(
-                  message.content
-                    .replace(/\"/g, '"')
-                    .replace(/`/g, "")
-                    .substring(1024, message.content.length)
-                );
-              } else {
-                messageChunks.push(message.content);
-              }
-            } else {
-              messageChunks.push("None");
-            }
-            messageChunks.forEach((chunk, i) => {
-              emb.addFields({ name: i === 0 ? "Content" : "Continued", value: chunk });
-            });
-            await logCh.send({ embeds: [emb] }).catch(() => {});
-          }
-        }
-      } else {
-        if (chMessages.length == CHAIN_DETECTION_LENGTH) chMessages.shift();
-        chMessages.push({ word: trimMsg(message.content), count: 0 });
-        client.channelMessages.set(message.channel.id, chMessages);
-      }
-    } else {
-      client.channelMessages.set(message.channel.id, [
+      return; // prevent running in dms, and use as guard clause
+    if (message.guild && !this.client.settings.has((message.guild || {}).id)) {
+      // We don't have the settings for this guild, find them or generate empty settings
+      const s = await SettingsModel.findOneAndUpdate(
+        { _id: message.guild.id },
+        { toUpdate: true },
         {
-          word: trimMsg(message.content),
-          count: 0,
+          upsert: true,
+          setDefaultsOnInsert: true,
+          new: true,
         },
-      ]);
+      )
+        .populate("mentorRoles")
+        .populate("commands");
+
+      this.client.logger.info(
+        `Setting sync: Fetch Database -> Client (${message.guild.id})`,
+      );
+
+      this.client.settings.set(message.guild.id, s);
+      message.settings = s;
+    } else {
+      const s = this.client.settings.get(message.guild ? message.guild.id : "default");
+      if (!s) return;
+      message.settings = s;
     }
-  }
+    const defaultUtility = this.client.utils.getUtility("default");
 
-  message.author.permLevel = level;
+    const level = this.client.getPermLevel(message, message.member!);
 
-  /** Phrase matching */
-  const foundPhrases = await PhraseMatcherModel.find();
+    const autoSlowManager = await defaultUtility.getAutoSlow(message.channelId);
 
-  for (const { phrases, logChannelId } of foundPhrases) {
-    for (const { content, matchThreshold } of phrases) {
-      const matches = fuzzyMatch(message.content, content);
-      if (matches >= matchThreshold) {
-        const logChannel = message.guild.channels.cache.get(logChannelId);
-        if (
-          logChannel &&
-          logChannel.guild != null &&
-          (logChannel.type === ChannelType.GuildText || logChannel.isThread())
-        ) {
-          const embed = new EmbedBuilder()
-            .setTitle("Matched message")
-            .setColor(matches === 100 ? "Green" : "Yellow")
-            .setDescription(`[Jump to message](${message.url})`)
-            .setFields([
-              {
-                name: `Message`,
-                value: message.content,
-              },
-              {
-                name: "Phrase",
-                value: content,
-              },
-              {
-                name: "Author",
-                value: message.author.id,
-              },
-              {
-                name: "Threshold match (%)",
-                value: `${Math.round(matches)}%`,
-              },
-            ]);
-          await logChannel.send({ embeds: [embed] });
-        }
-      }
-    }
-  }
-
-  // Keyword triggering
-  // Basically, if all of the keywords subarrays have at least one
-  // word that matches in the message content, it'll send the trigger message
-  const triggers = message.settings.triggers.filter((t) => t.enabled);
-
-  for (const trigger of triggers) {
-    const id = `trigger-${trigger.id}`;
-    const optedOut = await TriggerModel.exists({
-      guildId: message.guild.id,
-      userId: message.author.id,
-      triggerId: id,
-    });
-
-    if (optedOut) {
-      continue;
+    if (autoSlowManager != null && level < 1 && message.channel instanceof TextChannel) {
+      autoSlowManager.messageSent();
+      autoSlowManager.setOptimalSlowMode(message.channel);
     }
 
-    if (!client.dirtyCooldownHandler.has(id)) {
-      const matched: string[] = [];
-      const allMatch =
-        trigger.keywords.length != 0 &&
-        trigger.keywords.every((keywordArr) =>
-          keywordArr
-            .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
-            .some((k) => message.content.match(k) && matched.push(k.source))
-        );
+    const emojiUtility = this.client.utils.getUtility("emoji");
 
-      if (allMatch) {
-        const button = new ActionRowBuilder<ButtonBuilder>().setComponents(
-          new ButtonBuilder()
-            .setCustomId(id)
-            .setLabel("Don't remind me again")
-            .setStyle(ButtonStyle.Primary)
-        );
-
-        let reply: {
-          content?: string;
-          embeds?: EmbedBuilder[];
-          components: ActionRowBuilder<ButtonBuilder>[];
-        };
-
-        if (trigger.message.embed) {
-          let color: ColorResolvable = "Red";
-
-          const footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
-
-          if (isColor(trigger.message.color)) {
-            color = trigger.message.color;
-          }
-
-          reply = {
-            embeds: [
-              new EmbedBuilder()
-                .setTitle(trigger.message.title)
-                .setDescription(trigger.message.description)
-                .setColor(color)
-                .setFooter({ text: footer }),
-            ],
-            components: [button],
-          };
-        } else {
-          reply = {
-            content: trigger.message.content,
-            components: [button],
-          };
-        }
-
-        message
-          .reply(reply)
-          .then(() => {
-            client.dirtyCooldownHandler.set(id, trigger.cooldown * 1000);
-          })
-          .catch();
-
-        break; // Don't want multiple triggers on a single message
-      }
-    }
-  }
-
-  // Only called if the command pipeline was interrupted and the bot was ready to handle it
-  const next = async () => {};
-
-  if (!message.content.startsWith(client.prefix)) {
-    return next();
-  }
-
-  const args = message.content.slice(client.prefix.length).trim().split(/ +/g);
-  const command = args?.shift()?.toLowerCase();
-
-  if (!command) return;
-
-  let tempCmd: string | Command | undefined = client.commands.get(command);
-  if (!tempCmd) {
-    tempCmd = client.aliases.get(command);
-    if (!tempCmd) return;
-    tempCmd = client.commands.get(tempCmd);
-    if (!tempCmd) return;
-  }
-  const cmd = tempCmd;
-
-  // If the command is undefined, lets see if it exists in message settings
-  if (!cmd && level > 0) {
-    // Uhhhhhhh..... Lets see if we have a command with that trigger
-    // Just making this to get under 80 chars in 1 line :)
-    const filter = (c: ICommand) => c.trigger == command;
-    if (message.settings.commands.filter(filter).length == 1) {
-      // We just send an embed with the c content
-      message.channel.send({
-        embeds: [
-          new EmbedBuilder()
-            .setColor("Random")
-            .setDescription(message.settings.commands.filter(filter)[0].content),
-        ],
-      });
+    emojiUtility.countEmoji(message);
+    if (level == -1) {
       return;
     }
-  }
+    const linkUtility = this.client.utils.getUtility("linkHandler");
+    const hasLink = linkUtility.parseMessageForLink(message.content);
 
-  if (!cmd) {
-    return next();
-  }
+    const canSendLinks = linkUtility.checkLinkPermissions(
+      message.guildId ?? "",
+      message.channelId,
+      message.author.id,
+      message.member?.roles.cache.map((role) => role.id) ?? [],
+    );
 
-  // Check if the user's permlevel is high enough to run the command
-  if (level < client.levelCache[cmd.conf.permLevel.toString()]) {
-    return next();
-  }
-  const ret = await cmd.run(client, message as GuardTextMessage, args);
+    if (!canSendLinks && hasLink.hasUrls && level < 3) {
+      await message
+        .delete()
+        .catch(() => this.client.logger.error("Failed to delete message with link"));
+      return;
+    }
 
-  if (ret && ret.description) {
-    await message.channel.send({ embeds: [ret] });
-  }
+    await this.client.utils.getUtility("anchors").handleAnchor(message);
 
-  next();
-};
+    // Chain deletion
+    const chMessages = this.client.channelMessages.get(message.channelId);
+    const trimMsg = (str: string) => str.toLowerCase().trim();
+
+    if (
+      message.content != "" &&
+      !message.settings.chains?.ignored?.includes(trimMsg(message.content))
+    ) {
+      if (chMessages && !chainIgnoredChannels.includes(message.channelId)) {
+        if (
+          ((CHAIN_STOPS_ONLY && chainStops.some((o) => o == trimMsg(message.content))) ||
+            !CHAIN_STOPS_ONLY) &&
+          chMessages.some((o) => o.word == trimMsg(message.content)) &&
+          message.deletable &&
+          level < 2
+        ) {
+          const chMsg = chMessages.find((o) => o.word == trimMsg(message.content));
+          if (!chMsg) return;
+          chMsg.count++;
+          if (chMsg.count >= CHAIN_DELETE_MESSAGE_THRESHOLD) {
+            await message
+              .delete()
+              .catch(() => this.client.logger.error("Failed to delete chain message"));
+            if (chMsg.count == CHAIN_WARN_THRESHOLD) {
+              const msg = await message.channel
+                .send({ content: `Please stop chaining.` })
+                .catch(() =>
+                  this.client.logger.error("Failed to send chain warning message"),
+                );
+              if (msg && msg.deletable)
+                setTimeout(async () => {
+                  if (msg && msg.deletable)
+                    await msg
+                      .delete()
+                      .catch(() =>
+                        this.client.logger.error(
+                          "Failed to delete chain warning message",
+                        ),
+                      );
+                }, 5000);
+            }
+            const logCh = message.guild.channels.cache.get(CHAIN_DELETION_LOG_CHANNEL_ID);
+            if (
+              logCh &&
+              logCh.guild != null &&
+              (logCh.type === ChannelType.GuildText || logCh.isThread())
+            ) {
+              try {
+                const member = await message.guild.members.fetch({
+                  user: message.author.id,
+                });
+                const emb = new EmbedBuilder()
+                  .setAuthor({
+                    name: `${message.author.username}#${
+                      message.author.discriminator
+                    } ${member.nickname ? `(${member.nickname})` : ""}`,
+                    iconURL:
+                      message.author.avatarURL() ??
+                      "https://cdn.discordapp.com/embed/avatars/0.png",
+                  })
+                  .setColor("Random")
+                  .setDescription(`Chain detection in <#${message.channelId}>`)
+                  .addFields(
+                    {
+                      name: "Channel",
+                      value: `<#${message.channel.id}> (${
+                        (message.channel as GuildChannel)?.name ?? "Unknown"
+                      })`,
+                    },
+                    {
+                      name: "ID",
+                      value: `\`\`\`ini\nUser = ${message.author.id}\nMessage = ${message.id}\`\`\``,
+                    },
+                    {
+                      name: "Date",
+                      value: new Date(message.createdTimestamp).toString(),
+                    },
+                  );
+                const messageChunks = [];
+                if (message.content) {
+                  if (message.content.length > 1024) {
+                    messageChunks.push(
+                      message.content
+                        .replace(/\"/g, '"')
+                        .replace(/`/g, "")
+                        .substring(0, 1023),
+                    );
+                    messageChunks.push(
+                      message.content
+                        .replace(/\"/g, '"')
+                        .replace(/`/g, "")
+                        .substring(1024, message.content.length),
+                    );
+                  } else {
+                    messageChunks.push(message.content);
+                  }
+                } else {
+                  messageChunks.push("None");
+                }
+                messageChunks.forEach((chunk, i) => {
+                  emb.addFields({
+                    name: i === 0 ? "Content" : "Continued",
+                    value: chunk,
+                  });
+                });
+                await logCh
+                  .send({ embeds: [emb] })
+                  .catch(() =>
+                    this.client.logger.error(
+                      "Failed to send chain message to log channel",
+                    ),
+                  );
+              } catch (_) {
+                this.client.logger.error("Failed resolving chaining GuildMember.");
+                logCh.send({
+                  embeds: [
+                    defaultUtility.generateEmbed("error", {
+                      description: `Chain messages found in ${message.channel}, but failed to resolve culprit.`,
+                    }),
+                  ],
+                });
+              }
+            }
+          }
+        } else {
+          if (chMessages.length == CHAIN_DETECTION_LENGTH) chMessages.shift();
+          chMessages.push({ word: trimMsg(message.content), count: 0 });
+          this.client.channelMessages.set(message.channel.id, chMessages);
+        }
+      } else {
+        this.client.channelMessages.set(message.channel.id, [
+          {
+            word: trimMsg(message.content),
+            count: 0,
+          },
+        ]);
+      }
+    }
+    message.author.permLevel = level;
+
+    const foundPhrases = await PhraseMatcherModel.find();
+
+    for (const { phrases, logChannelId } of foundPhrases) {
+      for (const { content, matchThreshold } of phrases) {
+        const matches = defaultUtility.fuzzyMatch(message.content, content);
+        if (matches >= matchThreshold) {
+          const logChannel = message.guild.channels.cache.get(logChannelId);
+          if (
+            logChannel &&
+            logChannel.guild != null &&
+            (logChannel.type === ChannelType.GuildText || logChannel.isThread())
+          ) {
+            const embed = new EmbedBuilder()
+              .setTitle("Matched message")
+              .setColor(matches === 100 ? "Green" : "Yellow")
+              .setDescription(`[Jump to message](${message.url})`)
+              .setFields([
+                {
+                  name: `Message`,
+                  value: message.content,
+                },
+                {
+                  name: "Phrase",
+                  value: content,
+                },
+                {
+                  name: "Author",
+                  value: message.author.id,
+                },
+                {
+                  name: "Threshold match (%)",
+                  value: `${Math.round(matches)}%`,
+                },
+              ]);
+            await logChannel.send({ embeds: [embed] });
+          }
+        }
+      }
+    }
+
+    const triggers = message.settings.triggers.filter((t) => t.enabled);
+    for (const trigger of triggers) {
+      const id = `trigger-${trigger.id}`;
+      const optedOut = await TriggerModel.exists({
+        guildId: message.guild.id,
+        userId: message.author.id,
+        triggerId: id,
+      });
+
+      if (optedOut) {
+        continue;
+      }
+      if (this.client.dirtyCooldownHandler.has(id)) {
+        const matched: string[] = [];
+        const allMatch =
+          trigger.keywords.length != 0 &&
+          trigger.keywords.every((keywordArr) =>
+            keywordArr
+              .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
+              .some(
+                (k) =>
+                  message.content.match(k) &&
+                  matched.push(k.source) &&
+                  // Ignore trigger content if matched trigger is a custom emoji's name.
+                  message.content.match(/<a?:.+?:\d+>/)?.length == 0,
+              ),
+          );
+
+        if (allMatch) {
+          const button = new ActionRowBuilder<ButtonBuilder>().setComponents(
+            new ButtonBuilder()
+              .setCustomId(id)
+              .setLabel("Don't remind me again")
+              .setStyle(ButtonStyle.Primary),
+          );
+
+          let reply: {
+            content?: string;
+            embeds?: EmbedBuilder[];
+            components: ActionRowBuilder<ButtonBuilder>[];
+          };
+
+          if (trigger.message.embed) {
+            let color: ColorResolvable = "Red";
+
+            const footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
+
+            if (defaultUtility.isColor(trigger.message.color)) {
+              color = trigger.message.color;
+            }
+
+            reply = {
+              embeds: [
+                new EmbedBuilder()
+                  .setTitle(trigger.message.title)
+                  .setDescription(trigger.message.description)
+                  .setColor(color)
+                  .setFooter({ text: footer }),
+              ],
+              components: [button],
+            };
+          } else {
+            reply = {
+              content: trigger.message.content,
+              components: [button],
+            };
+          }
+
+          message
+            .reply(reply)
+            .then(() => {
+              this.client.dirtyCooldownHandler.set(id, trigger.cooldown * 1000);
+            })
+            .catch();
+
+          break; // Don't want multiple triggers on a single message
+        }
+      }
+    }
+
+    // auto-resolve discord urls
+    if (message.content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
+      const matches = [...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
+
+      matches.forEach(async (match) => {
+        const code = match[1];
+        console.log(`discord.gg/${code}`);
+        try {
+          const server = await this.client.fetchInvite(code);
+          if (!server.guild) return;
+
+          const embed = this.client.utils.getUtility("default").generateEmbed("success", {
+            title: "Resolved guild",
+            description: `Name: ${server.guild.name}`,
+            fields: [
+              {
+                name: "NSFW Level",
+                value: `${GuildNSFWLevel[server.guild.nsfwLevel]}`,
+              },
+            ],
+          });
+          await message.reply({ embeds: [embed] }).then((msg) => {
+            msg.reply(`Server avatar: ||${server.guild?.iconURL()}||`);
+          });
+        } catch (_) {
+          const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+            title: "Failed to resolve guild",
+            description: `Guild may be banned, deleted, or the invite expired.`,
+          });
+          message.reply({ embeds: [embed] });
+        }
+      });
+    }
+    this.client.textCommandLoader.handle(message);
+  }
+}

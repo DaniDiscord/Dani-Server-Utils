@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ICommand } from "types/mongodb";
+import { ICommand } from "../types/mongodb";
 
-const CommandSchema = new Schema({
+const CommandSchema = new Schema<ICommand>({
   guild: { type: String, ref: "Settings" },
   trigger: { type: String, index: true },
   content: String,

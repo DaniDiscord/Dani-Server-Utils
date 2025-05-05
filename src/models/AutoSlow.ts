@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { IAutoSlow } from "types/mongodb";
+import { IAutoSlow } from "../types/mongodb";
 
-const AutoSlowSchema = new Schema({
+const AutoSlowSchema = new Schema<IAutoSlow>({
   channelId: String,
   min: Number,
   max: Number,

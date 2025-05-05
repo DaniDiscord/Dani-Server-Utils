@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { IAutoPing } from "types/mongodb";
+import { IAutoPing } from "../types/mongodb";
 
-const AutoPingSchema = new Schema({
+const AutoPingSchema = new Schema<IAutoPing>({
   guildId: String,
   roleId: String,
   forumId: String,

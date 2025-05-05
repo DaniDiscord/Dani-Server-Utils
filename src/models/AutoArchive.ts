@@ -1,4 +1,4 @@
-import { IAutoArchiveForum, IAutoArchiveForumBlacklist } from "types/mongodb";
+import { IAutoArchiveForum, IAutoArchiveForumBlacklist } from "../types/mongodb";
 import { Model, Schema, model } from "mongoose";
 
 const AutoArchiveForumSchema = new Schema<IAutoArchiveForum>(
@@ -11,7 +11,7 @@ const AutoArchiveForumSchema = new Schema<IAutoArchiveForum>(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const AutoArchiveForumBlacklistSchema = new Schema<IAutoArchiveForumBlacklist>(
@@ -19,15 +19,15 @@ const AutoArchiveForumBlacklistSchema = new Schema<IAutoArchiveForumBlacklist>(
     guildId: { type: String, required: true, unique: true },
     threads: [{ type: String, required: true }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const AutoArchiveForumModel: Model<IAutoArchiveForum> = model(
   "AutoArchiveForum",
-  AutoArchiveForumSchema
+  AutoArchiveForumSchema,
 );
 
 export const AutoArchiveForumBlacklistModel: Model<IAutoArchiveForumBlacklist> = model(
   "AutoArchiveForumBlacklist",
-  AutoArchiveForumBlacklistSchema
+  AutoArchiveForumBlacklistSchema,
 );

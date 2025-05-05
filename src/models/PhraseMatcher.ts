@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { IPhraseMatcher } from "types/mongodb";
+import { IPhraseMatcher } from "../types/mongodb";
 
-const PhraseMatcherSchema = new Schema({
+const PhraseMatcherSchema = new Schema<IPhraseMatcher>({
   guildId: { type: String, required: true, unique: true },
   logChannelId: String,
   phrases: [
@@ -16,5 +16,5 @@ const PhraseMatcherSchema = new Schema({
 
 export const PhraseMatcherModel: Model<IPhraseMatcher> = model(
   "PhraseMatcher",
-  PhraseMatcherSchema
+  PhraseMatcherSchema,
 );

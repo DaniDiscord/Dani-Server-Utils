@@ -1,46 +1,60 @@
 import {
-  CacheType,
-  CommandInteraction,
+  ApplicationCommandType,
   GuildMember,
+  MessageFlags,
   PermissionsBitField,
   UserContextMenuCommandInteraction,
 } from "discord.js";
-import {
-  CustomInteractionReplyOptions,
-  InteractionCommand,
-} from "../../classes/CustomInteraction";
 
-import { ApplicationCommandType } from "discord-api-types/v10";
-import { BadNamer } from "lib/badname";
-import { CustomClient } from "lib/client";
+import { CounterModel } from "models/Counter";
+import { CustomApplicationCommand } from "lib/core/command";
+import { DsuClient } from "lib/core/DsuClient";
 
-const badNamer = new BadNamer();
-
-export default class ContextCommand extends InteractionCommand {
-  /**
-   *
-   */
-  constructor(client: CustomClient) {
-    super(client, {
+export default class RandName extends CustomApplicationCommand {
+  constructor(client: DsuClient) {
+    super("Random Name", client, {
       type: ApplicationCommandType.User,
-      name: "Random Name",
+      permissionLevel: "USER",
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
-  async execute(
-    interaction: CommandInteraction<CacheType>
-  ): Promise<CustomInteractionReplyOptions> {
-    const int = interaction as UserContextMenuCommandInteraction;
-    if (!(int.targetMember instanceof GuildMember)) {
-      return { content: "Random name only works on guild members", eph: true };
+  public async run(interaction: UserContextMenuCommandInteraction) {
+    const badNameUtility = this.client.utils.getUtility("badName");
+
+    if (!(interaction.targetMember instanceof GuildMember)) {
+      return interaction.reply({
+        content: "Random name only works on guild members",
+        flags: MessageFlags.Ephemeral,
+      });
     }
-    if (this.client.permlevel(undefined, int.targetMember) >= 2) {
-      return { content: "Helper and above cannot be nicknamed", eph: true };
+    if (this.client.getPermLevel(undefined, interaction.targetMember) >= 2) {
+      return interaction.reply({
+        content: "Helper and above cannot be nicknamed",
+        flags: MessageFlags.Ephemeral,
+      });
     }
-    const num = await this.client.getNextCounter("Badname");
-    const name = badNamer.get(num);
-    await this.client.setMemberName(int.targetMember, name);
-    return { content: "User renamed successfully", eph: true };
+    const id = "Badname";
+    const res = await CounterModel.findOneAndUpdate(
+      {
+        _id: id,
+      },
+      {
+        $inc: {
+          index: 1,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+    const name = badNameUtility.getName(res.index);
+    await badNameUtility.setMemberName(interaction.targetMember, name);
+    return interaction.reply({
+      content: "User renamed successfully",
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }

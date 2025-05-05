@@ -1,6 +1,6 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ILinkPermission } from "types/mongodb";
+import { ILinkPermission } from "../types/mongodb";
 
 const LinkPermissionSchema = new Schema<ILinkPermission>(
   {
@@ -26,10 +26,10 @@ const LinkPermissionSchema = new Schema<ILinkPermission>(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const LinkPermissionModel: Model<ILinkPermission> = model(
   "LinkPermission",
-  LinkPermissionSchema
+  LinkPermissionSchema,
 );

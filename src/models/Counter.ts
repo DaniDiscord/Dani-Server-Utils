@@ -1,8 +1,8 @@
 import { Model, Schema, model } from "mongoose";
 
-import { ICounter } from "types/mongodb";
+import { ICounter } from "../types/mongodb";
 
-const CounterSchema = new Schema({
+const CounterSchema = new Schema<ICounter>({
   _id: String,
   index: {
     type: Number,

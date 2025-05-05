@@ -1,11 +1,20 @@
-FROM node:22-bullseye
+FROM oven/bun:latest
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package*.json ./
+COPY bun.lock ./
 
-RUN yarn install
+RUN bun install
 
-COPY . .
+COPY lib/ ./lib/
+COPY src/ ./src/
+COPY .env ./
 
-CMD ["yarn", "dev"]
+COPY tsconfig.json ./
+COPY eslint.config.mjs ./
+COPY .prettierrc ./
+
+EXPOSE 3000
+
+CMD ["bun", "."]

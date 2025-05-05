@@ -1,121 +1,96 @@
-import { MINUTE, SECOND } from "lib/timeParser";
-
-import { CheckAnchorInactivity } from "lib/anchorHandler";
-import { Client } from "discord.js";
+import { DsuClient } from "../../lib/core/DsuClient";
+import { EventLoader } from "../../lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
-import { SettingsModel as Settings } from "../models/Settings";
+import { SettingsModel } from "models/Settings";
+import { Times } from "types/index";
 import _ from "lodash";
-import { fuzzyMatch } from "lib/utils";
-import { handleAutoArchive } from "lib/autoarchive";
 
-export default (client: Client): void => {
-  updateStuff();
-  async function updateStuff() {
-    client.user?.setPresence({
-      activities: [{ name: `v${process.env.npm_package_version}` }],
-    });
+export default class Ready extends EventLoader {
+  constructor(client: DsuClient) {
+    super(client, "ready");
+  }
 
-    for (const [k] of client.settings) {
-      let s: ISettings | null = null;
+  private async ensureGuildConfig(
+    client: DsuClient,
+    guildId: string,
+  ): Promise<ISettings> {
+    const existing = await SettingsModel.findById(guildId)
+      .populate("commands")
+      .populate("mentorRoles");
 
-      try {
-        s = await Settings.findOne({
-          _id: k,
-        })
+    if (existing) return existing;
+
+    try {
+      return await new SettingsModel({ _id: guildId })
+        .save()
+        .then((doc) => doc.populate("mentorRoles"))
+        .then((doc) => doc.populate("commands"));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (error.code === 11000) {
+        const existingConfig = await SettingsModel.findById(guildId)
           .populate("commands")
           .populate("mentorRoles");
-      } catch (e) {}
 
-      if (s) {
-        const cachedSettings = client.settings.get(k);
-        if (_.isEqual(cachedSettings, s) && !s.toUpdate) {
-          continue;
+        if (!existingConfig) {
+          throw new Error(
+            `Failed to find config for guild ${guildId} after duplicate key error`,
+          );
         }
-        if (cachedSettings) {
-          // If they're not equal, first check if the difference lies in the mentorRoles
-          if (cachedSettings.mentorRoles.toString() != s.mentorRoles.toString()) {
-            // The mentor roles are different. Mentor roles aren't changed clientside so just set the settings to the pulled ones
-            log.debug("Setting sync", {
-              action: "Fetch",
-              message: `Database.mentorRoles -> Client.mentorRoles (${k})`,
-            });
-            client.settings.set(k, s);
-          } else {
-            if (s.toUpdate) {
-              // The server updated last. Grab that shit
-              log.debug("Setting sync", {
-                action: "Fetch",
-                message: `Database -> Client (${k})`,
-              });
-              const newSettings = await Settings.findOneAndUpdate(
-                { _id: s._id },
-                { toUpdate: false },
-                { new: true }
-              )
-                .populate("commands")
-                .populate("mentorRoles");
-              if (newSettings) client.settings.set(k, newSettings);
-            } else if (cachedSettings.toUpdate) {
-              // The server hasn't updated. We gotta update dat bish
-              const ourThing = { ...cachedSettings };
-              delete ourThing._id;
-              ourThing.toUpdate = false;
+        return existingConfig;
+      }
+      client.logger.error("Failed to ensure guild config", { guildId, error });
+      throw error;
+    }
+  }
 
-              log.debug("Setting sync", {
-                action: "Push",
-                message: `Client -> Database (${k})`,
-              });
-              await Settings.updateOne({ _id: s._id }, ourThing);
+  private async syncSettings(client: DsuClient, guildId: string) {
+    const dbSettings = await this.ensureGuildConfig(client, guildId);
+    const cachedSettings = client.settings.get(guildId);
 
-              const newSettings = await Settings.findOne({ _id: s._id })
-                .populate("commands")
-                .populate("mentorRoles");
-              if (newSettings) client.settings.set(k, newSettings);
-            }
-          }
-        }
-      } else {
-        log.debug("Config generation", {
+    if (
+      !cachedSettings ||
+      !_.isEqual(cachedSettings, dbSettings) ||
+      dbSettings.toUpdate
+    ) {
+      if (cachedSettings?.mentorRoles.toString() !== dbSettings.mentorRoles.toString()) {
+        client.logger.info("Setting sync", {
           action: "Fetch",
-          message: `Guild with ID:${k} had no config, generating`,
+          message: `Database.mentorRoles -> Client.mentorRoles (${guildId})`,
         });
-        client.settings.set(
-          k,
-          (
-            await new Settings({
-              _id: k,
-            }).save()
-          )
-            .populate("mentorRoles")
-            .populate("commands")
-        );
-        log.debug("Config generation", {
-          action: "Fetch",
-          message: `Finished generating config for guild with ID:${k}`,
-        });
+        client.settings.set(guildId, dbSettings);
       }
     }
   }
-  setInterval(updateStuff, SECOND * 3);
-  handleAutoArchive(client);
-  CheckAnchorInactivity(client);
 
-  log.info("Logged in", {
-    action: `Ready`,
-    message: `Bot logged in as ${client.user?.tag}.`,
-  });
-  // console.log(fuzzyMatch("accept $20 gift - fakelink.com", "20 gift"));
-  // console.log(fuzzyMatch("This includes 20 gift, not the other words", "20 gift"));
-  // console.log(fuzzyMatch("This is a $20 present", "20 gift"));
-  // console.log(fuzzyMatch("Receive 20$ as a gift", "20 gift"));
-  // console.log(fuzzyMatch("abcd", "abc"));
-  // console.log(fuzzyMatch("this phrase should match", "this phrase should match"));
-  // console.log(fuzzyMatch("this pharse should mtach", "this phrase should match"));
-  // console.log(fuzzyMatch("totally different", "this phrase should match"));
-  // console.log(
-  //   fuzzyMatch(
-  //     "test phrase test phrase test phrase ahhhhhhhhhhhhhhhhhhhhhhhh",
-  //     "test phrase"
-  //   )
-  // );
-};
+  override async run(client: DsuClient) {
+    const updateSettings = async () => {
+      client.user?.setPresence({
+        activities: [{ name: `v${process.env.npm_package_version}` }],
+      });
+
+      await Promise.all(
+        Array.from(client.settings.keys()).map((guildId) =>
+          this.syncSettings(client, guildId).catch((e) =>
+            client.logger.error("Sync failed for guild", { guildId, error: e }),
+          ),
+        ),
+      );
+    };
+
+    await updateSettings();
+
+    const interval = setInterval(
+      () =>
+        updateSettings().catch((e) => client.logger.error("Periodic update failed", e)),
+      Times.SECOND * 3,
+    );
+
+    client.once("destroy", () => clearInterval(interval));
+
+    this.client.utils.getUtility("autoArchive").handleAutoArchive();
+    this.client.utils.getUtility("anchors").checkAnchorInactivity();
+
+    client.logger.info(`Bot logged in as ${client.user?.tag}.`);
+  }
+}

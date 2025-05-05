@@ -1,235 +1,156 @@
-import {
-  ApplicationCommandType,
-  EmbedBuilder,
-  Interaction,
-  MessageFlags,
-} from "discord.js";
-import {
-  CustomInteractionReplyOptions,
-  interpretInteractionResponse,
-} from "../classes/CustomInteraction";
-/* eslint-disable max-len */
-import { formatDuration, intervalToDuration } from "date-fns";
-import { staffAppCustomId, staffAppQuestions } from "lib/staffapp";
+import { Collection, Interaction, InteractionType, MessageFlags } from "discord.js";
 
-import { CustomClient } from "lib/client";
+import { DsuClient } from "lib/core/DsuClient";
+import { EventLoader } from "lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
 import { SettingsModel } from "models/Settings";
-import { TimestampModel } from "models/Timestamp";
 import { TriggerModel } from "models/Trigger";
-import { WEEK } from "lib/timeParser";
-import { forumTagComplete } from "lib/autoping";
-import { onInteraction } from "lib/emojiSuggestions";
 
-export default async function (client: CustomClient, interaction: Interaction) {
-  // if (interaction.guildId) {
-  //   await client.loadGuildSettings(interaction.guildId);
-  // }
-
-  // if (interaction.isButton()) {
-  //   const [buttonType, command] = interaction.customId.split(":");
-  //   const existingButtonHandler = client.buttons.get(buttonType);
-  //   if (existingButtonHandler) {
-  //     await existingButtonHandler.execute(interaction);
-  //   }
-  // }
-
-  if (!interaction.guild) return;
-  if (interaction.guild && !client.settings.has((interaction.guild || {}).id)) {
-    // We don't have the settings for this guild, find them or generate empty settings
-    const s: ISettings = await SettingsModel.findOneAndUpdate(
-      { _id: interaction.guild.id },
-      { toUpdate: true },
-      {
-        upsert: true,
-        setDefaultsOnInsert: true,
-        new: true,
-      }
-    )
-      .populate("mentorRoles")
-      .populate("commands");
-
-    log.debug("Setting sync", {
-      action: "Fetch",
-      message: `Database -> Client (${interaction.guild.id})`,
-    });
-
-    client.settings.set(interaction.guild.id, s);
-    interaction.settings = s;
-  } else {
-    const s = client.settings.get(interaction.guild ? interaction.guild.id : "default");
-    if (!s) return;
-    interaction.settings = s;
+export default class InteractionCreate extends EventLoader {
+  constructor(client: DsuClient) {
+    super(client, "interactionCreate");
   }
 
-  const isAutocomplete = interaction.isAutocomplete();
-  if (isAutocomplete) {
-    await forumTagComplete(interaction);
-  }
+  override async run(interaction: Interaction) {
+    if (!interaction.guild) return;
+    if (interaction.guild && !this.client.settings.has((interaction.guild || {}).id)) {
+      // We don't have the settings for this guild, find them or generate empty settings
+      const s: ISettings = await SettingsModel.findOneAndUpdate(
+        { _id: interaction.guild.id },
+        { toUpdate: true },
+        {
+          upsert: true,
+          setDefaultsOnInsert: true,
+          new: true,
+        },
+      )
+        .populate("mentorRoles")
+        .populate("commands");
 
-  // Emojis
-  await onInteraction(client, interaction);
+      this.client.logger.info(
+        `Setting sync: Fetch Database -> Client (${interaction.guild.id})`,
+      );
 
-  const isButton = interaction.isButton();
+      this.client.settings.set(interaction.guild.id, s);
+      interaction.settings = s;
+    } else {
+      const s = this.client.settings.get(
+        interaction.guild ? interaction.guild.id : "default",
+      );
+      if (!s) return;
+      interaction.settings = s;
+    }
 
-  if (isButton) {
-    const triggerIds = interaction.settings.triggers.map((t) => `trigger-${t.id}`);
+    const isAutocomplete = interaction.isAutocomplete();
 
-    for (const id of triggerIds) {
-      if (interaction.customId != id) {
-        continue;
-      }
+    if (isAutocomplete) {
+      await this.client.utils.getUtility("autoPing").onForumTagComplete(interaction);
+    }
 
-      const user = interaction.user;
-      const optedOut = await TriggerModel.exists({
-        guildId: interaction.guild.id,
-        userId: user.id,
-        triggerId: id,
-      });
+    // TODO emojis
 
-      if (optedOut) {
-        // Nuh uh
-        await interaction.reply({
-          content: "You have already opted out in this guild.",
-          flags: [MessageFlags.Ephemeral],
-        });
-      } else {
-        await new TriggerModel({
+    const isButton = interaction.isButton();
+
+    // can't be moved since its dynamic
+    if (isButton) {
+      const triggerIds = interaction.settings.triggers.map((t) => `trigger-${t.id}`);
+
+      for (const id of triggerIds) {
+        if (interaction.customId != id) {
+          continue;
+        }
+
+        const user = interaction.user;
+        const optedOut = await TriggerModel.exists({
           guildId: interaction.guild.id,
           userId: user.id,
           triggerId: id,
-        }).save();
-
-        await interaction.reply({
-          content: "We will not remind you in this guild again.",
-          flags: [MessageFlags.Ephemeral],
         });
-      }
-    }
-  }
 
-  const isModalSubmit = interaction.isModalSubmit();
-  if (isModalSubmit && interaction.customId == staffAppCustomId) {
-    // At this point, impose a cooldown. Lets start with a week
-    const TIMESPAN_COOLDOWN = WEEK;
-    const identifier = `${interaction.user.id}-staff-application`;
-    const lastApplied = await TimestampModel.findOne({ identifier });
-    if (
-      lastApplied?.timestamp &&
-      lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN >= Date.now()
-    ) {
-      // Nah bro, deny that shit
-      await interaction.reply({
-        flags: [MessageFlags.Ephemeral],
-        content:
-          `Your last staff application was sent ${formatDuration(
-            intervalToDuration({ start: lastApplied.timestamp, end: Date.now() })
-          )} ago\n` +
-          `You can send a new one in ${formatDuration(
-            intervalToDuration({
-              start: Date.now(),
-              end: lastApplied.timestamp.valueOf() + TIMESPAN_COOLDOWN,
-            })
-          )}`,
-      });
-      return;
-    } else {
-      await TimestampModel.updateOne(
-        { identifier },
-        { timestamp: new Date() },
-        { upsert: true }
-      );
-    }
-    const qna = [];
-    for (const question of staffAppQuestions) {
-      let answer = interaction.fields.getTextInputValue(question.customId);
-      if (answer === "") {
-        answer = "**N/A**";
-        if (question.required) {
+        if (optedOut) {
+          // Nuh uh
           await interaction.reply({
-            content: "Issue sending application, please try again.",
+            content: "You have already opted out in this guild.",
             flags: [MessageFlags.Ephemeral],
           });
+        } else {
+          await new TriggerModel({
+            guildId: interaction.guild.id,
+            userId: user.id,
+            triggerId: id,
+          }).save();
 
-          // Delete this users timeout, they couldn't send the application properly
-          await TimestampModel.deleteOne({ identifier });
-          return;
+          await interaction.reply({
+            content: "We will not remind you in this guild again.",
+            flags: [MessageFlags.Ephemeral],
+          });
         }
       }
-      qna.push({ name: question.label, value: answer });
     }
-
-    const authorId = interaction.user.id;
-
-    let embed = new EmbedBuilder();
 
     try {
-      embed = embed
-        .setColor(0xaa00aa)
-        .setTitle(`Application of ${interaction.user.tag}`)
-        .addFields(qna);
+      const cooldowns = this.client.applicationCommandLoader.cooldowns;
+      this.client.logger.info(
+        `${interaction.type} interaction created by ${interaction.user.id}${
+          interaction.type === InteractionType.ApplicationCommand
+            ? `: ${interaction.toString()}`
+            : ""
+        }`,
+      );
+      if (interaction.isCommand()) {
+        if (!cooldowns.has(interaction.commandName)) {
+          cooldowns.set(interaction.commandName, new Collection());
+        }
+        const command = this.client.applicationCommandLoader.fetchCommand(
+          interaction.commandName,
+        );
+        if (!command) {
+          return this.client.logger.error(
+            `Exception: Cannot find command to add cooldown (${interaction.commandName})`,
+          );
+        }
+        const now = Date.now();
+        const timestamps = this.client.applicationCommandLoader.cooldowns.get(
+          interaction.commandName,
+        );
+
+        if (!timestamps) {
+          return this.client.logger.error(`Exception: No timestamp exists.`);
+        }
+        const cooldownTimer = (command.options.cooldown ?? 0) * 1000;
+
+        if (timestamps?.has(interaction.user.id)) {
+          const expiration = timestamps.get(interaction.user.id) ?? 0 + cooldownTimer;
+          if (now < expiration) {
+            return interaction.reply({
+              flags: [MessageFlags.Ephemeral],
+              embeds: [
+                this.client.utils.getUtility("default").generateEmbed("error", {
+                  title: "Command on cooldown",
+                  description: `Try again in <t:${Math.round(expiration / 1000)}:R>`,
+                }),
+              ],
+            });
+          }
+        }
+
+        timestamps.set(interaction.user.id, now);
+        setTimeout(() => timestamps.delete(interaction.user.id), cooldownTimer);
+
+        this.client.applicationCommandLoader.handle(interaction);
+      } else if (interaction.isButton()) {
+        this.client.buttonLoader.handle(interaction);
+      } else if (interaction.isAnySelectMenu()) {
+        this.client.selectMenuLoader.handle(interaction);
+      } else if (interaction.isModalSubmit()) {
+        this.client.modalLoader.handle(interaction);
+      } else if (interaction.isMessageContextMenuCommand()) {
+        this.client.applicationCommandLoader.handle(interaction);
+      } else if (interaction.isUserContextMenuCommand()) {
+        this.client.applicationCommandLoader.handle(interaction);
+      }
     } catch (error) {
-      console.error(error);
-      await interaction.reply({
-        content: "Issue sending application, please try again.",
-        flags: [MessageFlags.Ephemeral],
-      });
-
-      // Delete this users timeout, they couldn't send the application properly
-      await TimestampModel.deleteOne({ identifier });
-      return;
-    }
-
-    await interaction.reply({
-      content: "Application sent successfully.",
-      flags: [MessageFlags.Ephemeral],
-    });
-    const channel = await client.channels.fetch("995792003726065684");
-    if (channel && channel.isSendable()) {
-      channel.send({
-        content: `<@${authorId}> (${interaction.user.tag}) is applying for staff:`,
-        embeds: [embed],
-      });
-    }
-  }
-
-  if (interaction.isCommand()) {
-    const cmd = client.slashCommands.get(
-      `${interaction.commandType}-${interaction.commandName}`
-    );
-    if (!cmd) return;
-    let message = `User ${interaction.user.username} executed ${
-      ApplicationCommandType[interaction.commandType]
-    } command ${interaction.commandName}`;
-    if (interaction.isUserContextMenuCommand()) {
-      message += ` targeting ${interaction.targetUser.username}`;
-    } else if (interaction.isMessageContextMenuCommand()) {
-      message += ` targeting ${interaction.targetMessage.id}`;
-    }
-
-    log.debug("Command executed", { action: "Command", message });
-
-    const response = await cmd.execute(interaction).catch(
-      (e: Error) =>
-        ({
-          content: `Error: ${e.message}`,
-          flags: [MessageFlags.Ephemeral],
-        } as CustomInteractionReplyOptions)
-    );
-    if (interaction.replied || interaction.deferred || response == null) return;
-    const send = interpretInteractionResponse(response);
-    if (Object.keys(send).length > 0) interaction.reply(send);
-    else
-      interaction.reply({
-        content: "Error: No response",
-        flags: [MessageFlags.Ephemeral],
-      });
-  } else if (interaction.isAutocomplete()) {
-    const ret = client.autocompleteOptions.get(interaction.commandName);
-    if (ret) {
-      const focused = interaction.options.getFocused(true);
-      const a = ret[focused.name](focused.value, interaction);
-      interaction.respond(a);
+      this.client.logger.error(`Failed to handle command ${interaction.id}: ${error}`);
     }
   }
 }
