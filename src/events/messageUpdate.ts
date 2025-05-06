@@ -47,7 +47,7 @@ export default class MessageUpdate extends EventLoader {
       newMessage.member?.roles.cache.map((role) => role.id) ?? [],
     );
 
-    if (((!canSendLinks || level < 3) && link.hasUrls)) {
+    if ((!canSendLinks && level < 3 && link.hasUrls)) {
       await newMessage
         .delete()
         .catch(() =>
