@@ -75,14 +75,14 @@ export default class MessageCreate extends EventLoader {
 
     const emojiUtility = this.client.utils.getUtility("emoji");
 
-    emojiUtility.countEmoji(message);
+    await emojiUtility.countEmoji(message);
     if (level == -1) {
       return;
     }
     const linkUtility = this.client.utils.getUtility("linkHandler");
     const hasLink = linkUtility.parseMessageForLink(message.content);
 
-    const canSendLinks = linkUtility.checkLinkPermissions(
+    const canSendLinks = await linkUtility.checkLinkPermissions(
       message.guildId ?? "",
       message.channelId,
       message.author.id,

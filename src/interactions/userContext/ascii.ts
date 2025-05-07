@@ -40,7 +40,7 @@ export default class AsciiName extends CustomApplicationCommand {
         flags: MessageFlags.Ephemeral,
       });
     }
-    badNameUtility.setMemberName(interaction.targetMember, name);
+    await badNameUtility.setMemberName(interaction.targetMember, name);
     return interaction.reply({
       content: "User renamed successfully",
       flags: MessageFlags.Ephemeral,

@@ -17,6 +17,6 @@ export default class StaffAppModalSubmit extends Modal {
       reason = "No reason specified.";
     }
 
-    suggestionUtility.deny(interaction, reason);
+    await suggestionUtility.deny(interaction, reason);
   }
 }
