@@ -286,26 +286,38 @@ export default class MessageCreate extends EventLoader {
         userId: message.author.id,
         triggerId: id,
       });
-
       if (optedOut) {
         continue;
       }
-      if (this.client.dirtyCooldownHandler.has(id)) {
+
+      if (!this.client.dirtyCooldownHandler.has(id)) {
         const matched: string[] = [];
         const allMatch =
-          trigger.keywords.length != 0 &&
+          trigger.keywords.length !== 0 &&
           trigger.keywords.every((keywordArr) =>
             keywordArr
               .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
-              .some(
-                (k) =>
-                  message.content.match(k) &&
-                  matched.push(k.source) &&
-                  // Ignore trigger content if matched trigger is a custom emoji's name.
-                  message.content.match(/<a?:.+?:\d+>/)?.length == 0,
-              ),
-          );
+              .some((regex) => {
+                const match = message.content.match(regex);
+                if (match) {
+                  const matchedStr = match[0];
 
+                  // Skip if the matched string is part of a custom emoji name
+                  const isInCustomEmoji = Array.from(
+                    message.content.matchAll(/<a?:([a-zA-Z0-9_]+):\d+>/g),
+                  ).some(
+                    ([, emojiName]) =>
+                      emojiName.toLowerCase() === matchedStr.toLowerCase(),
+                  );
+
+                  if (!isInCustomEmoji) {
+                    matched.push(regex.source);
+                    return true;
+                  }
+                }
+                return false;
+              }),
+          );
         if (allMatch) {
           const button = new ActionRowBuilder<ButtonBuilder>().setComponents(
             new ButtonBuilder()
