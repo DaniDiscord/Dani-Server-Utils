@@ -90,7 +90,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
           value: `${banReason}`,
         },
       ]);
-      return { embeds: [banEmbed], eph: true };
+      return interaction.reply({ embeds: [banEmbed], flags: MessageFlags.Ephemeral });
     }
     const lastUse = await emojiUtility.getLastCommandUse(
       interaction.guild.id,

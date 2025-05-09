@@ -10,6 +10,6 @@ export default class MessageReactionAdd extends EventLoader {
 
   async run(messageReaction: MessageReaction, user: User) {
     const emojiUtility = this.client.utils.getUtility("emoji");
-    emojiUtility.onReaction(messageReaction, user);
+    await emojiUtility.onReaction(messageReaction, user);
   }
 }
