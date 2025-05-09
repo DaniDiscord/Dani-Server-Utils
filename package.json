@@ -4,8 +4,9 @@
   "description": "The Dani Discord (discord.gg/danii) server bot!",
   "main": "src/client.ts",
   "scripts": {
-    "start": "bun .",
-    "lint": "bunx eslint"
+    "dev": "bun .",
+    "lint": "bunx eslint",
+    "start": "docker compose up -d --build"
   },
   "dependencies": {
     "async-mutex": "^0.5.0",
