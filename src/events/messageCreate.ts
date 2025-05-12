@@ -4,11 +4,16 @@ import {
   ButtonStyle,
   ChannelType,
   ColorResolvable,
+  ContainerBuilder,
   EmbedBuilder,
   GuildChannel,
   GuildNSFWLevel,
+  MediaGalleryBuilder,
   Message,
+  MessageFlags,
+  MessageType,
   TextChannel,
+  TextDisplayBuilder,
 } from "discord.js";
 
 import { DsuClient } from "lib/core/DsuClient";
@@ -30,6 +35,44 @@ export default class MessageCreate extends EventLoader {
   }
 
   override async run(message: Message) {
+    if (message.type === MessageType.AutoModerationAction) {
+      if (message.content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
+        const matches = [...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
+
+        matches.forEach(async (match) => {
+          const code = match[1];
+          try {
+            const server = await this.client.fetchInvite(code);
+            if (!server.guild) return;
+
+            const container = new ContainerBuilder()
+              .addTextDisplayComponents(
+                new TextDisplayBuilder({
+                  content: `# Resolved Guild\n Name: ${server.guild.name}\n Server Avatar:`,
+                }),
+              )
+              .addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems({
+                  media: {
+                    url: `${server.guild?.iconURL() || "https://cdn.discordapp.com/embed/avatars/0.png"}`,
+                  },
+                  spoiler: true,
+                }),
+              );
+            await message.reply({
+              flags: MessageFlags.IsComponentsV2,
+              components: [container],
+            });
+          } catch (_) {
+            const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+              title: "Failed to resolve guild",
+              description: `Guild may be banned, deleted, or the invite expired.`,
+            });
+            message.reply({ embeds: [embed] });
+          }
+        });
+      }
+    }
     if (message.author.bot) return;
     if (!message.guild) return;
     if (
@@ -370,39 +413,6 @@ export default class MessageCreate extends EventLoader {
       }
     }
 
-    // auto-resolve discord urls
-    if (message.content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
-      const matches = [...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
-
-      matches.forEach(async (match) => {
-        const code = match[1];
-        console.log(`discord.gg/${code}`);
-        try {
-          const server = await this.client.fetchInvite(code);
-          if (!server.guild) return;
-
-          const embed = this.client.utils.getUtility("default").generateEmbed("success", {
-            title: "Resolved guild",
-            description: `Name: ${server.guild.name}`,
-            fields: [
-              {
-                name: "NSFW Level",
-                value: `${GuildNSFWLevel[server.guild.nsfwLevel]}`,
-              },
-            ],
-          });
-          await message.reply({ embeds: [embed] }).then((msg) => {
-            msg.reply(`Server avatar: ||${server.guild?.iconURL()}||`);
-          });
-        } catch (_) {
-          const embed = this.client.utils.getUtility("default").generateEmbed("error", {
-            title: "Failed to resolve guild",
-            description: `Guild may be banned, deleted, or the invite expired.`,
-          });
-          message.reply({ embeds: [embed] });
-        }
-      });
-    }
     this.client.textCommandLoader.handle(message);
   }
 }
