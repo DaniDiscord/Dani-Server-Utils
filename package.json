@@ -1,6 +1,6 @@
 {
   "name": "dani-server-utils",
-  "version": "1.6.8",
+  "version": "1.6.10",
   "description": "The Dani Discord (discord.gg/danii) server bot!",
   "main": "src/client.ts",
   "scripts": {
@@ -11,6 +11,7 @@
   "dependencies": {
     "async-mutex": "^0.5.0",
     "axios": "^1.8.4",
+    "canvas": "^3.1.0",
     "chalk": "^5.4.1",
     "dayjs": "^1.11.13",
     "discord.js": "^14.19.3",

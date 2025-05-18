@@ -2,13 +2,13 @@ import { ApplicationCommandType, UserContextMenuCommandInteraction } from "disco
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { InteractionCommandOptions } from "types/commands";
+import { InteractionCommandOptions as _ } from "types/commands";
 
 // Needs to be default export if you plan to add it.
 export class Example extends CustomApplicationCommand {
   /**
    * Constructor call takes 3 arguments (name, client, options)
-   * See {@link InteractionCommandOptions} for options
+   * See {@link _} for options
    */
   constructor(client: DsuClient) {
     super("Name", client, {

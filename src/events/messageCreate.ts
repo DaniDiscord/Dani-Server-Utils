@@ -7,7 +7,6 @@ import {
   ContainerBuilder,
   EmbedBuilder,
   GuildChannel,
-  GuildNSFWLevel,
   MediaGalleryBuilder,
   Message,
   MessageFlags,
@@ -20,7 +19,10 @@ import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader/EventLoader";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
+import { Times } from "types/index";
 import { TriggerModel } from "models/Trigger";
+import XpManager from "lib/core/XpManager";
+import { XpModel } from "models/Xp";
 
 const chainStops = ["muck"];
 const chainIgnoredChannels = ["594178859453382696", "970968834372698163"];
@@ -29,15 +31,32 @@ const CHAIN_DETECTION_LENGTH = 5;
 const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
 const CHAIN_WARN_THRESHOLD = 3;
 const CHAIN_DELETION_LOG_CHANNEL_ID = "989203228749099088";
+
+const XP_CONFIG = {
+  cooldown: Times.MINUTE,
+  xpPerMessage: 3,
+};
 export default class MessageCreate extends EventLoader {
   constructor(client: DsuClient) {
     super(client, "messageCreate");
   }
 
   override async run(message: Message) {
-    if (message.type === MessageType.AutoModerationAction) {
-      if (message.content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
-        const matches = [...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
+    if (message.type == MessageType.AutoModerationAction) {
+      let content = message.embeds[0].description;
+      if (!content) {
+        return this.client.logger.error(
+          "Internal error: data does not exist inside automod message;",
+        );
+      }
+      if (
+        content.match(/discord\.gg\/([a-zA-Z0-9]+)/g) ||
+        content.match(/discord\.com\/invite\/([a-zA-Z0-9]+)/g)
+      ) {
+        const matches = [
+          ...content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g),
+          ...content.matchAll(/discord\.com\/invite\/([a-zA-Z0-9]+)/g),
+        ];
 
         matches.forEach(async (match) => {
           const code = match[1];
@@ -413,6 +432,36 @@ export default class MessageCreate extends EventLoader {
       }
     }
 
+    const lastXP = await XpModel.findOne({
+      guildId: message.guild.id,
+      userId: message.author.id,
+    });
+
+    if (
+      lastXP?.lastXpTimestamp &&
+      Date.now() - lastXP.lastXpTimestamp < XP_CONFIG.cooldown
+    ) {
+      return;
+    }
+
+    const xpModel = await XpModel.findOneAndUpdate(
+      { guildId: message.guild.id, userId: message.author.id },
+      {
+        $inc: { messageCount: 1, expAmount: XP_CONFIG.xpPerMessage },
+        $set: { lastXpTimestamp: Date.now() },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+
+    const previousManager = new XpManager(xpModel.expAmount - XP_CONFIG.xpPerMessage);
+    const currentManager = new XpManager(xpModel.expAmount);
+
+    if (currentManager.level > previousManager.level) {
+      await XpModel.updateOne(
+        { guildId: message.guild.id, userId: message.author.id },
+        { $set: { level: currentManager.level } },
+      );
+    }
     this.client.textCommandLoader.handle(message);
   }
 }

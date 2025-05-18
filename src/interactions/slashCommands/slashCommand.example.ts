@@ -2,13 +2,13 @@ import { ApplicationCommandType, ChatInputCommandInteraction } from "discord.js"
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { InteractionCommandOptions } from "types/commands";
+import { InteractionCommandOptions as _ } from "types/commands";
 
 // This needs default if its youre trying to add it.
 export class Name extends CustomApplicationCommand {
   /**
    * Constructor call takes 3 arguments (name, client, options)
-   * {@link InteractionCommandOptions} for options
+   * {@link _} for options
    */
   constructor(client: DsuClient) {
     super("name", client, {

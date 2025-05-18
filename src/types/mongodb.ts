@@ -228,3 +228,12 @@ export interface ISuggestion extends Document {
   status: "approved" | "pending";
   userId: string;
 }
+
+export interface IXp extends Document {
+  messageCount: number;
+  expAmount: number;
+  level: number;
+  userId: string;
+  guildId: string;
+  lastXpTimestamp?: number;
+}

@@ -1,4 +1,5 @@
 import {
+  APIEmbed,
   ApplicationCommandOptionType,
   ApplicationCommandType,
   ChannelType,
@@ -102,19 +103,20 @@ export default class Links extends CustomApplicationCommand {
         {
           name: "check",
           type: ApplicationCommandOptionType.Subcommand,
-          description: "Check if a user can send links in a channel.",
+          description:
+            "Check minimum permissions for a channel, or if a user can send links.",
           options: [
-            {
-              name: "user",
-              description: "The user to check permissions for.",
-              required: true,
-              type: ApplicationCommandOptionType.User,
-            },
             {
               name: "channel",
               description: "the channel to check",
               required: true,
               type: ApplicationCommandOptionType.Channel,
+            },
+            {
+              name: "user",
+              description: "The user to check permissions for.",
+              required: false,
+              type: ApplicationCommandOptionType.User,
             },
           ],
         },
@@ -466,8 +468,41 @@ export default class Links extends CustomApplicationCommand {
       }
 
       case "check": {
-        const user = interaction.options.getUser("user", true);
+        const user = interaction.options.getUser("user", false);
         const channel = interaction.options.getChannel("channel", true);
+
+        const channelConfig = permissions.channels.find(
+          (c) => c.channelId === channel.id,
+        );
+
+        if (!channelConfig) {
+          return interaction.reply({
+            embeds: [
+              embed
+                .setTitle("No Link Permissions")
+                .setDescription(
+                  `No link permissions are configured for channel ${channel}.`,
+                )
+                .setColor("Red"),
+            ],
+          });
+        }
+        if (!user) {
+          const embed: APIEmbed = {
+            title: `Channel Permissions for ${channel}`,
+            fields: await Promise.all(
+              channelConfig.roles.map(async (role) => {
+                let guildRole = await interaction.guild?.roles.fetch(role.roleId);
+                return {
+                  name: `Role: ${guildRole?.name}`,
+                  value: `Can send links?: ${role.enabled}`,
+                };
+              }),
+            ),
+          };
+
+          return interaction.reply({ embeds: [embed] });
+        }
         const member = await interaction.guild?.members.fetch(user.id);
 
         if (!member) {
@@ -507,23 +542,6 @@ export default class Links extends CustomApplicationCommand {
                     inline: true,
                   },
                 ])
-                .setColor("Red"),
-            ],
-          });
-        }
-
-        const channelConfig = permissions.channels.find(
-          (c) => c.channelId === channel.id,
-        );
-
-        if (!channelConfig) {
-          return interaction.reply({
-            embeds: [
-              embed
-                .setTitle("No Link Permissions")
-                .setDescription(
-                  `No link permissions are configured for channel ${channel}.`,
-                )
                 .setColor("Red"),
             ],
           });
