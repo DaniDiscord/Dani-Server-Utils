@@ -7,7 +7,6 @@ import {
   ContainerBuilder,
   EmbedBuilder,
   GuildChannel,
-  GuildNSFWLevel,
   MediaGalleryBuilder,
   Message,
   MessageFlags,
@@ -35,9 +34,15 @@ export default class MessageCreate extends EventLoader {
   }
 
   override async run(message: Message) {
-    if (message.type === MessageType.AutoModerationAction) {
-      if (message.content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
-        const matches = [...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
+    if (message.type == MessageType.AutoModerationAction) {
+      let content = message.embeds[0].description;
+      if (!content) {
+        return this.client.logger.error(
+          "Internal error: data does not exist inside automod message;",
+        );
+      }
+      if (content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
+        const matches = [...content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
 
         matches.forEach(async (match) => {
           const code = match[1];
