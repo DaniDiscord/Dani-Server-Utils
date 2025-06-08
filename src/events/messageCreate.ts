@@ -57,7 +57,6 @@ export default class MessageCreate extends EventLoader {
           ...content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g),
           ...content.matchAll(/discord\.com\/invite\/([a-zA-Z0-9]+)/g),
         ];
-
         matches.forEach(async (match) => {
           const code = match[1];
           try {
