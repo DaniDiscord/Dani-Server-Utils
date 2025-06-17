@@ -1,3 +1,4 @@
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "../../lib/core/DsuClient";
 import { EventLoader } from "../../lib/core/loader/EventLoader";
 import { GuildMember } from "discord.js";
@@ -8,12 +9,18 @@ export default class GuildMemberUpdate extends EventLoader {
   }
 
   override async run(oldMember: GuildMember, newMember: GuildMember) {
-    const util = this.client.utils.getUtility("default");
     const newNickName = newMember.nickname ?? newMember.user.username;
     if (oldMember.nickname !== newNickName) {
-      const nameInMemory = await util.getNameFromMemory(newMember.id, newMember.guild.id);
+      const nameInMemory = await DefaultClientUtilities.getNameFromMemory(
+        newMember.id,
+        newMember.guild.id,
+      );
       if (nameInMemory !== "" && nameInMemory !== newNickName) {
-        await util.setNameInMemory(newMember.id, newMember.guild.id, "");
+        await DefaultClientUtilities.setNameInMemory(
+          newMember.id,
+          newMember.guild.id,
+          "",
+        );
       }
     }
   }

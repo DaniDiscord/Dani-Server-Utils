@@ -1,14 +1,18 @@
 import { ButtonInteraction, ModalBuilder, TextInputStyle } from "discord.js";
+import {
+  EmojiSuggestionsUtility,
+  SuggestionAction,
+} from "../../utilities/emojiSuggestions";
 
 import { Button } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 import { Question } from "lib/util/questions";
-import { SuggestionAction } from "../../utilities/emojiSuggestions";
 
 export default class EmojiSuggestionDeny extends Button {
   constructor(client: DsuClient) {
     super("ban", client, {
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.MODERATOR,
       global: true,
     });
   }
@@ -17,7 +21,6 @@ export default class EmojiSuggestionDeny extends Button {
     if (interaction.message.partial) {
       await interaction.message.fetch();
     }
-    const emojiUtility = this.client.utils.getUtility("emoji");
     const message = interaction.message;
     const attachment = Array.from(message.attachments.values())[0];
     let author = message.content.split(" ")[2];
@@ -48,7 +51,7 @@ export default class EmojiSuggestionDeny extends Button {
     }
 
     const reason = submitted.fields.getTextInputValue(reasonId);
-    await emojiUtility.banFromSuggestion(
+    await EmojiSuggestionsUtility.banFromSuggestion(
       interaction.guildId!,
       "emojisuggest",
       author,
@@ -57,10 +60,10 @@ export default class EmojiSuggestionDeny extends Button {
 
     await submitted.reply({
       content: `<@${author}> banned from suggesting emojis with reason "${reason}"`,
-      flags: [1 << 6], // Ephemeral
+      flags: "Ephemeral",
     });
 
-    const embed = emojiUtility.generateEmojiEmbed(
+    const embed = EmojiSuggestionsUtility.generateEmojiEmbed(
       SuggestionAction.Ban,
       interaction.user.id,
       attachment.url,

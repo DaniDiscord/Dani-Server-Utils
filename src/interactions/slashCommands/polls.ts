@@ -8,7 +8,9 @@ import {
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 import { SettingsModel } from "models/Settings";
 
 export default class PollsCommand extends CustomApplicationCommand {
@@ -16,11 +18,12 @@ export default class PollsCommand extends CustomApplicationCommand {
     super("polls", client, {
       type: ApplicationCommandType.ChatInput,
       description: "Enable/disable polls in channels",
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.ADMINISTRATOR,
       applicationData: [
         {
           name: "enable",
           description: "Enable polls in a channel.",
+          level: PermissionLevels.ADMINISTRATOR,
           type: ApplicationCommandOptionType.Subcommand,
           options: [
             {
@@ -41,6 +44,7 @@ export default class PollsCommand extends CustomApplicationCommand {
         {
           name: "disable",
           description: "Disable polls in a channel.",
+          level: PermissionLevels.ADMINISTRATOR,
           type: ApplicationCommandOptionType.Subcommand,
           options: [
             {
@@ -59,23 +63,12 @@ export default class PollsCommand extends CustomApplicationCommand {
           ],
         },
       ],
+
       defaultMemberPermissions: "Administrator",
     });
   }
 
   async run(interaction: ChatInputCommandInteraction) {
-    const permLevel = this.client.getPermLevel(
-      undefined,
-      interaction.member as GuildMember,
-    );
-
-    if (permLevel < 4) {
-      return await interaction.reply({
-        content: "Insufficient Permissions",
-        flags: "Ephemeral",
-      });
-    }
-
     const subcmd = interaction.options.getSubcommand();
     const channel = interaction.options.getChannel("channel", true, [
       ChannelType.GuildText,
@@ -106,7 +99,7 @@ export default class PollsCommand extends CustomApplicationCommand {
       } else {
         await interaction.reply({
           embeds: [
-            this.client.utils.getUtility("default").generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Invalid Arguments",
               description: "Polls are already enabled.",
             }),
@@ -134,7 +127,7 @@ export default class PollsCommand extends CustomApplicationCommand {
       } else {
         await interaction.reply({
           embeds: [
-            this.client.utils.getUtility("default").generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Invalid Arguments",
               description: "Polls are already disabled.",
             }),

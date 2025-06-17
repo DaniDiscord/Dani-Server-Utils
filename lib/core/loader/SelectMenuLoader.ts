@@ -1,6 +1,7 @@
 import { AnySelectMenuInteraction, MessageFlags } from "discord.js";
 
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "../DsuClient";
 import { InteractionType } from "types/commands";
 import { SelectMenu } from "../command/SelectMenu";
@@ -30,11 +31,8 @@ export class SelectMenuLoader extends BaseInteractionLoader {
 
     if (missingPermissions) {
       return interaction.reply({
-        embeds: [
-          this.client.utils
-            .getUtility("default")
-            .generateEmbed("error", missingPermissions),
-        ],
+        embeds: [DefaultClientUtilities.generateEmbed("error", missingPermissions)],
+        flags: "Ephemeral",
       });
     }
 
@@ -45,7 +43,7 @@ export class SelectMenuLoader extends BaseInteractionLoader {
     await menu.run(interaction).catch((error) => {
       this.client.logger.error(error);
 
-      const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+      const embed = DefaultClientUtilities.generateEmbed("error", {
         title: "An error has occured!",
         description: "An unexpected error has occured.",
       });

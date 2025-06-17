@@ -9,6 +9,7 @@ import {
 import { Button, CustomApplicationCommand, Modal, SelectMenu } from "./command";
 import { Client, ClientOptions, Collection, GuildMember, Message } from "discord.js";
 
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { EmojiSuggestions } from "../../src/utilities/emojiSuggestions";
 import { EventLoader } from "./loader/EventLoader";
 import { ISettings } from "../../src/types/mongodb";
@@ -16,7 +17,6 @@ import { Logger } from "./Logger";
 import { SettingsModel } from "../../src/models/Settings";
 import TextCommand from "./command/TextCommand";
 import { TimeoutHandler } from "./TimeoutHandler";
-import { UtilitiesManager } from "lib/util/manager";
 import { clientConfig } from "../config/ClientConfig";
 import { existsSync } from "fs";
 import mongoose from "mongoose";
@@ -93,17 +93,11 @@ export class DsuClient extends Client {
    */
   public dirtyCooldownHandler: TimeoutHandler;
 
-  /**
-   * A helper class where are tools are stored.
-   */
-  public utils: UtilitiesManager;
-
   constructor(options: ClientOptions) {
     super(options);
 
     this.__dirname = resolve();
 
-    this.utils = new UtilitiesManager(this);
     this.config = clientConfig;
     this.logger = new Logger();
 
@@ -170,25 +164,22 @@ export class DsuClient extends Client {
       return this.logger.error(`Failed to read path: ${eventsPath}`);
     }
 
-    this.utils
-      .getUtility("default")
-      .readFiles(eventsPath)
-      .forEach(async (eventFilePath) => {
-        const eventModule = await import(pathToFileURL(eventFilePath).href);
-        const eventClass = eventModule.default;
-        if (eventClass && typeof eventClass === "function") {
-          const event = new eventClass(this);
-          if (event instanceof EventLoader) {
-            this.logger.info("Loaded event ", event.name);
-            event.listen();
-            this.events.set(event.name, event);
-          } else {
-            this.logger.warn(
-              `Event file ${eventFilePath} does not export a valid EventLoader class.`,
-            );
-          }
+    DefaultClientUtilities.readFiles(eventsPath).forEach(async (eventFilePath) => {
+      const eventModule = await import(pathToFileURL(eventFilePath).href);
+      const eventClass = eventModule.default;
+      if (eventClass && typeof eventClass === "function") {
+        const event = new eventClass(this);
+        if (event instanceof EventLoader) {
+          this.logger.info("Loaded event ", event.name);
+          event.listen();
+          this.events.set(event.name, event);
+        } else {
+          this.logger.warn(
+            `Event file ${eventFilePath} does not export a valid EventLoader class.`,
+          );
         }
-      });
+      }
+    });
   }
   /**
    * Returns an integer representing the GuildMembers current permission level.

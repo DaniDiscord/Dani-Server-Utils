@@ -4,15 +4,24 @@ import {
   ButtonStyle,
   ChannelType,
   ColorResolvable,
+  ContainerBuilder,
   EmbedBuilder,
   GuildChannel,
-  GuildNSFWLevel,
+  MediaGalleryBuilder,
   Message,
+  MessageFlags,
+  MessageType,
   TextChannel,
+  TextDisplayBuilder,
 } from "discord.js";
 
+import { AnchorUtility } from "../utilities/anchor";
+import { AutoSlowUtility } from "../utilities/autoSlow";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
 import { EventLoader } from "lib/core/loader/EventLoader";
+import { LinkHandlerUtility } from "../utilities/linkHandler";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
@@ -30,6 +39,50 @@ export default class MessageCreate extends EventLoader {
   }
 
   override async run(message: Message) {
+    if (message.type == MessageType.AutoModerationAction) {
+      let content = message.embeds[0].description;
+      if (!content) {
+        return this.client.logger.error(
+          "Internal error: data does not exist inside automod message;",
+        );
+      }
+      if (content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
+        const matches = [...content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
+
+        matches.forEach(async (match) => {
+          const code = match[1];
+          try {
+            const server = await this.client.fetchInvite(code);
+            if (!server.guild) return;
+
+            const container = new ContainerBuilder()
+              .addTextDisplayComponents(
+                new TextDisplayBuilder({
+                  content: `# Resolved Guild\n Name: ${server.guild.name}\n Server Avatar:`,
+                }),
+              )
+              .addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems({
+                  media: {
+                    url: `${server.guild?.iconURL() || "https://cdn.discordapp.com/embed/avatars/0.png"}`,
+                  },
+                  spoiler: true,
+                }),
+              );
+            await message.reply({
+              flags: MessageFlags.IsComponentsV2,
+              components: [container],
+            });
+          } catch (_) {
+            const embed = DefaultClientUtilities.generateEmbed("error", {
+              title: "Failed to resolve guild",
+              description: `Guild may be banned, deleted, or the invite expired.`,
+            });
+            message.reply({ embeds: [embed] });
+          }
+        });
+      }
+    }
     if (message.author.bot) return;
     if (!message.guild) return;
     if (
@@ -62,27 +115,23 @@ export default class MessageCreate extends EventLoader {
       if (!s) return;
       message.settings = s;
     }
-    const defaultUtility = this.client.utils.getUtility("default");
 
     const level = this.client.getPermLevel(message, message.member!);
 
-    const autoSlowManager = await defaultUtility.getAutoSlow(message.channelId);
+    const autoSlowManager = await AutoSlowUtility.getAutoSlow(message.channelId);
 
     if (autoSlowManager != null && level < 1 && message.channel instanceof TextChannel) {
       autoSlowManager.messageSent();
       autoSlowManager.setOptimalSlowMode(message.channel);
     }
 
-    const emojiUtility = this.client.utils.getUtility("emoji");
-
-    emojiUtility.countEmoji(message);
+    await EmojiSuggestionsUtility.countEmoji(message);
     if (level == -1) {
       return;
     }
-    const linkUtility = this.client.utils.getUtility("linkHandler");
-    const hasLink = linkUtility.parseMessageForLink(message.content);
+    const hasLink = LinkHandlerUtility.parseMessageForLink(message.content);
 
-    const canSendLinks = linkUtility.checkLinkPermissions(
+    const canSendLinks = await LinkHandlerUtility.checkLinkPermissions(
       message.guildId ?? "",
       message.channelId,
       message.author.id,
@@ -96,7 +145,7 @@ export default class MessageCreate extends EventLoader {
       return;
     }
 
-    await this.client.utils.getUtility("anchors").handleAnchor(message);
+    await AnchorUtility.handleAnchor(this.client, message);
 
     // Chain deletion
     const chMessages = this.client.channelMessages.get(message.channelId);
@@ -214,7 +263,7 @@ export default class MessageCreate extends EventLoader {
                 this.client.logger.error("Failed resolving chaining GuildMember.");
                 logCh.send({
                   embeds: [
-                    defaultUtility.generateEmbed("error", {
+                    DefaultClientUtilities.generateEmbed("error", {
                       description: `Chain messages found in ${message.channel}, but failed to resolve culprit.`,
                     }),
                   ],
@@ -242,7 +291,7 @@ export default class MessageCreate extends EventLoader {
 
     for (const { phrases, logChannelId } of foundPhrases) {
       for (const { content, matchThreshold } of phrases) {
-        const matches = defaultUtility.fuzzyMatch(message.content, content);
+        const matches = DefaultClientUtilities.fuzzyMatch(message.content, content);
         if (matches >= matchThreshold) {
           const logChannel = message.guild.channels.cache.get(logChannelId);
           if (
@@ -286,26 +335,38 @@ export default class MessageCreate extends EventLoader {
         userId: message.author.id,
         triggerId: id,
       });
-
       if (optedOut) {
         continue;
       }
-      if (this.client.dirtyCooldownHandler.has(id)) {
+
+      if (!this.client.dirtyCooldownHandler.has(id)) {
         const matched: string[] = [];
         const allMatch =
-          trigger.keywords.length != 0 &&
+          trigger.keywords.length !== 0 &&
           trigger.keywords.every((keywordArr) =>
             keywordArr
               .map((v) => new RegExp(v.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1"), "i"))
-              .some(
-                (k) =>
-                  message.content.match(k) &&
-                  matched.push(k.source) &&
-                  // Ignore trigger content if matched trigger is a custom emoji's name.
-                  message.content.match(/<a?:.+?:\d+>/)?.length == 0,
-              ),
-          );
+              .some((regex) => {
+                const match = message.content.match(regex);
+                if (match) {
+                  const matchedStr = match[0];
 
+                  // Skip if the matched string is part of a custom emoji name
+                  const isInCustomEmoji = Array.from(
+                    message.content.matchAll(/<a?:([a-zA-Z0-9_]+):\d+>/g),
+                  ).some(
+                    ([, emojiName]) =>
+                      emojiName.toLowerCase() === matchedStr.toLowerCase(),
+                  );
+
+                  if (!isInCustomEmoji) {
+                    matched.push(regex.source);
+                    return true;
+                  }
+                }
+                return false;
+              }),
+          );
         if (allMatch) {
           const button = new ActionRowBuilder<ButtonBuilder>().setComponents(
             new ButtonBuilder()
@@ -325,7 +386,7 @@ export default class MessageCreate extends EventLoader {
 
             const footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
 
-            if (defaultUtility.isColor(trigger.message.color)) {
+            if (DefaultClientUtilities.isColor(trigger.message.color)) {
               color = trigger.message.color;
             }
 
@@ -358,39 +419,6 @@ export default class MessageCreate extends EventLoader {
       }
     }
 
-    // auto-resolve discord urls
-    if (message.content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
-      const matches = [...message.content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
-
-      matches.forEach(async (match) => {
-        const code = match[1];
-        console.log(`discord.gg/${code}`);
-        try {
-          const server = await this.client.fetchInvite(code);
-          if (!server.guild) return;
-
-          const embed = this.client.utils.getUtility("default").generateEmbed("success", {
-            title: "Resolved guild",
-            description: `Name: ${server.guild.name}`,
-            fields: [
-              {
-                name: "NSFW Level",
-                value: `${GuildNSFWLevel[server.guild.nsfwLevel]}`,
-              },
-            ],
-          });
-          await message.reply({ embeds: [embed] }).then((msg) => {
-            msg.reply(`Server avatar: ||${server.guild?.iconURL()}||`);
-          });
-        } catch (_) {
-          const embed = this.client.utils.getUtility("default").generateEmbed("error", {
-            title: "Failed to resolve guild",
-            description: `Guild may be banned, deleted, or the invite expired.`,
-          });
-          message.reply({ embeds: [embed] });
-        }
-      });
-    }
     this.client.textCommandLoader.handle(message);
   }
 }

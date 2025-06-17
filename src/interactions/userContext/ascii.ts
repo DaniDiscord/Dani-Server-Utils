@@ -6,20 +6,22 @@ import {
   UserContextMenuCommandInteraction,
 } from "discord.js";
 
+import { BadNameUtility } from "../../utilities/badName";
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 
 export default class AsciiName extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("ASCII Name", client, {
       type: ApplicationCommandType.User,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
   public async run(interaction: UserContextMenuCommandInteraction) {
-    const badNameUtility = this.client.utils.getUtility("badName");
     if (!(interaction.targetMember instanceof GuildMember)) {
       return interaction.reply({
         content: "ASCII name only works on guild members",
@@ -33,14 +35,14 @@ export default class AsciiName extends CustomApplicationCommand {
       });
     }
     const unicodeName = interaction.targetMember.user.username;
-    const name = this.client.utils.getUtility("default").unicodeToAscii(unicodeName);
+    const name = DefaultClientUtilities.unicodeToAscii(unicodeName);
     if (name.length < 3) {
       return interaction.reply({
         content: "Name couldn't be converted to ASCII",
         flags: MessageFlags.Ephemeral,
       });
     }
-    badNameUtility.setMemberName(interaction.targetMember, name);
+    await BadNameUtility.setMemberName(interaction.targetMember, name);
     return interaction.reply({
       content: "User renamed successfully",
       flags: MessageFlags.Ephemeral,

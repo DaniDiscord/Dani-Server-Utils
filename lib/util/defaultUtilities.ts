@@ -10,26 +10,19 @@ import {
   EmbedBuilder,
 } from "discord.js";
 
-import { AutoSlowModel } from "models/AutoSlow";
-import { AutoSlowUtility } from "../../src/utilities/autoSlow";
-import { ClientUtilities } from "lib/core/ClientUtilities";
-import { DsuClient } from "../core/DsuClient";
 import { NameModel } from "models/Name";
+import { clientConfig } from "lib/config/ClientConfig";
 import { readdirSync } from "fs";
 import { resolve } from "path";
 
-export default class DefaultClientUtilities extends ClientUtilities {
-  constructor(client: DsuClient) {
-    super(client);
-  }
-
+export default class DefaultClientUtilities {
   /**
    * Recursively reads all files from a directory and returns their absolute paths.
    * @param directory - The directory to scan for files.
    * @param extension - The file extension
    * @returns {string[]} An array of absolute paths to the matching files.
    */
-  readFiles(directory: string, extension: string = ""): string[] {
+  public static readFiles(directory: string, extension: string = ""): string[] {
     const files: string[] = [];
     readdirSync(directory, { withFileTypes: true }).forEach((entry) => {
       const entryPath = resolve(directory, entry.name);
@@ -49,7 +42,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param name The name to change
    * @returns string
    */
-  unicodeToAscii(name: string): string {
+  public static unicodeToAscii(name: string): string {
     const asciiNameNfkd = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
     const finalNameNfkd = this.eliminateUnicode(asciiNameNfkd);
     if (finalNameNfkd.length > 2) {
@@ -63,7 +56,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param name The name to change
    * @returns string
    */
-  eliminateUnicode(name: string): string {
+  public static eliminateUnicode(name: string): string {
     let finalName = "";
     for (let char = 0; char < name.length; char++) {
       if (name.charCodeAt(char) < 128) {
@@ -74,7 +67,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  isColor(value: any): value is ColorResolvable {
+  public static isColor(value: any): value is ColorResolvable {
     if (value == null || value == undefined) {
       return false;
     }
@@ -112,7 +105,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @see https://en.wikipedia.org/wiki/Levenshtein_distance
    * @returns numeric representation of distance between strings.
    */
-  fuzzyMatch(message: string, phrase: string): number {
+  public static fuzzyMatch(message: string, phrase: string): number {
     const msg = message.toLowerCase();
     const phr = phrase.toLowerCase();
 
@@ -151,7 +144,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param b Right side argument
    * @returns boolean
    */
-  isSimilar = (a: string, b: string) => {
+  static isSimilar = (a: string, b: string) => {
     const similarPairs = [
       ["rn", "m"],
       ["0", "o"],
@@ -177,107 +170,26 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param data The embed content
    * @returns APIEmbed
    */
-  generateEmbed(type: "success" | "warning" | "error" | "general", data: APIEmbed) {
+  static generateEmbed(
+    type: "success" | "warning" | "error" | "general",
+    data: APIEmbed,
+  ) {
     const embed = new EmbedBuilder(data);
     switch (type) {
       case "success":
-        embed.setColor(this.client.config.colors.success);
+        embed.setColor(clientConfig.colors.success);
         break;
       case "warning":
-        embed.setColor(this.client.config.colors.warning);
+        embed.setColor(clientConfig.colors.warning);
         break;
       case "error":
-        embed.setColor(this.client.config.colors.error);
+        embed.setColor(clientConfig.colors.error);
         break;
       case "general":
-        embed.setColor(this.client.config.colors.primary);
+        embed.setColor(clientConfig.colors.primary);
         break;
     }
     return embed;
-  }
-  /**
-   * Adds autoslow data to given channel and DB.
-   * @param channelId The id of the channel to add autoslow to
-   * @param min The minimum seconds autoslow should use
-   * @param max The maximum seconds autoslow should use
-   * @param targetMsgsPerSec The frequency of messages
-   * @param minChange The lowest change
-   * @param minChangeRate How many times it should change
-   * @param enabled Whether auto slow is enabled
-   * @returns Promise\<AutoslowUtility\>
-   */
-  async addAutoSlow(
-    channelId: string,
-    min: number,
-    max: number,
-    targetMsgsPerSec: number,
-    minChange: number,
-    minChangeRate: number,
-    enabled: boolean,
-  ) {
-    const autoSlow = new AutoSlowUtility(this.client);
-    autoSlow.setAutoSlowParams(
-      min,
-      max,
-      targetMsgsPerSec,
-      minChange,
-      minChangeRate,
-      enabled,
-    );
-
-    autoSlow.addToCache(channelId);
-
-    await AutoSlowModel.findOneAndUpdate(
-      { channelId },
-      { min, max, targetMsgsPerSec, minChange, minChangeRate, enabled },
-      {
-        new: true,
-        upsert: true,
-        setDefaultsOnInsert: true,
-      },
-    );
-
-    return autoSlow;
-  }
-  /**
-   * Remove autoslow data from given channel and DB.
-   * @param channelId the channel the autoslow is in.
-   * @returns Promise\<void\>
-   */
-  async removeAutoSlow(channelId: string): Promise<void> {
-    this.client.utils.getUtility("autoSlow").cache.delete(channelId);
-    await AutoSlowModel.deleteOne({ channelId: channelId });
-  }
-
-  /**
-   * Get autoslow data.
-   * @param channelId the channel the autoslow is in.
-   * @returns Promise\<AutoSlowUtility\> | null
-   */
-  async getAutoSlow(channelId: string) {
-    let autoSlow = this.client.utils.getUtility("autoSlow").cache.get(channelId);
-    if (!autoSlow) {
-      const autoSlowConfig = await AutoSlowModel.findOne({
-        channelId,
-      });
-      if (!autoSlowConfig) return;
-
-      autoSlow = new AutoSlowUtility(this.client);
-      let { min, max, targetMsgsPerSec, minChange, minChangeRate, enabled } =
-        autoSlowConfig;
-      autoSlow.setAutoSlowParams(
-        min,
-        max,
-        targetMsgsPerSec,
-        minChange,
-        minChangeRate,
-        enabled,
-      );
-
-      this.client.utils.getUtility("autoSlow").cache.set(channelId, autoSlow);
-
-      return autoSlow;
-    }
   }
 
   /**
@@ -286,7 +198,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param guildId the id of the guild.
    * @returns Promise\<string\>
    */
-  async getNameFromMemory(userId: string, guildId: string) {
+  static async getNameFromMemory(userId: string, guildId: string) {
     const response = await NameModel.findOne({
       userId,
       guildId,
@@ -304,7 +216,7 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param name the name to add
    * @returns Promise\<void\>
    */
-  async setNameInMemory(userId: string, guildId: string, name: string) {
+  static async setNameInMemory(userId: string, guildId: string, name: boolean) {
     const filter = {
       userId,
       guildId,
@@ -322,14 +234,14 @@ export default class DefaultClientUtilities extends ClientUtilities {
    * @param formatPage A function to show the page format.
    * @returns Promise\<void\>
    */
-  async buildPagination<T>(
+  static async buildPagination<T>(
     interaction: CommandInteraction,
     items: T[],
-    totalPages: number,
     currentPage: number,
     itemsPerPage: number,
     formatPage: (pageItems: T[], index: number) => string,
   ) {
+    const totalPages = Math.ceil(items.length / itemsPerPage);
     const createEmb = (page: number) => {
       const embed = new EmbedBuilder()
         .setTitle(`Page ${page + 1} of ${totalPages}`)

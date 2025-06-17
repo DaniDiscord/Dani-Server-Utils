@@ -9,15 +9,17 @@ import { staffAppCustomId, staffAppQuestions } from "lib/util/questions";
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 
 export default class StaffApplicationCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("staff", client, {
       description: "apply for staff",
       type: ApplicationCommandType.ChatInput,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
       applicationData: [
         {
+          level: PermissionLevels.USER,
           type: ApplicationCommandOptionType.Subcommand,
           name: "apply",
           description: "apply for staff",

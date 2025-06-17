@@ -8,18 +8,20 @@ import {
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 
 export default class PhraseCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("phrase", client, {
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
       type: ApplicationCommandType.ChatInput,
       description: "Set, configure, or block phrases.",
       applicationData: [
         {
           name: "set",
           description: "Configure phrase settings",
+          level: PermissionLevels.BOT_OWNER,
           type: ApplicationCommandOptionType.SubcommandGroup,
           options: [
             {
@@ -62,6 +64,7 @@ export default class PhraseCommand extends CustomApplicationCommand {
         },
         {
           name: "remove",
+          level: PermissionLevels.MODERATOR,
           description: "Remove a phrase from the blacklist.",
           type: ApplicationCommandOptionType.Subcommand,
           options: [
@@ -75,6 +78,7 @@ export default class PhraseCommand extends CustomApplicationCommand {
         },
         {
           name: "list",
+          level: PermissionLevels.HELPER,
           description: "List all phrases.",
           type: ApplicationCommandOptionType.Subcommand,
         },

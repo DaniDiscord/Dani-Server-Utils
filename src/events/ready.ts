@@ -1,3 +1,5 @@
+import { AnchorUtility } from "../utilities/anchor";
+import { AutoArchiveUtility } from "../utilities/autoArchive";
 import { DsuClient } from "../../lib/core/DsuClient";
 import { EventLoader } from "../../lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
@@ -65,9 +67,13 @@ export default class Ready extends EventLoader {
 
   override async run(client: DsuClient) {
     const updateSettings = async () => {
-      client.user?.setPresence({
-        activities: [{ name: `v${process.env.npm_package_version}` }],
-      });
+      if (client.isReady()) {
+        // Should catch the AsyncEventEmitter "memory leak"?
+        // Presence data isn't available until the client is *truly* ready, so doing it here should fix anything from that.
+        client.user?.setPresence({
+          activities: [{ name: `v${process.env.npm_package_version}` }],
+        });
+      }
 
       await Promise.all(
         Array.from(client.settings.keys()).map((guildId) =>
@@ -88,8 +94,8 @@ export default class Ready extends EventLoader {
 
     client.once("destroy", () => clearInterval(interval));
 
-    this.client.utils.getUtility("autoArchive").handleAutoArchive();
-    this.client.utils.getUtility("anchors").checkAnchorInactivity();
+    AutoArchiveUtility.handleAutoArchive(this.client);
+    AnchorUtility.checkAnchorInactivity(this.client);
 
     client.logger.info(`Bot logged in as ${client.user?.tag}.`);
   }

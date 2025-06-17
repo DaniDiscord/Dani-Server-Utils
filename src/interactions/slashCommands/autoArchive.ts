@@ -14,12 +14,14 @@ import {
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
+import { TimeParserUtility } from "../../utilities/timeParser";
 
 export default class AutoArchive extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("autoarchive", client, {
       type: ApplicationCommandType.ChatInput,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
       description: "Manage auto-archiving for forum channels.",
       applicationData: [
         {
@@ -27,6 +29,7 @@ export default class AutoArchive extends CustomApplicationCommand {
           type: ApplicationCommandOptionType.Subcommand,
           description:
             "Add a channel to the auto-archive list with an expiration duration.",
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "channel",
@@ -48,6 +51,7 @@ export default class AutoArchive extends CustomApplicationCommand {
           name: "remove",
           type: ApplicationCommandOptionType.Subcommand,
           description: "Remove a channel from the auto-archive list.",
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "channel",
@@ -63,12 +67,14 @@ export default class AutoArchive extends CustomApplicationCommand {
           type: ApplicationCommandOptionType.Subcommand,
           description:
             "List all auto-archiving channels with their expiration durations.",
+          level: PermissionLevels.HELPER,
         },
         {
           name: "edit",
           type: ApplicationCommandOptionType.Subcommand,
           description:
             "Edit the expiration duration of an existing auto-archive configuration.",
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "channel",
@@ -89,6 +95,7 @@ export default class AutoArchive extends CustomApplicationCommand {
         {
           name: "blacklist",
           type: ApplicationCommandOptionType.SubcommandGroup,
+          level: PermissionLevels.HELPER,
           description: "Manage blacklisted threads from auto-archiving",
           options: [
             {
@@ -129,7 +136,6 @@ export default class AutoArchive extends CustomApplicationCommand {
     const guildId = interaction.guildId;
     const embed = new EmbedBuilder().setTitle("Auto-Archive Management");
 
-    const timeParserUtility = this.client.utils.getUtility("timeParser");
     if (subcommandGroup === "blacklist") {
       switch (subcommand) {
         case "add": {
@@ -241,7 +247,7 @@ export default class AutoArchive extends CustomApplicationCommand {
 
         config.channels.push({
           channelId: channel.id,
-          expireDuration: timeParserUtility.parseDuration(expireDuration.toString()),
+          expireDuration: TimeParserUtility.parseDuration(expireDuration.toString()),
         });
         await config.save();
 
@@ -325,7 +331,7 @@ export default class AutoArchive extends CustomApplicationCommand {
             (ch) =>
               `<#${
                 ch.channelId
-              }> - Expire after ${timeParserUtility.parseDurationToString(
+              }> - Expire after ${TimeParserUtility.parseDurationToString(
                 ch.expireDuration,
               )}`,
           )
@@ -378,7 +384,7 @@ export default class AutoArchive extends CustomApplicationCommand {
           });
         }
 
-        existingChannel.expireDuration = timeParserUtility.parseDuration(
+        existingChannel.expireDuration = TimeParserUtility.parseDuration(
           expireDuration.toString(),
         );
         await config.save();

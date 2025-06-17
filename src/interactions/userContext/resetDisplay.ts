@@ -6,20 +6,21 @@ import {
   UserContextMenuCommandInteraction,
 } from "discord.js";
 
+import { BadNameUtility } from "../../utilities/badName";
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 
 export default class ResetDisplay extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("Reset to Display Name", client, {
       type: ApplicationCommandType.User,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
   public async run(interaction: UserContextMenuCommandInteraction) {
-    const badNameUtility = this.client.utils.getUtility("badName");
     if (!(interaction.targetMember instanceof GuildMember)) {
       return interaction.reply({
         content: "Reset name only works on guild members",
@@ -32,7 +33,7 @@ export default class ResetDisplay extends CustomApplicationCommand {
         flags: MessageFlags.Ephemeral,
       });
     }
-    await badNameUtility.setMemberName(
+    await BadNameUtility.setMemberName(
       interaction.targetMember,
       interaction.targetUser.displayName,
     );

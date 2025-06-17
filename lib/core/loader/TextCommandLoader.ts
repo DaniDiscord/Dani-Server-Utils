@@ -1,5 +1,6 @@
 import { Collection, Message } from "discord.js";
 
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "../DsuClient";
 import TextCommand from "../command/TextCommand";
 import { existsSync } from "fs";
@@ -23,23 +24,20 @@ export class TextCommandLoader {
         return this.client.logger.error(`Failed to read path: ${textCommandsPath}`);
       }
 
-      this.client.utils
-        .getUtility("default")
-        .readFiles(textCommandsPath)
-        .forEach(async (textFilePath) => {
-          const textCommandClass = await import(pathToFileURL(textFilePath).href);
-          const textCommand = textCommandClass.default
-            ? new textCommandClass.default(this.client)
-            : null;
+      DefaultClientUtilities.readFiles(textCommandsPath).forEach(async (textFilePath) => {
+        const textCommandClass = await import(pathToFileURL(textFilePath).href);
+        const textCommand = textCommandClass.default
+          ? new textCommandClass.default(this.client)
+          : null;
 
-          if (textCommand instanceof TextCommand) {
-            this.client.textCommands.set(textCommand.name, textCommand);
-            return textCommand;
-          }
-          this.client.logger.warn(
-            `Invalid interaction at ${textFilePath}. (Are you missing the default export?) Skipping...`,
-          );
-        });
+        if (textCommand instanceof TextCommand) {
+          this.client.textCommands.set(textCommand.name, textCommand);
+          return textCommand;
+        }
+        this.client.logger.warn(
+          `Invalid interaction at ${textFilePath}. (Are you missing the default export?) Skipping...`,
+        );
+      });
     } catch (_error) {
       this.client.logger.error(`Failed to load files for textCommands.`);
     }
@@ -76,7 +74,7 @@ export class TextCommandLoader {
     await command.run(message, args).catch((error) => {
       this.client.logger.error(error);
 
-      const response = this.client.utils.getUtility("default").generateEmbed("error", {
+      const response = DefaultClientUtilities.generateEmbed("error", {
         title: "An error has occured!",
         description: "An unexpected error has occured.",
       });

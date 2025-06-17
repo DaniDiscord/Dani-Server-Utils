@@ -1,14 +1,7 @@
 import { Times, units } from "../types/index";
 
-import { ClientUtilities } from "lib/core/ClientUtilities";
-import { DsuClient } from "lib/core/DsuClient";
-
-export class TimeParserUtility extends ClientUtilities {
-  constructor(client: DsuClient) {
-    super(client);
-  }
-
-  parseDuration(durationString: string): number {
+export class TimeParserUtility {
+  static parseDuration(durationString: string): number {
     const durationRegex = /(\d+)([smhdwMy]?)/;
     const matches = durationString.match(durationRegex);
 
@@ -37,7 +30,7 @@ export class TimeParserUtility extends ClientUtilities {
     }
   }
 
-  parseDurationToString(duration: number) {
+  static parseDurationToString(duration: number) {
     let remainingDuration = duration;
     const parts: string[] = [];
 

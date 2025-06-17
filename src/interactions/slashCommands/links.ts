@@ -9,13 +9,16 @@ import {
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { ILinkPermission } from "types/mongodb";
 import { LinkPermissionModel } from "models/Links";
+import { PermissionLevels } from "types/commands";
 
 export default class Links extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("links", client, {
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
       type: ApplicationCommandType.ChatInput,
       description:
         "Configure links per-role, or permit/disallow users from sending them.",
@@ -23,6 +26,8 @@ export default class Links extends CustomApplicationCommand {
         {
           name: "enable",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.MODERATOR,
+
           description: "Enable links in a channel for a role.",
           options: [
             {
@@ -47,6 +52,8 @@ export default class Links extends CustomApplicationCommand {
         {
           name: "disable",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.MODERATOR,
+
           description: "Disable links in a channel for a role.",
           options: [
             {
@@ -72,6 +79,7 @@ export default class Links extends CustomApplicationCommand {
           name: "revoke",
           type: ApplicationCommandOptionType.Subcommand,
           description: "Remove link perms from a user.",
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "user",
@@ -89,6 +97,7 @@ export default class Links extends CustomApplicationCommand {
         {
           name: "allow",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
           description: "Allow a previously banned user to use links.",
           options: [
             {
@@ -103,6 +112,7 @@ export default class Links extends CustomApplicationCommand {
           name: "check",
           type: ApplicationCommandOptionType.Subcommand,
           description: "Check if a user can send links in a channel.",
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "user",
@@ -121,6 +131,7 @@ export default class Links extends CustomApplicationCommand {
         {
           name: "reset",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.BOT_OWNER,
           description: "Reset a channel's data for link settings",
           options: [
             {
@@ -136,6 +147,13 @@ export default class Links extends CustomApplicationCommand {
             },
           ],
         },
+        {
+          name: "list",
+          type: ApplicationCommandOptionType.Subcommand,
+          description:
+            "List each existing channels permission and the minimum role for it.",
+          level: PermissionLevels.HELPER,
+        },
       ],
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
@@ -144,7 +162,10 @@ export default class Links extends CustomApplicationCommand {
   async run(interaction: ChatInputCommandInteraction) {
     const subcommand = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
-
+    const permLevel = this.client.getPermLevel(
+      undefined,
+      interaction.member as GuildMember,
+    );
     let permissions = await LinkPermissionModel.findOne({ guildId });
     if (!permissions) {
       permissions = await LinkPermissionModel.create({
@@ -154,61 +175,9 @@ export default class Links extends CustomApplicationCommand {
       });
     }
 
-    const defaultUtility = this.client.utils.getUtility("default");
-    const embed = defaultUtility.generateEmbed("success", {
+    const embed = DefaultClientUtilities.generateEmbed("success", {
       title: "Updated Link Permissions",
     });
-    const permLevel = this.client.getPermLevel(
-      undefined,
-      interaction.member as GuildMember,
-    );
-    const modCmds = ["enable", "disable"];
-    const helperCmds = ["check", "allow", "revoke"];
-    const coOwnerOnly = ["reset"];
-
-    if (permLevel < 10 && coOwnerOnly.includes(subcommand)) {
-      return await interaction.reply({
-        embeds: [
-          embed
-            .setTitle("Insufficient Permissions")
-            .setDescription("Must be perm level 10 (Bot Owner) to use this command."),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    if (permLevel < 3 && modCmds.includes(subcommand)) {
-      return interaction.reply({
-        embeds: [
-          embed
-            .setTitle("Insufficient Permissions")
-            .setDescription("Must be perm level 3 (Moderator) to use this command."),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    if (permLevel < 2 && helperCmds.includes(subcommand)) {
-      return await interaction.reply({
-        embeds: [
-          embed
-            .setTitle("Insufficient Permissions")
-            .setDescription("Must be perm level 2 (Helper) to use this command."),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    if (permLevel < 2) {
-      return await interaction.reply({
-        embeds: [
-          embed
-            .setTitle("Insufficient Permissions")
-            .setDescription("Must be perm level 2 (Helper) to use this command."),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
 
     const highestRole = (interaction.member as GuildMember)!.roles.cache
       .sort((a, b) => b.position - a.position)
@@ -589,7 +558,26 @@ export default class Links extends CustomApplicationCommand {
           ],
         });
       }
+      case "list":
+        // should only be one document
+        const linkModel = await LinkPermissionModel.findOne(
+          { guildId },
+          {},
+          { limit: 1 },
+        );
+        if (!linkModel) {
+          return interaction.reply({
+            embeds: [
+              embed
+                .setTitle("Not found.")
+                .setDescription(`Cannot find document data for ${guildId}.`)
+                .setColor("Red"),
+            ],
+            flags: MessageFlags.Ephemeral,
+          });
+        }
 
+        return this.buildLinkPagination(interaction, linkModel);
       default:
         return interaction.reply({
           embeds: [
@@ -598,5 +586,45 @@ export default class Links extends CustomApplicationCommand {
           flags: MessageFlags.Ephemeral,
         });
     }
+  }
+
+  private async buildLinkPagination(
+    interaction: ChatInputCommandInteraction,
+    linkPermissions: ILinkPermission,
+  ) {
+    // This data is stored a little weirdly
+    // since we're pulling per one guild, the channels and user access are both arrays, we need to grab that data there, from a single document entry
+    // rather than iterating over multiple documents that may store each entry separately
+
+    const format = (channels: ILinkPermission["channels"], _: number) => {
+      return channels
+        .map((channel) => {
+          const resolvedChannel = interaction.guild?.channels.resolve(channel.channelId);
+          let channelName = "";
+          if (!resolvedChannel) {
+            channelName = channel.channelId;
+          } else {
+            channelName = resolvedChannel.name;
+          }
+
+          return `
+          ## **${channelName[0].toUpperCase() + channelName.substring(1)}**\n
+          Minimum role(s): 
+          ${channel.roles
+            .filter((r) => r.enabled)
+            .map((role) => `<@&${role.roleId}>`)
+            .join(", ")}
+        `;
+        })
+        .join("\n##");
+    };
+
+    await DefaultClientUtilities.buildPagination(
+      interaction,
+      linkPermissions.channels,
+      0,
+      5,
+      format,
+    );
   }
 }

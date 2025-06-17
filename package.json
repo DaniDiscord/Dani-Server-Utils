@@ -1,18 +1,19 @@
 {
   "name": "dani-server-utils",
-  "version": "1.6.2",
+  "version": "1.6.9",
   "description": "The Dani Discord (discord.gg/danii) server bot!",
   "main": "src/client.ts",
   "scripts": {
-    "start": "bun .",
-    "lint": "bunx eslint"
+    "dev": "bun .",
+    "lint": "bunx eslint",
+    "start": "docker compose up -d --build"
   },
   "dependencies": {
     "async-mutex": "^0.5.0",
     "axios": "^1.8.4",
     "chalk": "^5.4.1",
     "dayjs": "^1.11.13",
-    "discord.js": "^14.18.0",
+    "discord.js": "^14.19.3",
     "jiti": "^2.4.2",
     "lodash": "^4.17.21",
     "mongoose": "^8.13.2",

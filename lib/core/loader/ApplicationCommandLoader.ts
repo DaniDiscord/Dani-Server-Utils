@@ -1,6 +1,4 @@
 import {
-  ApplicationCommandData,
-  ApplicationCommandDataResolvable,
   ApplicationCommandType,
   Collection,
   CommandInteraction,
@@ -12,6 +10,7 @@ import {
 
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
 import { CustomApplicationCommand } from "../command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "../DsuClient";
 import { InteractionType } from "types/commands";
 import path from "path";
@@ -174,11 +173,8 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
     );
     if (missingPermissions) {
       return interaction.reply({
-        embeds: [
-          this.client.utils
-            .getUtility("default")
-            .generateEmbed("error", missingPermissions),
-        ],
+        embeds: [DefaultClientUtilities.generateEmbed("error", missingPermissions)],
+        flags: "Ephemeral",
       });
     }
 
@@ -189,7 +185,7 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
     command.run(interaction).catch((error): Promise<Message | InteractionResponse> => {
       this.client.logger.error(error);
 
-      const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+      const embed = DefaultClientUtilities.generateEmbed("error", {
         title: "An error has occurred!",
         description: "Something went wrong executing the command.",
       });
