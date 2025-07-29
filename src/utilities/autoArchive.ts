@@ -81,10 +81,7 @@ export class AutoArchiveUtility extends ClientUtilities {
           const embed = new EmbedBuilder()
             .setTitle(`Post Locked`)
             .setDescription(
-              `
-              This post has been automatically locked due to inactivity.
-              To unlock the thread, right click and choose Unlock Thread under Apps > Unlock Thread
-              `,
+              `This post has been automatically locked due to inactivity.\nTo unlock the thread, right click and choose Unlock Thread under Apps > Unlock Thread`,
             )
             .setColor("Red");
 

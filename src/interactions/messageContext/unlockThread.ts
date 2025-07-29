@@ -60,6 +60,7 @@ export default class UnlockThread extends CustomApplicationCommand {
     await thread.send({ embeds: [embed] });
 
     await thread.setLocked(false);
+    await thread.setArchived(false);
     return interaction.editReply({
       content: "Thread unlocked.",
     });
