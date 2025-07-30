@@ -7,7 +7,6 @@ const XpSchema = new Schema<IXp>({
   userId: String,
   messageCount: { type: Number, default: 0 },
   expAmount: { type: Number, default: 0 },
-  level: { type: Number, default: 1 },
   lastXpTimestamp: Number,
 });
 

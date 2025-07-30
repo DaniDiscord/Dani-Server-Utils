@@ -232,7 +232,6 @@ export interface ISuggestion extends Document {
 export interface IXp extends Document {
   messageCount: number;
   expAmount: number;
-  level: number;
   userId: string;
   guildId: string;
   lastXpTimestamp?: number;

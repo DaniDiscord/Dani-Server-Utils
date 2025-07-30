@@ -431,36 +431,35 @@ export default class MessageCreate extends EventLoader {
       }
     }
 
-    const lastXP = await XpModel.findOne({
-      guildId: message.guild.id,
-      userId: message.author.id,
-    });
+    const result = await XpModel.findOneAndUpdate(
+      {
+        guildId: message.guild.id,
+        userId: message.author.id,
+        $or: [
+          { lastXpTimestamp: { $exists: false } },
+          { lastXpTimestamp: { $lt: Date.now() - XP_CONFIG.cooldown } },
+        ],
+      },
+      {
+        $inc: {
+          messageCount: 1,
+          expAmount: XP_CONFIG.xpPerMessage,
+        },
+        $set: {
+          lastXpTimestamp: Date.now(),
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      },
+    );
 
-    if (
-      lastXP?.lastXpTimestamp &&
-      Date.now() - lastXP.lastXpTimestamp < XP_CONFIG.cooldown
-    ) {
+    if (!result) {
       return;
     }
 
-    const xpModel = await XpModel.findOneAndUpdate(
-      { guildId: message.guild.id, userId: message.author.id },
-      {
-        $inc: { messageCount: 1, expAmount: XP_CONFIG.xpPerMessage },
-        $set: { lastXpTimestamp: Date.now() },
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
-
-    const previousManager = new XpManager(xpModel.expAmount - XP_CONFIG.xpPerMessage);
-    const currentManager = new XpManager(xpModel.expAmount);
-
-    if (currentManager.level > previousManager.level) {
-      await XpModel.updateOne(
-        { guildId: message.guild.id, userId: message.author.id },
-        { $set: { level: currentManager.level } },
-      );
-    }
     this.client.textCommandLoader.handle(message);
   }
 }

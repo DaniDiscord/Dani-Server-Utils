@@ -82,9 +82,11 @@ export default class XpCommand extends CustomApplicationCommand {
         const attachment = new AttachmentBuilder(buf, { name: "xp_card.png" });
         await interaction.reply({ files: [attachment] });
         break;
+
       case "leaderboard":
         const limit = Math.min(interaction.options.getNumber("limit") ?? 10, 25);
         const topUsers = await XpModel.find({ guildId: interaction.guildId })
+          .select("userId expAmount")
           .sort({ expAmount: -1 })
           .limit(limit);
 
@@ -99,20 +101,15 @@ export default class XpCommand extends CustomApplicationCommand {
           });
         }
 
-        const leaderboardEntries = await Promise.all(
-          topUsers.map(async (user, index) => {
-            const xpManager = new XpManager(user.expAmount);
-
-            let id = user.userId;
-
-            return {
-              rank: index + 1,
-              user: id,
-              level: xpManager.level,
-              totalExp: user.expAmount,
-            };
-          }),
-        );
+        const leaderboardEntries = topUsers.map((user, index) => {
+          const xpManager = new XpManager(user.expAmount);
+          return {
+            rank: index + 1,
+            user: user.userId,
+            level: xpManager.level,
+            totalExp: user.expAmount,
+          };
+        });
 
         const leaderboardText = leaderboardEntries
           .map(
@@ -131,11 +128,11 @@ export default class XpCommand extends CustomApplicationCommand {
 
         await interaction.reply({ embeds: [embed] });
         break;
+
       case "calcxp":
         const targetLevel = interaction.options.getNumber("level", true);
         const xpEmbed = await this.generateXpCalculation(targetLevel, interaction);
         await interaction.reply({ embeds: [xpEmbed], flags: "Ephemeral" });
-
         break;
     }
   }
@@ -201,18 +198,11 @@ export default class XpCommand extends CustomApplicationCommand {
   }
 
   private async getOrCreateXpModel(guildId: string, userId: string) {
-    let xpModel = await XpModel.findOne({ guildId, userId });
-
-    if (!xpModel) {
-      xpModel = await XpModel.create({
-        guildId,
-        userId,
-        expAmount: 0,
-        messageCount: 0,
-      });
-    }
-
-    return xpModel;
+    return await XpModel.findOneAndUpdate(
+      { guildId, userId },
+      { $setOnInsert: { expAmount: 0, messageCount: 0 } },
+      { upsert: true, new: true },
+    );
   }
 
   private getSuffix(num: number): string {
