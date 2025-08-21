@@ -126,6 +126,7 @@ export default class MessageCreate extends EventLoader {
     }
 
     await EmojiSuggestionsUtility.countEmoji(message);
+
     if (level == -1) {
       return;
     }
