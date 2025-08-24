@@ -11,25 +11,20 @@ import {
 } from "discord.js";
 import { SuggestionConfigModel, SuggestionModel } from "models/Suggestion";
 
-import { ClientUtilities } from "lib/core/ClientUtilities";
-import { DsuClient } from "lib/core/DsuClient";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { ISuggestionConfig } from "types/mongodb";
+import { clientConfig } from "lib/config/ClientConfig";
 
-export class SuggestionUtility extends ClientUtilities {
-  modalContextCache = new Map<string, string>();
+export class SuggestionUtility {
+  static modalContextCache = new Map<string, string>();
 
-  constructor(client: DsuClient) {
-    super(client);
-    this.modalContextCache = new Map();
-  }
-
-  async isSuggestionMessage(target: Message) {
+  static async isSuggestionMessage(target: Message) {
     const model = await SuggestionModel.findOne({ messageId: target.id });
 
     return !!model;
   }
 
-  async deny(interaction: ModalSubmitInteraction, reason: string) {
+  static async deny(interaction: ModalSubmitInteraction, reason: string) {
     const userId = interaction.user.id;
     const messageId = this.modalContextCache.get(userId);
 
@@ -80,17 +75,14 @@ export class SuggestionUtility extends ClientUtilities {
       suggestionConfig.deniedThreadId!,
     )) as ThreadChannel;
 
-    // Lock suggestion discussion thread
     await originalMessage.thread?.setLocked(true);
 
-    // Remove reactions, forward message, and edit the original embed to notify users.
     await originalMessage.reactions.removeAll();
     await originalMessage.edit({
-      embeds: [this.generateDenialEmbed(suggestion.content, thread.id)],
+      embeds: [this.generateDenialEmbed(suggestion.content, reason)],
     });
 
     await originalMessage.forward(thread.id);
-    await thread.send(`The above submission has been denied!\nReason: ${reason}`);
 
     suggestionConfig.existingSubmissions = suggestionConfig.existingSubmissions.filter(
       (id) => !id.equals(suggestion._id as string),
@@ -109,13 +101,13 @@ export class SuggestionUtility extends ClientUtilities {
     });
   }
 
-  async createDeniedSuggestionThread(channel: GuildTextBasedChannel) {
+  static async createDeniedSuggestionThread(channel: GuildTextBasedChannel) {
     const msg = await channel.send({
       embeds: [
         {
           title: "Denied Suggestions",
           description: "This thread contains denied threads.",
-          color: this.client.config.colors.error,
+          color: clientConfig.colors.error,
         },
       ],
     });
@@ -134,7 +126,7 @@ export class SuggestionUtility extends ClientUtilities {
     );
   }
 
-  async sendAnonymousSuggestion(
+  static async sendAnonymousSuggestion(
     interaction: ChatInputCommandInteraction,
     content: string,
     model: ISuggestionConfig,
@@ -150,7 +142,7 @@ export class SuggestionUtility extends ClientUtilities {
     ) {
       return interaction.reply({
         embeds: [
-          this.client.utils.getUtility("default").generateEmbed("error", {
+          DefaultClientUtilities.generateEmbed("error", {
             title: "Invalid data.",
             description: `Channel <#${channelId}> is not valid: Unsendable or does not exist.`,
           }),
@@ -186,7 +178,7 @@ export class SuggestionUtility extends ClientUtilities {
       console.error("Failed to send anonymous suggestion:", error);
       return interaction.reply({
         embeds: [
-          this.client.utils.getUtility("default").generateEmbed("error", {
+          DefaultClientUtilities.generateEmbed("error", {
             title: "Failed to send suggestion",
             description: "There was an error while processing the suggestion.",
           }),
@@ -196,18 +188,18 @@ export class SuggestionUtility extends ClientUtilities {
     }
   }
 
-  generateAnonymousEmbed(content: string) {
+  static generateAnonymousEmbed(content: string) {
     return {
       title: "New Suggestion",
-      color: this.client.config.colors.success,
-      description: `Suggestion: \n ${content}`,
+      color: clientConfig.colors.success,
+      description: `${content}`,
     } as APIEmbed;
   }
 
-  generateDenialEmbed(content: string, denialThreadId: string) {
+  static generateDenialEmbed(content: string, reason?: string) {
     return {
-      title: `This submission has been denied! View reason in <#${denialThreadId}>`,
-      color: this.client.config.colors.error,
+      title: `Submission Denied! The reason is: \`${reason ?? "No reason specified"}\``,
+      color: clientConfig.colors.error,
       description: `Suggestion: \n ${content}`,
     } as APIEmbed;
   }

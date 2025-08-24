@@ -7,17 +7,6 @@ import {
   PresenceData,
 } from "discord.js";
 
-import { AnchorUtility } from "../utilities/anchor";
-import { AutoArchiveUtility } from "../utilities/autoArchive";
-import { AutoPingUtility } from "../utilities/autoPing";
-import { AutoSlowUtility } from "../utilities/autoSlow";
-import { BadNameUtility } from "../utilities/badName";
-import DefaultClientUtilities from "../../lib/util/defaultUtilities";
-import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
-import { LinkHandlerUtility } from "../utilities/linkHandler";
-import { SuggestionUtility } from "../utilities/suggestions";
-import { TimeParserUtility } from "../utilities/timeParser";
-
 export interface ClientConfig {
   ownerId: string;
   requiredPermissions: PermissionsString[];
@@ -44,23 +33,6 @@ export interface ClientConfig {
   presence: PresenceData;
 }
 
-export const utilities = {
-  default: DefaultClientUtilities,
-  anchors: AnchorUtility,
-  autoArchive: AutoArchiveUtility,
-  autoPing: AutoPingUtility,
-  autoSlow: AutoSlowUtility,
-  badName: BadNameUtility,
-  linkHandler: LinkHandlerUtility,
-  timeParser: TimeParserUtility,
-  emoji: EmojiSuggestionsUtility,
-  suggestions: SuggestionUtility,
-} as const;
-
-export type UtilityKey = keyof typeof utilities;
-export type UtilityInstanceMap = {
-  [K in UtilityKey]: InstanceType<(typeof utilities)[K]>;
-};
 export enum Times {
   SECOND = 1000,
   MINUTE = 60 * SECOND,

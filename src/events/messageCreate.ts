@@ -15,8 +15,13 @@ import {
   TextDisplayBuilder,
 } from "discord.js";
 
+import { AnchorUtility } from "../utilities/anchor";
+import { AutoSlowUtility } from "../utilities/autoSlow";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
 import { EventLoader } from "lib/core/loader/EventLoader";
+import { LinkHandlerUtility } from "../utilities/linkHandler";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
@@ -69,7 +74,7 @@ export default class MessageCreate extends EventLoader {
               components: [container],
             });
           } catch (_) {
-            const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+            const embed = DefaultClientUtilities.generateEmbed("error", {
               title: "Failed to resolve guild",
               description: `Guild may be banned, deleted, or the invite expired.`,
             });
@@ -110,27 +115,24 @@ export default class MessageCreate extends EventLoader {
       if (!s) return;
       message.settings = s;
     }
-    const defaultUtility = this.client.utils.getUtility("default");
 
     const level = this.client.getPermLevel(message, message.member!);
 
-    const autoSlowManager = await defaultUtility.getAutoSlow(message.channelId);
+    const autoSlowManager = await AutoSlowUtility.getAutoSlow(message.channelId);
 
     if (autoSlowManager != null && level < 1 && message.channel instanceof TextChannel) {
       autoSlowManager.messageSent();
       autoSlowManager.setOptimalSlowMode(message.channel);
     }
 
-    const emojiUtility = this.client.utils.getUtility("emoji");
+    await EmojiSuggestionsUtility.countEmoji(message);
 
-    await emojiUtility.countEmoji(message);
     if (level == -1) {
       return;
     }
-    const linkUtility = this.client.utils.getUtility("linkHandler");
-    const hasLink = linkUtility.parseMessageForLink(message.content);
+    const hasLink = LinkHandlerUtility.parseMessageForLink(message.content);
 
-    const canSendLinks = await linkUtility.checkLinkPermissions(
+    const canSendLinks = await LinkHandlerUtility.checkLinkPermissions(
       message.guildId ?? "",
       message.channelId,
       message.author.id,
@@ -144,7 +146,7 @@ export default class MessageCreate extends EventLoader {
       return;
     }
 
-    await this.client.utils.getUtility("anchors").handleAnchor(message);
+    await AnchorUtility.handleAnchor(this.client, message);
 
     // Chain deletion
     const chMessages = this.client.channelMessages.get(message.channelId);
@@ -262,7 +264,7 @@ export default class MessageCreate extends EventLoader {
                 this.client.logger.error("Failed resolving chaining GuildMember.");
                 logCh.send({
                   embeds: [
-                    defaultUtility.generateEmbed("error", {
+                    DefaultClientUtilities.generateEmbed("error", {
                       description: `Chain messages found in ${message.channel}, but failed to resolve culprit.`,
                     }),
                   ],
@@ -290,7 +292,7 @@ export default class MessageCreate extends EventLoader {
 
     for (const { phrases, logChannelId } of foundPhrases) {
       for (const { content, matchThreshold } of phrases) {
-        const matches = defaultUtility.fuzzyMatch(message.content, content);
+        const matches = DefaultClientUtilities.fuzzyMatch(message.content, content);
         if (matches >= matchThreshold) {
           const logChannel = message.guild.channels.cache.get(logChannelId);
           if (
@@ -385,7 +387,7 @@ export default class MessageCreate extends EventLoader {
 
             const footer = `Matched: ${matched.map((m) => `"${m}"`).join(", ")}`;
 
-            if (defaultUtility.isColor(trigger.message.color)) {
+            if (DefaultClientUtilities.isColor(trigger.message.color)) {
               color = trigger.message.color;
             }
 

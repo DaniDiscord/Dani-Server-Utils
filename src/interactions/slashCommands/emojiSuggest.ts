@@ -14,6 +14,8 @@ import { EMOJI_APPROVE, EMOJI_BAN, EMOJI_DENY } from "types/constants/emoji";
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { EmojiSuggestionsUtility } from "../../utilities/emojiSuggestions";
+import { PermissionLevels } from "types/commands";
 
 export const commandId = "emojisuggest";
 const NAME = "name";
@@ -31,10 +33,11 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
     super("suggest", client, {
       type: ApplicationCommandType.ChatInput,
       description: "Suggest an emoji",
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
       applicationData: [
         {
           description: "Suggest an emoji",
+          level: PermissionLevels.USER,
           name: "emoji",
           type: ApplicationCommandOptionType.Subcommand,
           options: [
@@ -58,9 +61,9 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
   }
 
   async run(interaction: ChatInputCommandInteraction) {
-    const emojiUtility = this.client.utils.getUtility("emoji");
     if (!interaction.guild) return;
-    const emojiSuggestionsConfig = await emojiUtility.getEmojiSuggestions(
+    const emojiSuggestionsConfig = await EmojiSuggestionsUtility.getEmojiSuggestions(
+      this.client,
       interaction.guildId ?? "",
     );
 
@@ -77,12 +80,11 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
       });
     }
 
-    const banReason = await emojiUtility.getBanReason(
+    const banReason = await EmojiSuggestionsUtility.getBanReason(
       interaction.guild.id,
       commandId,
       interaction.user.id,
     );
-    console.log(banReason);
     if (banReason !== undefined) {
       const banEmbed = new EmbedBuilder().addFields([
         {
@@ -92,7 +94,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
       ]);
       return interaction.reply({ embeds: [banEmbed], flags: MessageFlags.Ephemeral });
     }
-    const lastUse = await emojiUtility.getLastCommandUse(
+    const lastUse = await EmojiSuggestionsUtility.getLastCommandUse(
       interaction.guild.id,
       commandId,
       interaction.user.id,

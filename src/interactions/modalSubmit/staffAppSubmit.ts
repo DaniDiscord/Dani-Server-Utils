@@ -1,15 +1,17 @@
 import { MessageFlags, ModalSubmitInteraction } from "discord.js";
 import { staffAppCustomId, staffAppQuestions } from "lib/util/questions";
 
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { Modal } from "lib/core/command";
+import { PermissionLevels } from "types/commands";
 import { Times } from "types/index";
 import { TimestampModel } from "models/Timestamp";
 
 export default class StaffAppModalSubmit extends Modal {
   constructor(client: DsuClient) {
     super(staffAppCustomId, client, {
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
     });
   }
 
@@ -69,7 +71,7 @@ export default class StaffAppModalSubmit extends Modal {
     let embed;
 
     try {
-      embed = this.client.utils.getUtility("default").generateEmbed("general", {
+      embed = DefaultClientUtilities.generateEmbed("general", {
         title: `Application of ${interaction.user.tag}`,
         fields: questions,
       });

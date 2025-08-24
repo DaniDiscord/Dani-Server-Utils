@@ -1,21 +1,15 @@
-import { ClientUtilities } from "lib/core/ClientUtilities";
-import { DsuClient } from "lib/core/DsuClient";
 import { LinkPermissionModel } from "models/Links";
 import TLDS from "constants/tlds.json";
 
-export class LinkHandlerUtility extends ClientUtilities {
-  constructor(client: DsuClient) {
-    super(client);
-  }
-
-  isIPAddress(addr: string) {
+export class LinkHandlerUtility {
+  static isIPAddress(addr: string) {
     const ipv4Pattern = /^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?$/;
     const ipv6Pattern = /^(?:\[[a-f0-9:]+])(?::\d+)?$/i;
 
     return ipv4Pattern.test(addr) || ipv6Pattern.test(addr);
   }
 
-  getTLDCandidates(hostName: string) {
+  static getTLDCandidates(hostName: string) {
     const parts = hostName.split(".");
     const candidates: string[] = [];
     for (let i = parts.length - 1; i >= 0; i--) {
@@ -25,7 +19,7 @@ export class LinkHandlerUtility extends ClientUtilities {
     return candidates;
   }
 
-  parseMessageForLink(content: string) {
+  static parseMessageForLink(content: string) {
     const urlPattern =
       /\b(?:https?):\/\/[^\s/$.?#-][^\s]*|(?:www\.|[\p{L}0-9-]+\.)+[\p{L}0-9-]+(?:[^\s]*)?/giu;
     const matches = Array.from(content.matchAll(urlPattern), (match) => {
@@ -64,7 +58,7 @@ export class LinkHandlerUtility extends ClientUtilities {
     };
   }
 
-  async checkLinkPermissions(
+  static async checkLinkPermissions(
     guildId: string,
     channelId: string,
     userId: string,

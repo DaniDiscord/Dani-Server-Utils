@@ -9,13 +9,13 @@ import {
 } from "discord.js";
 
 export enum PermissionLevels {
-  USER,
-  MENTOR,
-  HELPER,
-  MODERATOR,
-  ADMINISTRATOR,
-  SERVER_OWNER,
-  BOT_OWNER,
+  USER = 0,
+  MENTOR = 1,
+  HELPER = 2,
+  MODERATOR = 3,
+  ADMINISTRATOR = 4,
+  SERVER_OWNER = 5,
+  BOT_OWNER = 10,
 }
 
 export type BaseCommandOptions = {
@@ -25,10 +25,14 @@ export type BaseCommandOptions = {
 export type InteractionCommandOptions = BaseCommandOptions & {
   guildOnly?: boolean;
   cooldown?: number;
-  permissionLevel: PermissionLevels | keyof typeof PermissionLevels;
-  applicationData?: ApplicationCommandOptionData[];
+  applicationData?: CustomApplicationCommandOptionData[];
   defaultMemberPermissions?: ApplicationCommandData["defaultMemberPermissions"];
   type?: ApplicationCommandData["type"];
+  permissionLevel: PermissionLevels;
+};
+
+type CustomApplicationCommandOptionData = ApplicationCommandOptionData & {
+  level: PermissionLevels;
 };
 
 export type TextCommandOptions = Omit<InteractionCommandOptions, "applicationData">;

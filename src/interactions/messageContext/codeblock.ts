@@ -8,12 +8,13 @@ import {
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 
 export default class Codeblock extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("Convert to Codeblock", client, {
       type: ApplicationCommandType.Message,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
       defaultMemberPermissions: null,
     });
   }

@@ -7,27 +7,29 @@ import {
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 import { Question } from "lib/util/questions";
+import { SuggestionUtility } from "../../utilities/suggestions";
 
 export default class Codeblock extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("Deny Suggestion", client, {
       type: ApplicationCommandType.Message,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.MODERATOR,
       defaultMemberPermissions: null,
     });
   }
 
   async run(interaction: MessageContextMenuCommandInteraction) {
-    const suggestionUtility = this.client.utils.getUtility("suggestions");
-    const isSuggestion = await suggestionUtility.isSuggestionMessage(
+    const isSuggestion = await SuggestionUtility.isSuggestionMessage(
       interaction.targetMessage,
     );
     if (!isSuggestion) {
       return interaction.reply({
         embeds: [
-          this.client.utils.getUtility("default").generateEmbed("error", {
+          DefaultClientUtilities.generateEmbed("error", {
             title: "Command cannot be used.",
             description: "This command can only be ran on suggestion messages.",
           }),
@@ -46,7 +48,7 @@ export default class Codeblock extends CustomApplicationCommand {
       TextInputStyle.Paragraph,
     );
 
-    suggestionUtility.modalContextCache.set(
+    SuggestionUtility.modalContextCache.set(
       interaction.user.id,
       interaction.targetMessage.id,
     );

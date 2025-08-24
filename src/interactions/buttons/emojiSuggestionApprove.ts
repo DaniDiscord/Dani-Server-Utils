@@ -7,24 +7,31 @@ import {
   TextChannel,
 } from "discord.js";
 import { EMOJI_APPROVE, EMOJI_DENY } from "types/constants/emoji";
-import { SuggestionAction, approveSync } from "../../utilities/emojiSuggestions";
+import {
+  EmojiSuggestionsUtility,
+  SuggestionAction,
+  approveSync,
+} from "../../utilities/emojiSuggestions";
 
 import { Button } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 
 const confirmationTimeoutPeriod = 15000;
 
 export default class EmojiSuggestionApprove extends Button {
   constructor(client: DsuClient) {
     super("approve", client, {
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.MODERATOR,
       global: true,
     });
   }
 
   public async run(interaction: ButtonInteraction) {
-    const emojiUtility = this.client.utils.getUtility("emoji");
-    const config = await emojiUtility.getEmojiSuggestions(interaction.guildId!);
+    const config = await EmojiSuggestionsUtility.getEmojiSuggestions(
+      this.client,
+      interaction.guildId!,
+    );
     if (!config || interaction.channelId !== config.sourceId) return;
 
     if (interaction.message.partial) await interaction.message.fetch();
@@ -111,7 +118,7 @@ export default class EmojiSuggestionApprove extends Button {
         await voteMessage.react(EMOJI_APPROVE);
         await voteMessage.react(EMOJI_DENY);
 
-        const embed = emojiUtility.generateEmojiEmbed(
+        const embed = EmojiSuggestionsUtility.generateEmojiEmbed(
           SuggestionAction.Approve,
           interaction.user.id,
           attachment.url,

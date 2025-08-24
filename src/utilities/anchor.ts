@@ -1,16 +1,11 @@
 import { Message, TextChannel } from "discord.js";
 
 import { AnchorModel } from "models/Anchor";
-import { ClientUtilities } from "lib/core/ClientUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { Times } from "../types/index";
 
-export class AnchorUtility extends ClientUtilities {
-  constructor(client: DsuClient) {
-    super(client);
-  }
-
-  async handleAnchor(message: Message) {
+export class AnchorUtility {
+  static async handleAnchor(client: DsuClient, message: Message) {
     if (message.author.bot) return;
     if (!message.guild || !(message.channel instanceof TextChannel)) return;
 
@@ -45,7 +40,7 @@ export class AnchorUtility extends ClientUtilities {
             const oldAnchor = await message.channel.messages.fetch(anchor.lastAnchorId);
             if (oldAnchor) await oldAnchor.delete();
           } catch (err) {
-            this.client.logger.error("Failed to delete the old anchor message:", err);
+            client.logger.error("Failed to delete the old anchor message:", err);
           }
         }
 
@@ -63,25 +58,25 @@ export class AnchorUtility extends ClientUtilities {
         anchor.messageCount = 0;
         await anchor.save();
       } catch (err) {
-        this.client.logger.error("Error during reanchoring process:", err);
+        client.logger.error("Error during reanchoring process:", err);
       }
     }
   }
 
-  async checkAnchorInactivity() {
+  static async checkAnchorInactivity(client: DsuClient) {
     const now = Date.now();
 
     const anchors = await AnchorModel.find({
       "config.inactivityThreshold": { $gt: 0 },
     });
     if (!anchors || anchors.length === 0) {
-      setTimeout(() => this.checkAnchorInactivity(), Times.MINUTE * 5);
+      setTimeout(() => this.checkAnchorInactivity(client), Times.MINUTE * 5);
       return;
     }
 
     for (const anchor of anchors) {
       try {
-        const channel = await this.client.channels.fetch(anchor.channelId);
+        const channel = await client.channels.fetch(anchor.channelId);
         if (!channel || !(channel instanceof TextChannel)) continue;
 
         const messages = await channel.messages.fetch({ limit: 1 });
@@ -103,10 +98,7 @@ export class AnchorUtility extends ClientUtilities {
             const oldAnchor = await channel.messages.fetch(anchor.lastAnchorId);
             if (oldAnchor) await oldAnchor.delete();
           } catch (err) {
-            this.client.logger.error(
-              "Error deleting old anchor on inactivity check:",
-              err,
-            );
+            client.logger.error("Error deleting old anchor on inactivity check:", err);
           }
         }
 
@@ -124,10 +116,7 @@ export class AnchorUtility extends ClientUtilities {
         anchor.messageCount = 0;
         await anchor.save();
       } catch (err) {
-        this.client.logger.error(
-          `Error processing inactivity for anchor ${anchor._id}:`,
-          err,
-        );
+        client.logger.error(`Error processing inactivity for anchor ${anchor._id}:`, err);
       }
     }
 
@@ -140,9 +129,9 @@ export class AnchorUtility extends ClientUtilities {
         ? nextAnchor.lastAnchorTime.getTime()
         : now;
       const nextCheck = nextAnchor.config.inactivityThreshold - (now - lastAnchorTime);
-      setTimeout(() => this.checkAnchorInactivity(), nextCheck);
+      setTimeout(() => this.checkAnchorInactivity(client), nextCheck);
     } else {
-      setTimeout(() => this.checkAnchorInactivity(), Times.MINUTE * 5);
+      setTimeout(() => this.checkAnchorInactivity(client), Times.MINUTE * 5);
     }
   }
 }

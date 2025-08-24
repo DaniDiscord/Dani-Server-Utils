@@ -1,5 +1,6 @@
+import { InteractionCommandOptions, PermissionLevels } from "types/commands";
+
 import { DsuClient } from "lib/core/DsuClient";
-import { InteractionCommandOptions } from "types/commands";
 import { Modal } from "lib/core/command";
 import { ModalSubmitInteraction } from "discord.js";
 
@@ -12,7 +13,7 @@ export class SubmitExample extends Modal {
    */
   constructor(client: DsuClient) {
     super("name", client, {
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
     });
   }
 

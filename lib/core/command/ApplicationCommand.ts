@@ -1,8 +1,10 @@
 import {
+  APIEmbed,
   ApplicationCommandType,
   AutocompleteFocusedOption,
   AutocompleteInteraction,
   CommandInteraction,
+  GuildMember,
   MessageContextMenuCommandInteraction,
   UserContextMenuCommandInteraction,
 } from "discord.js";
@@ -28,15 +30,43 @@ export class CustomApplicationCommand extends BaseInteraction {
     };
   }
 
-  public override run(
+  public override validate(interaction: CommandInteraction, type: InteractionType) {
+    const subcommand = interaction.isChatInputCommand()
+      ? interaction.options.getSubcommand(false)
+      : null;
+
+    const requiredLevel = subcommand
+      ? this.options.applicationData?.find((c) => c.name === subcommand)?.level
+      : this.options.permissionLevel;
+
+    const emb: APIEmbed = {
+      title: "Missing Permissions",
+    };
+    const permLevel = this.client.getPermLevel(
+      undefined,
+      interaction.member as GuildMember,
+    );
+    if (requiredLevel && requiredLevel > permLevel) {
+      emb.description = `Incorrect permission. (${requiredLevel} vs ${permLevel})`;
+      return emb;
+    }
+
+    return null;
+  }
+
+  public override async run(
     interaction:
       | CommandInteraction
       | UserContextMenuCommandInteraction
       | MessageContextMenuCommandInteraction,
   ) {
+    const validationError = this.validate(interaction, this.type);
+    if (validationError) {
+      return interaction.reply({ embeds: [validationError], ephemeral: true });
+    }
+
     return super.run(interaction);
   }
-
   public async autoComplete(
     _interaction: AutocompleteInteraction,
     _option: AutocompleteFocusedOption,

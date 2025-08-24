@@ -6,22 +6,22 @@ import {
   UserContextMenuCommandInteraction,
 } from "discord.js";
 
+import { BadNameUtility } from "../../utilities/badName";
 import { CounterModel } from "models/Counter";
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 
 export default class RandName extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("Random Name", client, {
       type: ApplicationCommandType.User,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
 
   public async run(interaction: UserContextMenuCommandInteraction) {
-    const badNameUtility = this.client.utils.getUtility("badName");
-
     if (!(interaction.targetMember instanceof GuildMember)) {
       return interaction.reply({
         content: "Random name only works on guild members",
@@ -50,8 +50,8 @@ export default class RandName extends CustomApplicationCommand {
         setDefaultsOnInsert: true,
       },
     );
-    const name = badNameUtility.getName(res.index);
-    await badNameUtility.setMemberName(interaction.targetMember, name);
+    const name = BadNameUtility.getName(res.index);
+    await BadNameUtility.setMemberName(interaction.targetMember, name);
     return interaction.reply({
       content: "User renamed successfully",
       flags: MessageFlags.Ephemeral,

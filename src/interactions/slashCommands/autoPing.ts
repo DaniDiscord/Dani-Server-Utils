@@ -9,6 +9,7 @@ import {
 
 import { AutoPingModel } from "models/AutoPing";
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
 
@@ -34,6 +35,7 @@ export default class AutoPingCommand extends CustomApplicationCommand {
         {
           description: "register a role to automatically notify",
           name: register,
+          level: PermissionLevels.HELPER,
           type: ApplicationCommandOptionType.Subcommand,
           options: [
             {
@@ -66,18 +68,21 @@ export default class AutoPingCommand extends CustomApplicationCommand {
         {
           description: "Clear all automatic pings",
           name: clear,
+          level: PermissionLevels.MODERATOR,
           type: ApplicationCommandOptionType.Subcommand,
         },
         {
           description: "List all automatic pings",
           name: list,
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
         },
         {
           description:
             "Remove every autoping that matches, leave field empty to match all",
           name: remove,
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
           options: [
             {
               description: "Role to ping",
@@ -103,7 +108,7 @@ export default class AutoPingCommand extends CustomApplicationCommand {
           ],
         },
       ],
-      permissionLevel: PermissionLevels.USER,
+      permissionLevel: PermissionLevels.HELPER,
     });
   }
 
@@ -113,7 +118,7 @@ export default class AutoPingCommand extends CustomApplicationCommand {
     if (!interaction.guild)
       return interaction.reply({
         embeds: [
-          this.client.utils.getUtility("default").generateEmbed("error", {
+          DefaultClientUtilities.generateEmbed("error", {
             title: "Invalid",
             description: "Command must be ran within a guild.",
           }),

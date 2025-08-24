@@ -6,12 +6,17 @@ import {
   MessageFlags,
   PermissionsBitField,
 } from "discord.js";
+import {
+  EmojiSuggestions,
+  EmojiSuggestionsUtility,
+} from "../../utilities/emojiSuggestions";
 
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
-import { EmojiSuggestions } from "../../utilities/emojiSuggestions";
 import { EmojiUsageModel } from "models/EmojiUsage";
 import { IEmojiUsage } from "types/mongodb";
+import { PermissionLevels } from "types/commands";
 
 const EMOJI = "emoji";
 const LIST = "list";
@@ -47,12 +52,13 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super(EMOJI, client, {
       type: ApplicationCommandType.ChatInput,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
       description: "Emoji suggestions!",
       applicationData: [
         {
           description: "Setup emoji suggestions",
           name: CONFIG,
+          level: PermissionLevels.BOT_OWNER,
           type: ApplicationCommandOptionType.Subcommand,
           options: [
             {
@@ -92,21 +98,25 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
         {
           description: "List top 10 most popular server emojis.",
           name: LIST,
+          level: PermissionLevels.HELPER,
           type: ApplicationCommandOptionType.Subcommand,
         },
         {
           description: "Get the details of the Emoji Event",
           name: GET,
+          level: PermissionLevels.HELPER,
           type: ApplicationCommandOptionType.Subcommand,
         },
         {
           description: "End emoji suggestions event",
           name: REMOVE,
+          level: PermissionLevels.MODERATOR,
           type: ApplicationCommandOptionType.Subcommand,
         },
         {
           description: "Unban user from suggesting emojis",
           name: UNBAN,
+          level: PermissionLevels.MODERATOR,
           type: ApplicationCommandOptionType.Subcommand,
           options: [
             {
@@ -123,11 +133,11 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
   }
 
   async run(interaction: ChatInputCommandInteraction) {
-    const emojiUtility = this.client.utils.getUtility("emoji");
     const subcommand = interaction.options.getSubcommand();
     if (!interaction.guild) return;
 
-    const emojiSuggestionsConfig = await emojiUtility.getEmojiSuggestions(
+    const emojiSuggestionsConfig = await EmojiSuggestionsUtility.getEmojiSuggestions(
+      this.client,
       interaction.guild.id,
     );
 
@@ -145,7 +155,10 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
           flags: MessageFlags.Ephemeral,
         });
       case REMOVE:
-        await emojiUtility.removeEmojiSuggestions(interaction.guild.id);
+        await EmojiSuggestionsUtility.removeEmojiSuggestions(
+          this.client,
+          interaction.guild.id,
+        );
         return interaction.reply({
           content: "Emoji suggestions removed successfully",
           flags: MessageFlags.Ephemeral,
@@ -190,14 +203,17 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
           cap,
           cooldown,
         );
-        await emojiUtility.setEmojiSuggestions(newEmojiSuggestions);
+        await EmojiSuggestionsUtility.setEmojiSuggestions(
+          this.client,
+          newEmojiSuggestions,
+        );
         return interaction.reply({
           embeds: [getEmbed(newEmojiSuggestions)],
           flags: MessageFlags.Ephemeral,
         });
       case UNBAN:
         const user = interaction.options.getUser(USER, true);
-        await emojiUtility.unbanFromSuggestion(
+        await EmojiSuggestionsUtility.unbanFromSuggestion(
           interaction.guild.id,
           "emojisuggest",
           user.id,
@@ -228,10 +244,7 @@ export default class EmojiSuggestion extends CustomApplicationCommand {
             )
             .join("\n");
         };
-        console.log(usages.map((v) => v));
-        this.client.utils
-          .getUtility("default")
-          .buildPagination(interaction, sorted, 2, 0, 5, emojiFormat);
+        DefaultClientUtilities.buildPagination(interaction, sorted, 0, 5, emojiFormat);
 
         break;
       default:

@@ -7,10 +7,15 @@ const SuggestionGuildConfigSchema = new Schema<ISuggestionConfig>({
   cooldown: { type: Number, required: true },
   deniedThreadId: { type: String },
   existingSubmissions: [{ type: Schema.Types.ObjectId, ref: "Suggestion" }],
-
   deniedSubmissions: [
     {
       messageId: { type: String, required: true },
+      reason: { type: String },
+    },
+  ],
+  bannedUsers: [
+    {
+      userId: { type: String, required: true },
       reason: { type: String },
     },
   ],

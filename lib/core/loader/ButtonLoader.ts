@@ -2,6 +2,7 @@ import { ButtonInteraction, MessageFlags } from "discord.js";
 
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
 import { Button } from "../command/";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "../DsuClient";
 import { InteractionType } from "types/commands";
 
@@ -40,11 +41,8 @@ export class ButtonLoader extends BaseInteractionLoader {
     const missingPermissions = button.validate(interaction, InteractionType.Button);
     if (missingPermissions)
       return interaction.reply({
-        embeds: [
-          this.client.utils
-            .getUtility("default")
-            .generateEmbed("error", missingPermissions),
-        ],
+        embeds: [DefaultClientUtilities.generateEmbed("error", missingPermissions)],
+        flags: "Ephemeral",
       });
 
     return this.run(button, interaction);
@@ -54,7 +52,7 @@ export class ButtonLoader extends BaseInteractionLoader {
     await button.run(interaction).catch((error) => {
       this.client.logger.error(error);
 
-      const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+      const embed = DefaultClientUtilities.generateEmbed("error", {
         title: "An error has occured!",
         description: "An unexpected error has occured.",
       });
