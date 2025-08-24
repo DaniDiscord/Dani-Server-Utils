@@ -5,24 +5,30 @@ import {
   ButtonStyle,
   MessageFlags,
 } from "discord.js";
+import {
+  EmojiSuggestionsUtility,
+  SuggestionAction,
+} from "../../utilities/emojiSuggestions";
 
 import { Button } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { SuggestionAction } from "../../utilities/emojiSuggestions";
+import { PermissionLevels } from "types/commands";
 
 const confirmationTimeoutPeriod = 15000;
 
 export default class EmojiSuggestionDeny extends Button {
   constructor(client: DsuClient) {
     super("deny", client, {
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.MODERATOR,
       global: true,
     });
   }
 
   public async run(interaction: ButtonInteraction) {
-    const emojiUtility = this.client.utils.getUtility("emoji");
-    const config = await emojiUtility.getEmojiSuggestions(interaction.guildId!);
+    const config = await EmojiSuggestionsUtility.getEmojiSuggestions(
+      this.client,
+      interaction.guildId!,
+    );
     if (!config || interaction.channelId !== config.sourceId) return;
 
     if (interaction.message.partial) await interaction.message.fetch();
@@ -85,7 +91,7 @@ export default class EmojiSuggestionDeny extends Button {
 
       if (!confirmed) return;
 
-      const embed = emojiUtility.generateEmojiEmbed(
+      const embed = EmojiSuggestionsUtility.generateEmojiEmbed(
         SuggestionAction.Deny,
         interaction.user.id,
         attachment.url,

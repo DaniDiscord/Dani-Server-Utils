@@ -1,5 +1,7 @@
 import { Collection, Interaction, InteractionType, MessageFlags } from "discord.js";
 
+import { AutoPingUtility } from "../utilities/autoPing";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
@@ -44,7 +46,7 @@ export default class InteractionCreate extends EventLoader {
     const isAutocomplete = interaction.isAutocomplete();
 
     if (isAutocomplete) {
-      await this.client.utils.getUtility("autoPing").onForumTagComplete(interaction);
+      await AutoPingUtility.onForumTagComplete(interaction);
     }
 
     // TODO emojis
@@ -97,10 +99,12 @@ export default class InteractionCreate extends EventLoader {
             : ""
         }`,
       );
+
       if (interaction.isCommand()) {
         if (!cooldowns.has(interaction.commandName)) {
           cooldowns.set(interaction.commandName, new Collection());
         }
+
         const command = this.client.applicationCommandLoader.fetchCommand(
           interaction.commandName,
         );
@@ -125,7 +129,7 @@ export default class InteractionCreate extends EventLoader {
             return interaction.reply({
               flags: [MessageFlags.Ephemeral],
               embeds: [
-                this.client.utils.getUtility("default").generateEmbed("error", {
+                DefaultClientUtilities.generateEmbed("error", {
                   title: "Command on cooldown",
                   description: `Try again in <t:${Math.round(expiration / 1000)}:R>`,
                 }),

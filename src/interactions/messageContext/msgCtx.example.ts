@@ -1,8 +1,8 @@
 import { ApplicationCommandType, MessageContextMenuCommandInteraction } from "discord.js";
+import { InteractionCommandOptions, PermissionLevels } from "types/commands";
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { InteractionCommandOptions } from "types/commands";
 
 // Needs to be default export if you plan to add it.
 
@@ -15,7 +15,7 @@ export class Example extends CustomApplicationCommand {
     super("Name", client, {
       // **MAKE SURE THIS TYPE IS DEFINED! It will NOT be loaded correctly.**
       type: ApplicationCommandType.Message,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
     });
   }
   /**

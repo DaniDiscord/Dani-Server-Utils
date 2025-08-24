@@ -11,17 +11,20 @@ import { AnchorModel } from "models/Anchor";
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
+import { TimeParserUtility } from "../../utilities/timeParser";
 
 export default class AnchorCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("anchor", client, {
       type: ApplicationCommandType.ChatInput,
       description: "Manage anchored messages",
+
       applicationData: [
         {
           name: "add",
           description: "Add a new anchor",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "message",
@@ -56,11 +59,13 @@ export default class AnchorCommand extends CustomApplicationCommand {
           name: "list",
           description: "List all anchors for this server",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
         },
         {
           name: "remove",
           description: "Remove an anchor",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "anchor_id",
@@ -71,7 +76,7 @@ export default class AnchorCommand extends CustomApplicationCommand {
           ],
         },
       ],
-      permissionLevel: PermissionLevels.USER,
+      permissionLevel: PermissionLevels.HELPER,
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
@@ -80,7 +85,6 @@ export default class AnchorCommand extends CustomApplicationCommand {
     const subcommand = interaction.options.getSubcommand();
     const guildId = interaction.guildId;
 
-    const timeParserUtility = this.client.utils.getUtility("timeParser");
     switch (subcommand) {
       case "add": {
         const messageLink = interaction.options.getString("message", true);
@@ -148,8 +152,8 @@ export default class AnchorCommand extends CustomApplicationCommand {
           embeds,
           config: {
             messageThreshold,
-            timeThreshold: timeParserUtility.parseDuration(timeThreshold),
-            inactivityThreshold: timeParserUtility.parseDuration(inactivityThreshold),
+            timeThreshold: TimeParserUtility.parseDuration(timeThreshold),
+            inactivityThreshold: TimeParserUtility.parseDuration(inactivityThreshold),
           },
         });
 
@@ -183,10 +187,10 @@ export default class AnchorCommand extends CustomApplicationCommand {
               `**Original Message:** [Jump Link](https://discord.com/channels/${guildId}/${anchor.originalChannelId}/${anchor.originalMessageId})\n` +
               `**Config:**\n` +
               `Message Threshold: ${anchor.config.messageThreshold} message\n` +
-              `\tTime Threshold: ${timeParserUtility.parseDurationToString(
+              `\tTime Threshold: ${TimeParserUtility.parseDurationToString(
                 anchor.config.timeThreshold,
               )}\n` +
-              `\tInactivity Threshold: ${timeParserUtility.parseDurationToString(
+              `\tInactivity Threshold: ${TimeParserUtility.parseDurationToString(
                 anchor.config.inactivityThreshold,
               )}`,
           });

@@ -2,13 +2,14 @@ import { ApplicationCommandType, ChatInputCommandInteraction } from "discord.js"
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 
 export default class PingCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("ping", client, {
       type: ApplicationCommandType.ChatInput,
       defaultMemberPermissions: "Administrator",
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
       description: "Check the bot's ping!",
     });
   }

@@ -7,8 +7,10 @@ import {
   PermissionsBitField,
 } from "discord.js";
 
+import { AutoSlowModel } from "models/AutoSlow";
 import { AutoSlowUtility } from "../../utilities/autoSlow";
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
 
@@ -34,11 +36,13 @@ export default class AutoSlow extends CustomApplicationCommand {
           name: CONFIG,
           description: "Configure autoslow",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.MODERATOR,
           options: [
             {
               name: MIN,
               description: "Minimum value for slow mode (1 second at least)",
               type: ApplicationCommandOptionType.Number,
+              min_value: 1,
             },
             {
               name: MAX,
@@ -49,18 +53,21 @@ export default class AutoSlow extends CustomApplicationCommand {
               name: FREQUENCY,
               description: "Chat message frequency (suggested: 0.25)",
               type: ApplicationCommandOptionType.Number,
+              min_value: 0,
             },
             {
               name: MAX_CHANGE,
               description:
                 "The default maximum amount slowmode is allowed to change by. (suggested: 5)",
               type: ApplicationCommandOptionType.Number,
+              min_value: 0,
             },
             {
               name: RATE_OF_CHANGE,
               description:
                 "The amount slowmode is allowed to change, proportional to current slow mode. (suggested: 2)",
               type: ApplicationCommandOptionType.Number,
+              min_value: 0,
             },
             {
               name: ENABLED,
@@ -71,12 +78,15 @@ export default class AutoSlow extends CustomApplicationCommand {
         },
         {
           name: REMOVE,
+          level: PermissionLevels.MODERATOR,
+
           description:
             "Removes autoslow from the channel entirely (Prefer disabling instead)",
           type: ApplicationCommandOptionType.Subcommand,
         },
         {
           name: GET,
+          level: PermissionLevels.HELPER,
           description: "Gets autoslow parameters for channel",
           type: ApplicationCommandOptionType.Subcommand,
         },
@@ -84,7 +94,7 @@ export default class AutoSlow extends CustomApplicationCommand {
       defaultMemberPermissions: new PermissionsBitField("Administrator"),
     });
   }
-  paramEmbed(autoSlow: AutoSlowUtility) {
+  getParamsForEmbed(autoSlow: AutoSlowUtility) {
     const min = Math.floor(autoSlow.minSlow);
     const max = Math.floor(autoSlow.maxSlow);
     const freq = autoSlow.targetMsgsPerSec.toFixed(2);
@@ -103,16 +113,15 @@ export default class AutoSlow extends CustomApplicationCommand {
 
   async run(interaction: ChatInputCommandInteraction) {
     const subCommand = interaction.options.getSubcommand();
-    const defaultUtility = this.client.utils.getUtility("default");
     if (subCommand === REMOVE) {
-      await defaultUtility.removeAutoSlow(interaction.channelId);
+      await this.removeAutoSlow(interaction.channelId);
       return interaction.reply({
         content: "Autoslow removed successfully",
         flags: MessageFlags.Ephemeral,
       });
     }
 
-    const currentAutoSlow = await defaultUtility.getAutoSlow(interaction.channelId);
+    const currentAutoSlow = await AutoSlowUtility.getAutoSlow(interaction.channelId);
 
     const commandMin = interaction.options.getNumber(MIN);
     const commandMax = interaction.options.getNumber(MAX);
@@ -125,16 +134,16 @@ export default class AutoSlow extends CustomApplicationCommand {
       if (!currentAutoSlow) {
         return interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Autoslow does not exist in this channel.",
             }),
           ],
         });
       }
-      let params: APIEmbedField[] = [];
-      const embed = defaultUtility
-        .generateEmbed("general", { title: "Autoslow Parameters" })
-        .addFields(params);
+      let params: APIEmbedField[] = this.getParamsForEmbed(currentAutoSlow);
+      const embed = DefaultClientUtilities.generateEmbed("general", {
+        title: "Autoslow Parameters",
+      }).addFields(params);
       return interaction.reply({
         embeds: [embed],
         flags: MessageFlags.Ephemeral,
@@ -159,60 +168,8 @@ export default class AutoSlow extends CustomApplicationCommand {
     ) {
       await interaction.reply({
         embeds: [
-          defaultUtility.generateEmbed("error", {
+          DefaultClientUtilities.generateEmbed("error", {
             title: "Missing parameters",
-          }),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    if (freq <= 0) {
-      await interaction.reply({
-        embeds: [
-          defaultUtility.generateEmbed("error", {
-            title: "Invalid Frequency",
-            description: "Frequency has to be a positive value.",
-          }),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    if (min < 1) {
-      await interaction.reply({
-        embeds: [
-          defaultUtility.generateEmbed("error", {
-            title: "Invalid Minimum",
-            description: "Minimum slow mode can't be lower than 1 second.",
-          }),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    if (minChange < 0) {
-      await interaction.reply({
-        embeds: [
-          defaultUtility.generateEmbed("error", {
-            title: "Invalid Minimum Change",
-            description: "Minimum Change cannot be negative.",
-          }),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-      return;
-    }
-
-    if (minChangeRate < 0) {
-      await interaction.reply({
-        embeds: [
-          defaultUtility.generateEmbed("error", {
-            title: "Invalid Change Rate",
-            description: "Minimum Change Rate cannot be negative.",
           }),
         ],
         flags: MessageFlags.Ephemeral,
@@ -223,7 +180,7 @@ export default class AutoSlow extends CustomApplicationCommand {
     if (minChange < 0.5 && min * minChangeRate < 0.5) {
       await interaction.reply({
         embeds: [
-          defaultUtility.generateEmbed("error", {
+          DefaultClientUtilities.generateEmbed("error", {
             title: "Values Too Small",
             description: "Minimum Change and Change Rate is too small.",
           }),
@@ -233,7 +190,7 @@ export default class AutoSlow extends CustomApplicationCommand {
       return;
     }
 
-    const autoSlow = await defaultUtility.addAutoSlow(
+    const autoSlow = await this.addAutoSlow(
       interaction.channelId,
       min,
       max,
@@ -243,11 +200,11 @@ export default class AutoSlow extends CustomApplicationCommand {
       enabled,
     );
 
-    const params = this.paramEmbed(autoSlow);
+    const params = this.getParamsForEmbed(autoSlow);
 
     return await interaction.reply({
       embeds: [
-        defaultUtility.generateEmbed("success", {
+        DefaultClientUtilities.generateEmbed("success", {
           title: "Slow Mode Setup Successful",
           fields: params,
         }),
@@ -256,5 +213,59 @@ export default class AutoSlow extends CustomApplicationCommand {
     });
 
     return;
+  }
+
+  /**
+   * Adds autoslow data to given channel and DB.
+   * @param channelId The id of the channel to add autoslow to
+   * @param min The minimum seconds autoslow should use
+   * @param max The maximum seconds autoslow should use
+   * @param targetMsgsPerSec The frequency of messages
+   * @param minChange The lowest change
+   * @param minChangeRate How many times it should change
+   * @param enabled Whether auto slow is enabled
+   * @returns Promise\<AutoslowUtility\>
+   */
+  private async addAutoSlow(
+    channelId: string,
+    min: number,
+    max: number,
+    targetMsgsPerSec: number,
+    minChange: number,
+    minChangeRate: number,
+    enabled: boolean,
+  ) {
+    let autoSlow = AutoSlowUtility.cache.get(channelId);
+
+    if (!autoSlow) {
+      autoSlow = new AutoSlowUtility();
+      AutoSlowUtility.cache.set(channelId, autoSlow);
+    }
+
+    autoSlow.setAutoSlowParams(
+      min,
+      max,
+      targetMsgsPerSec,
+      minChange,
+      minChangeRate,
+      enabled,
+    );
+
+    await AutoSlowModel.findOneAndUpdate(
+      { channelId },
+      { min, max, targetMsgsPerSec, minChange, minChangeRate, enabled },
+      { upsert: true, new: true },
+    );
+
+    return autoSlow;
+  }
+  /**
+   * Remove autoslow data from given channel and DB.
+   * @param channelId the channel the autoslow is in.
+   * @returns Promise\<void\>
+   */
+  private async removeAutoSlow(channelId: string): Promise<void> {
+    AutoSlowUtility.cache.delete(channelId);
+    await AutoSlowModel.deleteOne({ channelId: channelId });
   }
 }

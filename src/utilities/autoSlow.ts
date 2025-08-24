@@ -1,11 +1,9 @@
-import { ClientUtilities } from "lib/core/ClientUtilities";
-import { DsuClient } from "lib/core/DsuClient";
+import { AutoSlowModel } from "models/AutoSlow";
 import { TextChannel } from "discord.js";
 
 const BASE = 0.95;
 
-export class AutoSlowUtility extends ClientUtilities {
-  // Instance-specific properties
+export class AutoSlowUtility {
   minSlow: number = 0;
   maxSlow: number = 0;
   targetMsgsPerSec: number = 0;
@@ -17,14 +15,9 @@ export class AutoSlowUtility extends ClientUtilities {
   lastTime: number | null = null;
   lastSlowSet: number | null = null;
 
-  // Static-like cache accessible through instance
   private static _cache: Map<string, AutoSlowUtility> = new Map();
 
-  constructor(client: DsuClient) {
-    super(client);
-  }
-
-  get cache(): Map<string, AutoSlowUtility> {
+  public static get cache(): Map<string, AutoSlowUtility> {
     return AutoSlowUtility._cache;
   }
 
@@ -126,5 +119,31 @@ export class AutoSlowUtility extends ClientUtilities {
     if (Math.abs(newSlow - oldSlow) < 0.1 || Number.isNaN(newSlow)) return;
 
     channel.setRateLimitPerUser(newSlow, "Stabilizing Chat Flow");
+  }
+
+  /**
+   * Get autoslow data.
+   * @param channelId the channel the autoslow is in.
+   * @returns Promise\<AutoSlowUtility\> | null
+   */
+  static async getAutoSlow(channelId: string): Promise<AutoSlowUtility | null> {
+    const cached = AutoSlowUtility.cache.get(channelId);
+    if (cached) return cached;
+
+    const autoSlowConfig = await AutoSlowModel.findOne({ channelId });
+    if (!autoSlowConfig) return null;
+
+    const autoSlow = new AutoSlowUtility();
+    autoSlow.setAutoSlowParams(
+      autoSlowConfig.min,
+      autoSlowConfig.max,
+      autoSlowConfig.targetMsgsPerSec,
+      autoSlowConfig.minChange,
+      autoSlowConfig.minChangeRate,
+      autoSlowConfig.enabled,
+    );
+
+    AutoSlowUtility.cache.set(channelId, autoSlow);
+    return autoSlow;
   }
 }

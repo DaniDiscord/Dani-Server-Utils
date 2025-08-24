@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import { format } from "util";
+
 export class Logger {
   private static get timestamp(): string {
     const now = new Date();

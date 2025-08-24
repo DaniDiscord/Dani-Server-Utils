@@ -1,9 +1,6 @@
 import { GuildEmoji, Message, MessageReaction, ReactionEmoji, User } from "discord.js";
 
-import { ClientUtilities } from "lib/core/ClientUtilities";
-import { DsuClient } from "lib/core/DsuClient";
-
-export class ReactionHandler extends ClientUtilities {
+export class ReactionHandler {
   closePollsRoles = ["707248297290629120", "580770272521617446", "502973976428150784"];
   autoReactChannels = [
     "664579652261773333",
@@ -17,9 +14,6 @@ export class ReactionHandler extends ClientUtilities {
   /**
    *
    */
-  constructor(client: DsuClient) {
-    super(client);
-  }
 
   async onNewMessage(message: Message): Promise<void> {
     if (this.autoReactChannels.indexOf(message.channelId) < 0) return;

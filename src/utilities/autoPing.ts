@@ -7,11 +7,11 @@ import {
 } from "discord.js";
 
 import { AutoPingModel } from "models/AutoPing";
-import { ClientUtilities } from "lib/core/ClientUtilities";
+import { DsuClient } from "lib/core/DsuClient";
 import { IAutoPing } from "../types/mongodb";
 
-export class AutoPingUtility extends ClientUtilities {
-  async onThreadCreated(thread: GuildChannel) {
+export class AutoPingUtility {
+  static async onThreadCreated(client: DsuClient, thread: GuildChannel) {
     if (thread.parentId === null) {
       return;
     }
@@ -29,7 +29,7 @@ export class AutoPingUtility extends ClientUtilities {
       threadExists.parentId!,
     );
     for (const autoPing of autoPings) {
-      const pingChannel = await this.client.channels.fetch(autoPing.targetChannelId);
+      const pingChannel = await client.channels.fetch(autoPing.targetChannelId);
       if (!(pingChannel instanceof TextChannel)) {
         continue;
       }
@@ -48,14 +48,14 @@ export class AutoPingUtility extends ClientUtilities {
     }
   }
 
-  async getAutoPing(guildId: string, forumId: string): Promise<IAutoPing[]> {
+  static async getAutoPing(guildId: string, forumId: string): Promise<IAutoPing[]> {
     return await AutoPingModel.find({
       guildId: guildId,
       forumId: forumId,
     });
   }
 
-  async onForumTagComplete(interaction: AutocompleteInteraction) {
+  static async onForumTagComplete(interaction: AutocompleteInteraction) {
     const focus = interaction.options.getFocused(true);
     if (focus.name !== "tag") {
       return;

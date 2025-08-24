@@ -218,6 +218,10 @@ interface RawSuggestionConfig {
   deniedThreadId: string;
   existingSubmissions: Types.ObjectId[];
   deniedSubmissions: { messageId: string; reason?: string }[];
+  bannedUsers: {
+    userId: string;
+    reason?: string;
+  }[];
 }
 
 export interface ISuggestionConfig extends RawSuggestionConfig, Document {}

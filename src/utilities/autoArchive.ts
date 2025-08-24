@@ -4,16 +4,12 @@ import {
 } from "models/AutoArchive";
 import { EmbedBuilder, ForumChannel, ThreadChannel } from "discord.js";
 
-import { ClientUtilities } from "lib/core/ClientUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { TimeParserUtility } from "./timeParser";
 import { Times } from "../types/index";
 
-export class AutoArchiveUtility extends ClientUtilities {
-  constructor(client: DsuClient) {
-    super(client);
-  }
-
-  async fetchAllThreads(channel: ForumChannel, archived = false) {
+export class AutoArchiveUtility {
+  static async fetchAllThreads(channel: ForumChannel, archived = false) {
     let threads: ThreadChannel[] = [];
     let cursor: string | undefined;
 
@@ -35,7 +31,11 @@ export class AutoArchiveUtility extends ClientUtilities {
     return threads;
   }
 
-  async autoArchiveInForum(channel: ForumChannel, expireDuration: number) {
+  static async autoArchiveInForum(
+    client: DsuClient,
+    channel: ForumChannel,
+    expireDuration: number,
+  ) {
     const blacklist = await AutoArchiveForumBlacklistModel.findOne({
       guildId: channel.guildId,
     });
@@ -49,7 +49,7 @@ export class AutoArchiveUtility extends ClientUtilities {
     const logPercentage = 10;
     let currentThread = 0;
 
-    this.client.logger.info("Auto-Archive", {
+    client.logger.info("Auto-Archive", {
       action: "Run",
       message: `Checking ${threadCount} threads in channel (${channel.id})`,
     });
@@ -70,7 +70,7 @@ export class AutoArchiveUtility extends ClientUtilities {
       const ageInMs = Date.now() - lastMessageAt.getTime();
 
       if (currentThread % Math.floor(threadCount / logPercentage) === 0) {
-        this.client.logger.info("Auto-Archive", {
+        client.logger.info("Auto-Archive", {
           action: "Progress",
           message: `Checked ${currentThread} of ${threadCount} threads in channel (${channel.id})`,
         });
@@ -85,7 +85,7 @@ export class AutoArchiveUtility extends ClientUtilities {
 
           await thread.send({ embeds: [embed] });
         } catch (error) {
-          this.client.logger.warn(
+          client.logger.warn(
             `Failed to send lock embed for thread (${thread.id}) in channel (${channel.id})`,
             error as Error,
           );
@@ -93,9 +93,9 @@ export class AutoArchiveUtility extends ClientUtilities {
 
         await thread.setLocked(
           true,
-          `Auto-Lock after ${this.client.utils
-            .getUtility("timeParser")
-            .parseDurationToString(ageInMs)} of inactivity.`,
+          `Auto-Lock after ${TimeParserUtility.parseDurationToString(
+            ageInMs,
+          )} of inactivity.`,
         );
 
         await thread.setArchived(true);
@@ -118,11 +118,11 @@ export class AutoArchiveUtility extends ClientUtilities {
     }
 
     setTimeout(() => {
-      this.autoArchiveInForum(channel, expireDuration);
+      this.autoArchiveInForum(client, channel, expireDuration);
     }, nearestThreadLock);
   }
 
-  async handleAutoArchiveChannels(guildId: string) {
+  static async handleAutoArchiveChannels(client: DsuClient, guildId: string) {
     const config = await AutoArchiveForumModel.findOne({ guildId });
 
     if (!config) return;
@@ -130,19 +130,19 @@ export class AutoArchiveUtility extends ClientUtilities {
     for (const channelConfig of config.channels) {
       const { channelId, expireDuration } = channelConfig;
 
-      const channel = await this.client.channels.fetch(channelId);
+      const channel = await client.channels.fetch(channelId);
 
       if (!channel || !channel.isThreadOnly()) {
         continue;
       }
 
-      await this.autoArchiveInForum(channel as ForumChannel, expireDuration);
+      await this.autoArchiveInForum(client, channel as ForumChannel, expireDuration);
     }
   }
 
-  async handleAutoArchive() {
-    for (const guild of this.client.guilds.cache.values()) {
-      await this.handleAutoArchiveChannels(guild.id);
+  static async handleAutoArchive(client: DsuClient) {
+    for (const guild of client.guilds.cache.values()) {
+      await this.handleAutoArchiveChannels(client, guild.id);
     }
   }
 }

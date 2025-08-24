@@ -1,11 +1,12 @@
+import { APIEmbed, GuildMember } from "discord.js";
 import {
   BaseInteractionType,
   InteractionCommandOptions,
   InteractionGroups,
   InteractionType,
+  PermissionLevels,
 } from "types/commands";
 
-import { APIEmbed } from "discord.js";
 import { DsuClient } from "../DsuClient";
 
 export class BaseInteraction {
@@ -24,7 +25,7 @@ export class BaseInteraction {
     this.name = name;
     this.client = client;
     this.description = options?.description ?? "";
-    this.options = options ?? { permissionLevel: "USER" };
+    this.options = options ?? { permissionLevel: 0 };
     this.type = type;
   }
 
@@ -41,14 +42,25 @@ export class BaseInteraction {
       title: "Missing Permissions",
     };
 
+    let level = this.client.getPermLevel(undefined, interaction.member as GuildMember);
+
     if (this.options.guildOnly && !interaction.inGuild()) {
       emb.description = `${interactionType} must be ran in a guild.`;
       return emb;
     } else if (
-      this.options.permissionLevel === "SERVER_OWNER" &&
+      this.options.permissionLevel === PermissionLevels.SERVER_OWNER &&
       interaction.guild?.ownerId != interaction.user.id
     ) {
       emb.description = `${interactionType} can only be ran by the guild owner.`;
+      return emb;
+    } else if (
+      this.options.permissionLevel === PermissionLevels.BOT_OWNER &&
+      interaction.user.id != process.env.OWNER_ID
+    ) {
+      emb.description = "Must be the bot developer to use this command";
+      return emb;
+    } else if (this.options.permissionLevel > level) {
+      emb.description = `Incorrect permission. (${this.options.permissionLevel} vs ${level})`;
       return emb;
     }
 

@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 
 import { BaseInteractionLoader } from "./BaseInteractionLoader";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "../DsuClient";
 import { InteractionType } from "types/commands";
 import { Modal } from "../command";
@@ -35,11 +36,8 @@ export class ModalLoader extends BaseInteractionLoader {
 
     if (missingPermissions)
       return interaction.reply({
-        embeds: [
-          this.client.utils
-            .getUtility("default")
-            .generateEmbed("error", missingPermissions),
-        ],
+        embeds: [DefaultClientUtilities.generateEmbed("error", missingPermissions)],
+        flags: "Ephemeral",
       });
 
     return this.runModal(modal, interaction);
@@ -64,7 +62,7 @@ export class ModalLoader extends BaseInteractionLoader {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .catch(async (error: any): Promise<InteractionResponse | Message> => {
         this.client.logger.error(`Error when submitting modal interaction: ${error}\n`);
-        const embed = this.client.utils.getUtility("default").generateEmbed("error", {
+        const embed = DefaultClientUtilities.generateEmbed("error", {
           title: "An error has occured!",
           description: "An unexpected error has occured.",
         });

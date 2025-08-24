@@ -2,13 +2,16 @@ import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
   ChatInputCommandInteraction,
+  ColorResolvable,
   EmbedBuilder,
   GuildMember,
   MessageFlags,
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import { PermissionLevels } from "types/commands";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
 
@@ -22,6 +25,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
           name: "add",
           description: "Add a trigger.",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.ADMINISTRATOR,
           options: [
             {
               name: "id",
@@ -100,6 +104,8 @@ export default class TriggerCommand extends CustomApplicationCommand {
           name: "remove",
           description: "Remove a trigger.",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.ADMINISTRATOR,
+
           options: [
             {
               name: "id",
@@ -119,6 +125,8 @@ export default class TriggerCommand extends CustomApplicationCommand {
           name: "enable",
           description: "Enable a trigger.",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.ADMINISTRATOR,
+
           options: [
             {
               name: "id",
@@ -132,6 +140,8 @@ export default class TriggerCommand extends CustomApplicationCommand {
           name: "disable",
           description: "Disable a trigger.",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.ADMINISTRATOR,
+
           options: [
             {
               name: "id",
@@ -145,6 +155,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
           name: "get",
           description: "Get information about a trigger.",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.ADMINISTRATOR,
           options: [
             {
               name: "id",
@@ -158,6 +169,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
           name: "ignore",
           description: "Opts out a user from a trigger",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
           options: [
             {
               name: "user",
@@ -177,38 +189,31 @@ export default class TriggerCommand extends CustomApplicationCommand {
           name: "list",
           description: "Get a list of triggers for this guild.",
           type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
+        },
+        {
+          name: "display",
+          description: "Show a trigger without it having to be triggered.",
+          type: ApplicationCommandOptionType.Subcommand,
+          level: PermissionLevels.HELPER,
+
+          options: [
+            {
+              name: "trigger_id",
+              description: "The id of the trigger.",
+              type: ApplicationCommandOptionType.String,
+              required: true,
+            },
+          ],
         },
       ],
       defaultMemberPermissions: "Administrator",
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.HELPER,
     });
   }
 
   async run(interaction: ChatInputCommandInteraction) {
     const subcommand = interaction.options.getSubcommand();
-    const permLevel = this.client.getPermLevel(
-      undefined,
-      interaction.member as GuildMember,
-    );
-
-    const adminOnly = ["add", "remove", "enable", "disable", "get"];
-    const staffOnly = ["ignore", "list"];
-
-    const defaultUtility = this.client.utils.getUtility("default");
-
-    if (permLevel < 4 && adminOnly.includes(subcommand)) {
-      return await interaction.reply({
-        content: "Insufficient Permissions",
-        flags: "Ephemeral",
-      });
-    }
-
-    if (permLevel < 2 && staffOnly.includes(subcommand)) {
-      return await interaction.reply({
-        content: "Insufficient Permissions",
-        flags: "Ephemeral",
-      });
-    }
 
     if (subcommand == "add") {
       const id = interaction.options.getString("id", true);
@@ -217,7 +222,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       if (exists) {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` already exists`,
             }),
@@ -254,7 +259,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
           content: content || "",
           title: title || "",
           description: description || "",
-          color: defaultUtility.isColor(color) ? color : "Red",
+          color: DefaultClientUtilities.isColor(color) ? color : "Red",
         },
       };
 
@@ -305,7 +310,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       } else {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` already does not exist`,
             }),
@@ -345,7 +350,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       } else if (trigger) {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` already enabled`,
             }),
@@ -354,7 +359,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       } else {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` does not exist`,
             }),
@@ -394,7 +399,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       } else if (trigger) {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` already disabled`,
             }),
@@ -403,7 +408,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       } else {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` does not exist`,
             }),
@@ -431,7 +436,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       } else {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` does not exist`,
             }),
@@ -453,7 +458,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       if (!interaction.settings.triggers.some((t) => t.id == id)) {
         await interaction.reply({
           embeds: [
-            defaultUtility.generateEmbed("error", {
+            DefaultClientUtilities.generateEmbed("error", {
               title: "Argument invalid",
               description: `Trigger \`${id}\` does not exist.`,
             }),
@@ -500,8 +505,37 @@ export default class TriggerCommand extends CustomApplicationCommand {
       await interaction.reply({
         embeds: [new EmbedBuilder().setColor("Green").setDescription(str)],
       });
-    }
+    } else if (subcommand == "display") {
+      const id = interaction.options.getString("trigger_id", true);
+      const trigger = interaction.settings.triggers.find((t) => t.id === id);
 
-    return {};
+      if (!trigger) {
+        return await interaction.reply({
+          embeds: [
+            DefaultClientUtilities.generateEmbed("error", {
+              title: "Argument invalid",
+              description: `Trigger \`${id}\` does not exist.`,
+            }),
+          ],
+          flags: [MessageFlags.Ephemeral],
+        });
+      }
+
+      if (trigger.message.embed) {
+        let color: ColorResolvable = "Red";
+
+        if (DefaultClientUtilities.isColor(trigger.message.color)) {
+          color = trigger.message.color;
+        }
+        const embed = new EmbedBuilder()
+          .setTitle(trigger.message.title)
+          .setDescription(trigger.message.description)
+          .setColor(color);
+
+        interaction.reply({ embeds: [embed] });
+      } else {
+        interaction.reply(trigger.message.content);
+      }
+    }
   }
 }

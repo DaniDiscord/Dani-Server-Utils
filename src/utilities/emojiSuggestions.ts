@@ -1,7 +1,6 @@
 import { ChannelType, EmbedBuilder, Message, MessageReaction, User } from "discord.js";
 import { EMOJI_APPROVE, EMOJI_DENY } from "types/constants/emoji";
 
-import { ClientUtilities } from "lib/core/ClientUtilities";
 import { CommandCooldownModel } from "models/CommandCooldown";
 import { DsuClient } from "lib/core/DsuClient";
 import { EmojiSuggestionsModel } from "models/EmojiSuggestions";
@@ -92,14 +91,8 @@ export class EmojiSuggestions {
 }
 const reactionSync = new SynchronizeById();
 
-export class EmojiSuggestionsUtility extends ClientUtilities {
-  constructor(client: DsuClient) {
-    super(client);
-  }
-
-  // TODO
-
-  generateEmojiEmbed(
+export class EmojiSuggestionsUtility {
+  static generateEmojiEmbed(
     actionType: SuggestionAction,
     userId: string,
     emojiUrl: string,
@@ -128,7 +121,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     return embed;
   }
 
-  // async onInteraction(interaction: ButtonInteraction) {
+  // static async onInteraction(interaction: ButtonInteraction) {
   //   const guildId = interaction.guildId;
 
   //   if (!guildId) {
@@ -140,19 +133,19 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
   //   if (!emojiSuggestionsConfig) return;
   // }
 
-  async getEmojiSuggestions(guildId: string) {
-    const cacheValue = this.client.emojiEventCache.get(guildId);
+  static async getEmojiSuggestions(client: DsuClient, guildId: string) {
+    const cacheValue = client.emojiEventCache.get(guildId);
     if (cacheValue !== undefined) {
       return cacheValue;
     }
     const dbValue = await EmojiSuggestionsModel.findOne({ guildId });
     if (dbValue) {
-      this.client.emojiEventCache.set(guildId, dbValue);
+      client.emojiEventCache.set(guildId, dbValue);
     }
     return dbValue;
   }
 
-  async banFromSuggestion(
+  static async banFromSuggestion(
     guildId: string,
     commandId: string,
     userId: string,
@@ -172,7 +165,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     );
   }
 
-  async unbanFromSuggestion(guildId: string, commandId: string, userId: string) {
+  static async unbanFromSuggestion(guildId: string, commandId: string, userId: string) {
     const filter = { guildId: guildId, commandId: commandId, userId: userId };
     await CommandCooldownModel.findOneAndUpdate(
       filter,
@@ -184,8 +177,11 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     );
   }
 
-  async setEmojiSuggestions(config: EmojiSuggestions): Promise<void> {
-    this.client.emojiEventCache.set(config.guildId, config);
+  static async setEmojiSuggestions(
+    client: DsuClient,
+    config: EmojiSuggestions,
+  ): Promise<void> {
+    client.emojiEventCache.set(config.guildId, config);
     const filter = {
       guildId: config.guildId,
     };
@@ -196,12 +192,15 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     });
   }
 
-  async removeEmojiSuggestions(guildId: string): Promise<EmojiSuggestions | null> {
-    this.client.emojiEventCache.delete(guildId);
+  static async removeEmojiSuggestions(
+    client: DsuClient,
+    guildId: string,
+  ): Promise<EmojiSuggestions | null> {
+    client.emojiEventCache.delete(guildId);
     return await EmojiSuggestionsModel.findOneAndDelete({ guildId: guildId });
   }
 
-  async getBanReason(guildId: string, commandId: string, userId: string) {
+  static async getBanReason(guildId: string, commandId: string, userId: string) {
     const filter = { guildId: guildId, commandId: commandId, userId: userId };
     const command = await CommandCooldownModel.findOne(filter);
     if (command === null || !command.banned) {
@@ -210,7 +209,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     return command.reason;
   }
 
-  async getLastCommandUse(
+  static async getLastCommandUse(
     guildId: string,
     commandId: string,
     userId: string,
@@ -220,7 +219,11 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     return command?.lastUse ?? null;
   }
 
-  async onReaction(reaction: MessageReaction, user: User): Promise<void> {
+  static async onReaction(
+    client: DsuClient,
+    reaction: MessageReaction,
+    user: User,
+  ): Promise<void> {
     if (user.bot) {
       return;
     }
@@ -229,7 +232,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     if (guildId === null) {
       return;
     }
-    const emojiSuggestionsConfig = await this.getEmojiSuggestions(guildId);
+    const emojiSuggestionsConfig = await this.getEmojiSuggestions(client, guildId);
     if (emojiSuggestionsConfig === null) {
       return;
     }
@@ -301,7 +304,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     }
   }
 
-  async countEmoji(message: Message): Promise<void> {
+  static async countEmoji(message: Message): Promise<void> {
     const regex = new RegExp(`:[a-zA-Z1-9_]+${emojiSuffix}:`, "g");
     if (message.guildId === null) {
       return;
@@ -325,7 +328,7 @@ export class EmojiSuggestionsUtility extends ClientUtilities {
     }
   }
 
-  async addEmoji(guildId: string, name: string): Promise<void> {
+  static async addEmoji(guildId: string, name: string): Promise<void> {
     const time = Date.now();
 
     const emojiUsage = await EmojiUsageModel.findOneAndUpdate(
