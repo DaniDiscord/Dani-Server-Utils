@@ -54,14 +54,11 @@ export default class MessageCreate extends EventLoader {
           "Internal error: data does not exist inside automod message;",
         );
       }
-      if (
-        content.match(/discord\.gg\/([a-zA-Z0-9]+)/g) ||
-        content.match(/discord\.com\/invite\/([a-zA-Z0-9]+)/g)
-      ) {
-        const matches = [
-          ...content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g),
-          ...content.matchAll(/discord\.com\/invite\/([a-zA-Z0-9]+)/g),
-        ];
+
+      const DISCORD_INVITE_PATTERNS =
+        /(?:https?:\/\/)?(?:discord\.gg|discord(?:app)?\.com\/invite)\/([\w-]+)/gi;
+      if (content.match(DISCORD_INVITE_PATTERNS)) {
+        const matches = [...content.matchAll(DISCORD_INVITE_PATTERNS)];
         matches.forEach(async (match) => {
           const code = match[1];
           try {
