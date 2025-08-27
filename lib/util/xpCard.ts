@@ -110,7 +110,7 @@ export async function generateXpCard({
   const nameY = 100;
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 36px Arial";
+  ctx.font = "bold 36px Liberation Sans";
   ctx.fillText(username.charAt(0).toUpperCase() + username.slice(1), usernameX, nameY);
 
   // Role Icon
@@ -134,12 +134,12 @@ export async function generateXpCard({
   }
 
   // Level
-  ctx.font = "bold 44px Arial";
+  ctx.font = "bold 44px Liberation Sans";
   ctx.fillStyle = right;
   ctx.fillText(`Level: ${level}`, usernameX + 2, nameY + 55);
 
   // Rank
-  ctx.font = "bold 52px Arial";
+  ctx.font = "bold 52px Liberation Sans";
   ctx.fillStyle = "#c3d4d0";
   const rankText = `Rank #${rank}`;
   const textMetrics = ctx.measureText(rankText);

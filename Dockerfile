@@ -2,6 +2,10 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y fontconfig fonts-liberation && \
+    fc-cache -f -v
+
 COPY package*.json ./
 COPY bun.lock ./
 

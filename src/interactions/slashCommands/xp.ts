@@ -23,8 +23,16 @@ export default class XpCommand extends CustomApplicationCommand {
         {
           type: ApplicationCommandOptionType.Subcommand,
           name: "get",
-          description: "Show your current xp level!",
-          level: PermissionLevels.USER
+          description: "Show your own or someone else's current xp level!",
+          level: PermissionLevels.USER,
+          options: [
+            {
+              name: "user",
+              description: "The user to check the XP level for.",
+              type: ApplicationCommandOptionType.User,
+              required: false,
+            },
+          ],
         },
         {
           type: ApplicationCommandOptionType.Subcommand,
