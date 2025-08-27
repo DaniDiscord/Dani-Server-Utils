@@ -12,9 +12,9 @@ import {
 } from "discord.js";
 import { SuggestionConfigModel, SuggestionModel } from "models/Suggestion";
 
+import { clientConfig } from "lib/config/ClientConfig";
 import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { ISuggestionConfig } from "types/mongodb";
-import { clientConfig } from "lib/config/ClientConfig";
 
 export class SuggestionUtility {
   static modalContextCache = new Map<string, string>();
@@ -254,7 +254,7 @@ export class SuggestionUtility {
 
   static generateApprovalEmbed(content: string) {
     return {
-      title: "Approved suggested!", 
+      title: "Suggestion approved!", 
       color: clientConfig.colors.success, 
       description: `${content}`
     } as APIEmbed;
