@@ -149,7 +149,7 @@ export default class XpCommand extends CustomApplicationCommand {
         await interaction.reply({ embeds: [embed] });
         break;
 
-      case "calcxp":
+      case "calc":
         const targetLevel = interaction.options.getNumber("level", true);
         const user = interaction.options.getUser("user") ?? interaction.user;
 
