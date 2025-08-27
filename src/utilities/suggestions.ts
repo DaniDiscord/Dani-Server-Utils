@@ -272,7 +272,7 @@ export class SuggestionUtility {
 
   static generateDenialEmbed(content: string, reason?: string) {
     return {
-      title: `Submission Denied! The reason is: \`${reason ?? "No reason specified"}\``,
+      title: `Submission Denied: \`${reason ?? "No reason specified"}\``,
       color: clientConfig.colors.error,
       description: `Suggestion: \n ${content}`,
     } as APIEmbed;
