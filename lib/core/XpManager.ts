@@ -1,3 +1,5 @@
+import { Times } from "types/index";
+
 type DigestResult = {
   totalExp: number;
   exp: number;
@@ -6,6 +8,8 @@ type DigestResult = {
 };
 
 export default class XpManager {
+  public static EXP_PER_MESSAGE = 3;
+  public static EXP_COOLDOWN = Times.MINUTE;
   public formula: (levelIndex: number) => number;
   public totalExp = 0;
   public exp = 0;

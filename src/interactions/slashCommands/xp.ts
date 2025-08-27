@@ -3,7 +3,7 @@ import {
   ApplicationCommandType,
   AttachmentBuilder,
   ChatInputCommandInteraction,
-  EmbedBuilder,
+  EmbedBuilder
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
@@ -12,6 +12,8 @@ import XpManager from "lib/core/XpManager";
 import { generateXpCard } from "lib/util/xpCard";
 import { XpModel } from "models/Xp";
 import { PermissionLevels } from "types/commands";
+import { Times } from "types/index";
+import { TimeParserUtility } from "../../utilities/timeParser";
 
 export default class XpCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -51,7 +53,7 @@ export default class XpCommand extends CustomApplicationCommand {
         },
         {
           type: ApplicationCommandOptionType.Subcommand,
-          name: "calcxp",
+          name: "calc",
           description: "Calculate time needed to reach a level!",
           level: PermissionLevels.USER,
           options: [
@@ -62,6 +64,12 @@ export default class XpCommand extends CustomApplicationCommand {
               min_value: 1,
               required: true,
             },
+            {
+              name: "user",
+              description: "The user to check the XP level for.",
+              type: ApplicationCommandOptionType.User,
+              required: false,
+            }
           ],
         },
       ],
@@ -72,8 +80,8 @@ export default class XpCommand extends CustomApplicationCommand {
     const subcommand = interaction.options.getSubcommand();
     switch (subcommand) {
       case "get":
-        const user = interaction.options.getUser("user") ?? interaction.user;
-        const xpModel = await this.getOrCreateXpModel(interaction.guildId!, user.id);
+        const getUser = interaction.options.getUser("user") ?? interaction.user;
+        const xpModel = await this.getOrCreateXpModel(interaction.guildId!, getUser.id);
         const xpManager = new XpManager(xpModel.expAmount);
 
         const rank =
@@ -83,8 +91,8 @@ export default class XpCommand extends CustomApplicationCommand {
           })) + 1;
 
         const buf = await generateXpCard({
-          username: user.username,
-          avatarURL: user.displayAvatarURL({ extension: "png", size: 256 }),
+          username: getUser.username,
+          avatarURL: getUser.displayAvatarURL({ extension: "png", size: 256 }),
           level: xpManager.level,
           xp: xpManager.exp,
           xpNeeded: xpManager.next,
@@ -143,7 +151,9 @@ export default class XpCommand extends CustomApplicationCommand {
 
       case "calcxp":
         const targetLevel = interaction.options.getNumber("level", true);
-        const xpEmbed = await this.generateXpCalculation(targetLevel, interaction);
+        const user = interaction.options.getUser("user") ?? interaction.user;
+
+        const xpEmbed = await this.generateXpCalculation(targetLevel, user.id, interaction.guildId);
         await interaction.reply({ embeds: [xpEmbed], flags: "Ephemeral" });
         break;
     }
@@ -151,7 +161,8 @@ export default class XpCommand extends CustomApplicationCommand {
 
   private async generateXpCalculation(
     targetLevel: number,
-    interaction: ChatInputCommandInteraction,
+    userId: string,
+    guildId: string | null
   ) {
     const xpManager = new XpManager(0);
 
@@ -163,26 +174,31 @@ export default class XpCommand extends CustomApplicationCommand {
       totalXp += nextXp;
     }
 
-    const minutesRequired = totalXp / 3;
-    const days = Math.floor(minutesRequired / 1440);
-    const hours = Math.floor((minutesRequired % 1440) / 60);
-    const minutes = Math.round(minutesRequired % 60);
-
-    const timeString = [
-      days > 0 ? `${days} day${days !== 1 ? "s" : ""}` : "",
-      hours > 0 ? `${hours} hour${hours !== 1 ? "s" : ""}` : "",
-      minutes > 0 ? `${minutes} minute${minutes !== 1 ? "s" : ""}` : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    const xpModel = await XpModel.findOne({
-      guildId: interaction.guildId,
-      userId: interaction.user.id,
+    const minutesRequired = totalXp / XpManager.EXP_PER_MESSAGE;
+    const timeString = TimeParserUtility.parseDurationToString(minutesRequired * Times.MINUTE, {
+      allowedUnits: ["day", "hour", "minute"],
     });
 
-    const currentLevel = xpModel ? new XpManager(xpModel.expAmount).level : 0;
-    const xpNeeded = totalXp - (xpModel?.expAmount || 0);
+    const xpModel = await XpModel.findOne({
+      guildId: guildId,
+      userId: userId,
+    });
+
+    const currentXp = xpModel?.expAmount || 0;
+    const currentLevel = xpModel ? new XpManager(currentXp).level : 0;
+    const xpNeeded = totalXp - currentXp;
+
+    const timeSpentMinutes = currentXp / XpManager.EXP_PER_MESSAGE;
+    const timeSpent = TimeParserUtility.parseDurationToString(timeSpentMinutes * Times.MINUTE, {
+      allowedUnits: ["day", "hour", "minute"],
+    });
+
+    const timeDiffMinutes = Math.abs(xpNeeded) / XpManager.EXP_PER_MESSAGE;
+    const timeDiff = TimeParserUtility.parseDurationToString(timeDiffMinutes * Times.MINUTE, {
+      allowedUnits: ["day", "hour", "minute"],
+    });
+
+    const timeLeft = xpNeeded > 0 ? timeDiff : `Surpassed by ${timeDiff}`;
 
     const embed = new EmbedBuilder()
       .setTitle(`XP Calculation for Level ${targetLevel}`)
@@ -194,7 +210,17 @@ export default class XpCommand extends CustomApplicationCommand {
           value: xpNeeded > 0 ? xpNeeded.toLocaleString() : "Already reached",
           inline: true,
         },
-        { name: "Time Investment", value: timeString || "0 minutes", inline: true },
+        { name: "Time Investment (Total)", value: timeString || "0 minutes", inline: true },
+        {
+          name: "Time Spent",
+          value: timeSpent || "0 minutes",
+          inline: true,
+        },
+        {
+          name: "Time Left",
+          value: timeLeft || "0 minutes",
+          inline: true,
+        },
         {
           name: "Next Level",
           value: `Requires: ${nextXp.toLocaleString()} XP`,
@@ -202,7 +228,7 @@ export default class XpCommand extends CustomApplicationCommand {
         },
         {
           name: "Current Progress",
-          value: `You're level ${currentLevel} (${xpModel?.expAmount || 0} XP)`,
+          value: `Level ${currentLevel} (${currentXp} XP)`,
           inline: true,
         },
       );

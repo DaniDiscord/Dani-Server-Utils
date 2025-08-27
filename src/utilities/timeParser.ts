@@ -30,18 +30,30 @@ export class TimeParserUtility {
     }
   }
 
-  static parseDurationToString(duration: number) {
+  static parseDurationToString(
+    duration: number,
+    options?: { compact?: boolean; allowedUnits?: string[] }
+  ): string {
     let remainingDuration = duration;
     const parts: string[] = [];
 
     for (const unit of units) {
+      // Skip units not in the allowedUnits array (if provided)
+      if (options?.allowedUnits && !options.allowedUnits.includes(unit.label)) {
+        continue;
+      }
+
       const count = Math.floor(remainingDuration / unit.value);
       if (count > 0) {
-        parts.push(`${count} ${unit.label}${count > 1 ? "s" : ""}`);
+        parts.push(
+          options?.compact
+            ? `${count}${unit.label === "month" ? "M" : unit.label[0]}`
+            : `${count} ${unit.label}${count > 1 ? "s" : ""}`
+        );
         remainingDuration %= unit.value;
       }
     }
 
-    return parts.join(", ") || "0 seconds";
+    return parts.join(options?.compact ? " " : ", ") || "0 seconds";
   }
 }

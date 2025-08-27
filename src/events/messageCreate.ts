@@ -15,19 +15,18 @@ import {
   TextDisplayBuilder,
 } from "discord.js";
 
-import { AnchorUtility } from "../utilities/anchor";
-import { AutoSlowUtility } from "../utilities/autoSlow";
-import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
-import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
 import { EventLoader } from "lib/core/loader/EventLoader";
-import { LinkHandlerUtility } from "../utilities/linkHandler";
+import XpManager from "lib/core/XpManager";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
-import { Times } from "types/index";
 import { TriggerModel } from "models/Trigger";
-import XpManager from "lib/core/XpManager";
 import { XpModel } from "models/Xp";
+import { AnchorUtility } from "../utilities/anchor";
+import { AutoSlowUtility } from "../utilities/autoSlow";
+import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
+import { LinkHandlerUtility } from "../utilities/linkHandler";
 
 const chainStops = ["muck"];
 const chainIgnoredChannels = ["594178859453382696", "970968834372698163"];
@@ -37,10 +36,6 @@ const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
 const CHAIN_WARN_THRESHOLD = 3;
 const CHAIN_DELETION_LOG_CHANNEL_ID = "989203228749099088";
 
-const XP_CONFIG = {
-  cooldown: Times.MINUTE,
-  xpPerMessage: 3,
-};
 export default class MessageCreate extends EventLoader {
   constructor(client: DsuClient) {
     super(client, "messageCreate");
@@ -436,13 +431,13 @@ export default class MessageCreate extends EventLoader {
         userId: message.author.id,
         $or: [
           { lastXpTimestamp: { $exists: false } },
-          { lastXpTimestamp: { $lt: Date.now() - XP_CONFIG.cooldown } },
+          { lastXpTimestamp: { $lt: Date.now() - XpManager.EXP_COOLDOWN } },
         ],
       },
       {
         $inc: {
           messageCount: 1,
-          expAmount: XP_CONFIG.xpPerMessage,
+          expAmount: XpManager.EXP_PER_MESSAGE,
         },
         $set: {
           lastXpTimestamp: Date.now(),
