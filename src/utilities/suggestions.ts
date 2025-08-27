@@ -26,8 +26,7 @@ export class SuggestionUtility {
   }
 
   static async approve(interaction: MessageContextMenuCommandInteraction) {
-    const userId = interaction.user.id;
-    const messageId = this.modalContextCache.get(userId);
+    const messageId = interaction.targetMessage.id;
 
     if (!messageId) {
       return interaction.reply({
@@ -36,7 +35,6 @@ export class SuggestionUtility {
       });
     }
 
-    this.modalContextCache.delete(userId);
 
     const suggestionConfig = await SuggestionConfigModel.findOne({
       guildId: interaction.guildId,
@@ -272,7 +270,7 @@ export class SuggestionUtility {
 
   static generateDenialEmbed(content: string, reason?: string) {
     return {
-      title: `Submission Denied: \`${reason ?? "No reason specified"}\``,
+      title: `Submission Denied! The reason is: \`${reason ?? "No reason specified"}\``,
       color: clientConfig.colors.error,
       description: `Suggestion: \n ${content}`,
     } as APIEmbed;
