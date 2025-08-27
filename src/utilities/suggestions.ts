@@ -26,8 +26,7 @@ export class SuggestionUtility {
   }
 
   static async approve(interaction: MessageContextMenuCommandInteraction) {
-    const userId = interaction.user.id;
-    const messageId = this.modalContextCache.get(userId);
+    const messageId = interaction.targetMessage.id;
 
     if (!messageId) {
       return interaction.reply({
@@ -35,8 +34,6 @@ export class SuggestionUtility {
         flags: MessageFlags.Ephemeral,
       });
     }
-
-    this.modalContextCache.delete(userId);
 
     const suggestionConfig = await SuggestionConfigModel.findOne({
       guildId: interaction.guildId,
