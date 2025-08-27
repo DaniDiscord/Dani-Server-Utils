@@ -229,7 +229,7 @@ export interface ISuggestionConfig extends RawSuggestionConfig, Document {}
 export interface ISuggestion extends Document {
   messageId: string;
   content: string;
-  status: "approved" | "pending";
+  status: "approved" | "pending" | "denied";
   userId: string;
 }
 
