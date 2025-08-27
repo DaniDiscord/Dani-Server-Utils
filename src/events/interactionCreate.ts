@@ -107,45 +107,48 @@ export default class InteractionCreate extends EventLoader {
       );
 
       if (interaction.isCommand()) {
-        if (!cooldowns.has(interaction.commandName) && permLevel < PermissionLevels.MODERATOR) {
-          cooldowns.set(interaction.commandName, new Collection());
-        }
 
         const command = this.client.applicationCommandLoader.fetchCommand(
           interaction.commandName,
         );
+        
         if (!command) {
           return this.client.logger.error(
             `Exception: Cannot find command to add cooldown (${interaction.commandName})`,
           );
         }
-        const now = Date.now();
-        const timestamps = this.client.applicationCommandLoader.cooldowns.get(
-          interaction.commandName,
-        );
-
-        if (!timestamps) {
-          return this.client.logger.error(`Exception: No timestamp exists.`);
-        }
-        const cooldownTimer = (command.options.cooldown ?? 0) * 1000;
-
-        if (timestamps?.has(interaction.user.id)) {
-          const expiration = timestamps.get(interaction.user.id) ?? 0 + cooldownTimer;
-          if (now < expiration) {
-            return interaction.reply({
-              flags: [MessageFlags.Ephemeral],
-              embeds: [
-                DefaultClientUtilities.generateEmbed("error", {
-                  title: "Command on cooldown",
-                  description: `Try again in <t:${Math.round(expiration / 1000)}:R>`,
-                }),
-              ],
-            });
+        if (permLevel < PermissionLevels.MODERATOR) {
+          if (!cooldowns.has(interaction.commandName)) {
+            cooldowns.set(interaction.commandName, new Collection());
           }
-        }
+          const now = Date.now();
+          const timestamps = this.client.applicationCommandLoader.cooldowns.get(
+            interaction.commandName,
+          );
 
-        timestamps.set(interaction.user.id, now);
-        setTimeout(() => timestamps.delete(interaction.user.id), cooldownTimer);
+          if (!timestamps) {
+            return this.client.logger.error(`Exception: No timestamp exists.`);
+          }
+          const cooldownTimer = (command.options.cooldown ?? 0) * 1000;
+
+          if (timestamps?.has(interaction.user.id)) {
+            const expiration = timestamps.get(interaction.user.id) ?? 0 + cooldownTimer;
+            if (now < expiration) {
+              return interaction.reply({
+                flags: [MessageFlags.Ephemeral],
+                embeds: [
+                  DefaultClientUtilities.generateEmbed("error", {
+                    title: "Command on cooldown",
+                    description: `Try again in <t:${Math.round(expiration / 1000)}:R>`,
+                  }),
+                ],
+              });
+            }
+          }
+
+          timestamps.set(interaction.user.id, now);
+          setTimeout(() => timestamps.delete(interaction.user.id), cooldownTimer);
+        }
 
         this.client.applicationCommandLoader.handle(interaction);
       } else if (interaction.isButton()) {
