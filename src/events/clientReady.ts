@@ -7,9 +7,9 @@ import { SettingsModel } from "models/Settings";
 import { Times } from "types/index";
 import _ from "lodash";
 
-export default class Ready extends EventLoader {
+export default class ClientReady extends EventLoader {
   constructor(client: DsuClient) {
-    super(client, "ready");
+    super(client, "clientReady");
   }
 
   private async ensureGuildConfig(

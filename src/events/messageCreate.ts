@@ -24,7 +24,10 @@ import { EventLoader } from "lib/core/loader/EventLoader";
 import { LinkHandlerUtility } from "../utilities/linkHandler";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
+import { Times } from "types/index";
 import { TriggerModel } from "models/Trigger";
+import XpManager from "lib/core/XpManager";
+import { XpModel } from "models/Xp";
 
 const chainStops = ["muck"];
 const chainIgnoredChannels = ["594178859453382696", "970968834372698163"];
@@ -33,6 +36,11 @@ const CHAIN_DETECTION_LENGTH = 5;
 const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
 const CHAIN_WARN_THRESHOLD = 3;
 const CHAIN_DELETION_LOG_CHANNEL_ID = "989203228749099088";
+
+const XP_CONFIG = {
+  cooldown: Times.MINUTE,
+  xpPerMessage: 3,
+};
 export default class MessageCreate extends EventLoader {
   constructor(client: DsuClient) {
     super(client, "messageCreate");
@@ -46,9 +54,11 @@ export default class MessageCreate extends EventLoader {
           "Internal error: data does not exist inside automod message;",
         );
       }
-      if (content.match(/discord\.gg\/([a-zA-Z0-9]+)/g)) {
-        const matches = [...content.matchAll(/discord\.gg\/([a-zA-Z0-9]+)/g)];
 
+      const DISCORD_INVITE_PATTERNS =
+        /(?:https?:\/\/)?(?:discord\.gg|discord(?:app)?\.com\/invite)\/([\w-]+)/gi;
+      if (content.match(DISCORD_INVITE_PATTERNS)) {
+        const matches = [...content.matchAll(DISCORD_INVITE_PATTERNS)];
         matches.forEach(async (match) => {
           const code = match[1];
           try {
@@ -418,6 +428,35 @@ export default class MessageCreate extends EventLoader {
           break; // Don't want multiple triggers on a single message
         }
       }
+    }
+
+    const result = await XpModel.findOneAndUpdate(
+      {
+        guildId: message.guild.id,
+        userId: message.author.id,
+        $or: [
+          { lastXpTimestamp: { $exists: false } },
+          { lastXpTimestamp: { $lt: Date.now() - XP_CONFIG.cooldown } },
+        ],
+      },
+      {
+        $inc: {
+          messageCount: 1,
+          expAmount: XP_CONFIG.xpPerMessage,
+        },
+        $set: {
+          lastXpTimestamp: Date.now(),
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      },
+    );
+
+    if (!result) {
+      return;
     }
 
     this.client.textCommandLoader.handle(message);
