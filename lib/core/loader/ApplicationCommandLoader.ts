@@ -8,13 +8,13 @@ import {
   RESTPostAPIApplicationCommandsJSONBody,
 } from "discord.js";
 
-import { BaseInteractionLoader } from "./BaseInteractionLoader";
-import { CustomApplicationCommand } from "../command";
-import DefaultClientUtilities from "lib/util/defaultUtilities";
-import { DsuClient } from "../DsuClient";
-import { InteractionType } from "types/commands";
-import path from "path";
 import { readdirSync } from "fs";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
+import path from "path";
+import { InteractionType } from "types/commands";
+import { CustomApplicationCommand } from "../command";
+import { DsuClient } from "../DsuClient";
+import { BaseInteractionLoader } from "./BaseInteractionLoader";
 
 export class ApplicationCommandLoader extends BaseInteractionLoader {
   public cooldowns = new Collection<string, Collection<string, number>>();
@@ -108,10 +108,12 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
     commandData: RESTPostAPIApplicationCommandsJSONBody[],
   ) {
     try {
+      this.client.logger.info(commandData);
       await this.client.application?.commands.set(commandData);
       this.client.logger.info(`Registered global commands.`);
     } catch (error) {
-      this.client.logger.error(`Failed to register global commands:`, error);
+      this.client.logger.error(`Failed to register global commands:`);
+      this.client.logger.error(error);
     }
   }
 
@@ -137,7 +139,8 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
 
           this.client.applicationCommands.set(command.name, command);
         } catch (error) {
-          this.client.logger.error(`Error loading command from ${file}:`, error);
+          this.client.logger.error(`Error loading command from ${file}:`);
+          this.client.logger.error(error);
         }
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

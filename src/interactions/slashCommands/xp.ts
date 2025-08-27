@@ -9,25 +9,28 @@ import {
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import XpManager from "lib/core/XpManager";
-import { XpModel } from "models/Xp";
 import { generateXpCard } from "lib/util/xpCard";
+import { XpModel } from "models/Xp";
+import { PermissionLevels } from "types/commands";
 
 export default class XpCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("xp", client, {
       type: ApplicationCommandType.ChatInput,
       description: "Check xp",
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
       applicationData: [
         {
           type: ApplicationCommandOptionType.Subcommand,
           name: "get",
           description: "Show your current xp level!",
+          level: PermissionLevels.USER
         },
         {
           type: ApplicationCommandOptionType.Subcommand,
           name: "leaderboard",
           description: "Show the XP leaderboard!",
+          level: PermissionLevels.USER,
           options: [
             {
               name: "limit",
@@ -42,6 +45,7 @@ export default class XpCommand extends CustomApplicationCommand {
           type: ApplicationCommandOptionType.Subcommand,
           name: "calcxp",
           description: "Calculate time needed to reach a level!",
+          level: PermissionLevels.USER,
           options: [
             {
               name: "level",
