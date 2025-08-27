@@ -11,12 +11,12 @@ import {
 import { SuggestionConfigModel, SuggestionModel } from "models/Suggestion";
 
 import { CustomApplicationCommand } from "lib/core/command";
-import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { PermissionLevels } from "types/commands";
+import { Times } from "types/index";
 import { SuggestionUtility } from "../../utilities/suggestions";
 import { TimeParserUtility } from "../../utilities/timeParser";
-import { Times } from "types/index";
 
 export default class SuggestionsCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -132,7 +132,7 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
       case "config":
         return this.handleConfig(interaction);
       case "create":
-        return this.handleCreate(interaction);
+        return this.handleCreate(interaction, permLevel);
       case "ban":
         return this.handleBan(interaction);
       case "unban":
@@ -235,7 +235,7 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
     });
   }
 
-  private async handleCreate(interaction: ChatInputCommandInteraction) {
+  private async handleCreate(interaction: ChatInputCommandInteraction, permLevel: PermissionLevels) {
     const defaultUtility = DefaultClientUtilities;
 
     const content = interaction.options.getString("suggestion", true);
@@ -275,28 +275,31 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
       cooldowns.set(commandName, new Collection());
     }
 
-    const timestamps = cooldowns.get(commandName)!;
-    const now = Date.now();
-    const cooldownAmount = config.cooldown;
+    // only if permlevel is under mod
+    if (permLevel < PermissionLevels.MODERATOR) {
+      const timestamps = cooldowns.get(commandName)!;
+      const now = Date.now();
+      const cooldownAmount = config.cooldown;
 
-    const expirationTime = timestamps.get(interaction.user.id) ?? 0;
+      const expirationTime = timestamps.get(interaction.user.id) ?? 0;
 
-    if (now < expirationTime) {
-      const timeLeft = Math.ceil((expirationTime - now) / 1000);
-      return interaction.reply({
-        embeds: [
-          defaultUtility.generateEmbed("error", {
-            title: "You're on cooldown!",
-            description: `Please wait **${timeLeft}s** before using this again.`,
-          }),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
+      if (now < expirationTime) {
+        const timeLeft = Math.ceil((expirationTime - now) / 1000);
+        return interaction.reply({
+          embeds: [
+            defaultUtility.generateEmbed("error", {
+              title: "You're on cooldown!",
+              description: `Please wait **${timeLeft}s** before using this again.`,
+            }),
+          ],
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+
+      timestamps.set(interaction.user.id, now + cooldownAmount);
     }
 
     await interaction.deferReply({ flags: "Ephemeral" });
-
-    timestamps.set(interaction.user.id, now + cooldownAmount);
 
     await SuggestionUtility.sendAnonymousSuggestion(interaction, content, config);
 
