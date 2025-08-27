@@ -1,6 +1,6 @@
 {
   "name": "dani-server-utils",
-  "version": "1.6.10",
+  "version": "1.6.11",
   "description": "The Dani Discord (discord.gg/danii) server bot!",
   "main": "src/client.ts",
   "scripts": {
