@@ -206,13 +206,13 @@ export default class XpCommand extends CustomApplicationCommand {
       .addFields(
         { name: "Total XP Required", value: totalXp.toLocaleString(), inline: true },
         {
-          name: "XP Needed",
-          value: xpNeeded > 0 ? xpNeeded.toLocaleString() : "Already reached",
+          name: "Current Progress",
+          value: `Level ${currentLevel} (${currentXp} XP)`,
           inline: true,
         },
         {
-          name: "Current Progress",
-          value: `Level ${currentLevel} (${currentXp} XP)`,
+          name: "XP Needed",
+          value: xpNeeded > 0 ? xpNeeded.toLocaleString() : "Already reached",
           inline: true,
         },
         { name: "Time Investment (Total)", value: timeString || "0 minutes", inline: true },

@@ -50,11 +50,12 @@ export default class XpManager {
   }
 
   private digestExp(total: number): DigestResult {
-    const ret: DigestResult = { totalExp: total, exp: total, level: 0, next: 100 };
+    const ret: DigestResult = { totalExp: total, exp: total, level: 0, next: this.formula(0) };
 
-    for (let i = 0; ret.exp >= ret.next; i++, ret.level++) {
+    while (ret.exp >= ret.next) {
       ret.exp -= ret.next;
-      ret.next = this.formula(i + 1);
+      ret.next = this.formula(ret.level); 
+      ret.level++;
     }
 
     return ret;
