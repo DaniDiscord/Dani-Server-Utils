@@ -13,6 +13,7 @@ RUN bun install
 
 COPY lib/ ./lib/
 COPY src/ ./src/
+COPY img/ ./img/
 COPY .env ./
 
 COPY tsconfig.json ./
