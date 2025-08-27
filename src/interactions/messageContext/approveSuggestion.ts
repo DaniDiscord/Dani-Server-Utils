@@ -12,10 +12,11 @@ import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
 import { Question } from "lib/util/questions";
 import { SuggestionUtility } from "../../utilities/suggestions";
+import { SuggestionModel } from "models/Suggestion";
 
-export default class Codeblock extends CustomApplicationCommand {
+export default class ApproveSuggestion extends CustomApplicationCommand {
   constructor(client: DsuClient) {
-    super("Deny Suggestion", client, {
+    super("Approve Suggestion", client, {
       type: ApplicationCommandType.Message,
       permissionLevel: PermissionLevels.MODERATOR,
       defaultMemberPermissions: null,
@@ -23,10 +24,10 @@ export default class Codeblock extends CustomApplicationCommand {
   }
 
   async run(interaction: MessageContextMenuCommandInteraction) {
-    const isSuggestion = await SuggestionUtility.isSuggestionMessage(
+    const suggestion = await SuggestionUtility.isSuggestionMessage(
       interaction.targetMessage,
     );
-    if (!isSuggestion) {
+    if (!suggestion.exists || !suggestion.model) {
       return interaction.reply({
         embeds: [
           DefaultClientUtilities.generateEmbed("error", {
@@ -37,24 +38,21 @@ export default class Codeblock extends CustomApplicationCommand {
         flags: MessageFlags.Ephemeral,
       });
     }
-    const modal = new ModalBuilder()
-      .setCustomId("denysubmission")
-      .setTitle("Deny Submission");
+   
+    
+    if(suggestion.model.status !== "pending") {
+      return interaction.reply({
+        embeds: [
+          DefaultClientUtilities.generateEmbed("error", {
+            title: "Command cannot be used.",
+            description: "This suggestion has already been handled.",
+          }),
+        ],
+        flags: MessageFlags.Ephemeral,
+      });
+    } 
 
-    const submissionDenialQuestion = new Question(
-      "reason",
-      "Reason for denial",
-      false,
-      TextInputStyle.Paragraph,
-    );
 
-    SuggestionUtility.modalContextCache.set(
-      interaction.user.id,
-      interaction.targetMessage.id,
-    );
-
-    modal.addComponents(submissionDenialQuestion.toActionRow());
-
-    await interaction.showModal(modal);
+    SuggestionUtility.approve(interaction);
   }
 }

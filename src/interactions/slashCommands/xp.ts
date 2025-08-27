@@ -4,7 +4,6 @@ import {
   AttachmentBuilder,
   ChatInputCommandInteraction,
   EmbedBuilder,
-  MessageFlags
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";

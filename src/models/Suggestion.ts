@@ -29,7 +29,7 @@ export const SuggestionConfigModel: Model<ISuggestionConfig> = model(
 const SuggestionSchema = new Schema<ISuggestion>({
   messageId: { type: String, required: true },
   content: { type: String, required: true },
-  status: { type: String, enum: ["approved", "pending"], required: true },
+  status: { type: String, enum: ["approved", "pending", "denied"], required: true },
   userId: { type: String, required: true },
 });
 

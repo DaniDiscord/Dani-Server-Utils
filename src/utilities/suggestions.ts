@@ -4,6 +4,7 @@ import {
   ChatInputCommandInteraction,
   GuildTextBasedChannel,
   Message,
+  MessageContextMenuCommandInteraction,
   MessageFlags,
   ModalSubmitInteraction,
   TextChannel,
@@ -21,7 +22,70 @@ export class SuggestionUtility {
   static async isSuggestionMessage(target: Message) {
     const model = await SuggestionModel.findOne({ messageId: target.id });
 
-    return !!model;
+    return { exists: !!model, model };
+  }
+
+  static async approve(interaction: MessageContextMenuCommandInteraction) {
+    const userId = interaction.user.id;
+    const messageId = this.modalContextCache.get(userId);
+
+    if (!messageId) {
+      return interaction.reply({
+        content: "No suggestion context found. Try again.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    this.modalContextCache.delete(userId);
+
+    const suggestionConfig = await SuggestionConfigModel.findOne({
+      guildId: interaction.guildId,
+    });
+
+    if (!suggestionConfig) {
+      return interaction.reply({
+        content: "Suggestion config not found.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    const suggestion = await SuggestionModel.findOne({ messageId });
+
+    if (!suggestion) {
+      return interaction.reply({
+        content: "Suggestion not found.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    const originalChannel = await interaction.guild!.channels.fetch(
+      suggestionConfig.channelId,
+    );
+    const originalMessage = await (originalChannel as TextChannel).messages.fetch(
+      messageId,
+    );
+
+    if (!originalMessage) {
+      return interaction.reply({
+        content: "Original message not found.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    await originalMessage.thread?.setLocked(true);
+
+    await originalMessage.reactions.removeAll();
+    await originalMessage.edit({
+      embeds: [this.generateApprovalEmbed(suggestion.content)],
+    });
+
+    await suggestion.updateOne({ status: "approved" });
+
+    await suggestionConfig.save();
+
+    await interaction.reply({
+      content: "Suggestion appoved!",
+      flags: MessageFlags.Ephemeral,
+    });
   }
 
   static async deny(interaction: ModalSubmitInteraction, reason: string) {
@@ -92,6 +156,8 @@ export class SuggestionUtility {
       messageId,
       reason,
     });
+
+    await suggestion.updateOne({ status: "denied" });
 
     await suggestionConfig.save();
 
@@ -188,10 +254,18 @@ export class SuggestionUtility {
     }
   }
 
+
+  static generateApprovalEmbed(content: string) {
+    return {
+      title: "Approved suggested!", 
+      color: clientConfig.colors.success, 
+      description: `${content}`
+    } as APIEmbed;
+  }
   static generateAnonymousEmbed(content: string) {
     return {
       title: "New Suggestion",
-      color: clientConfig.colors.success,
+      color: clientConfig.colors.primary,
       description: `${content}`,
     } as APIEmbed;
   }
