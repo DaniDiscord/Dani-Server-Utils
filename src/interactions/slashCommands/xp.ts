@@ -210,6 +210,11 @@ export default class XpCommand extends CustomApplicationCommand {
           value: xpNeeded > 0 ? xpNeeded.toLocaleString() : "Already reached",
           inline: true,
         },
+        {
+          name: "Current Progress",
+          value: `Level ${currentLevel} (${currentXp} XP)`,
+          inline: true,
+        },
         { name: "Time Investment (Total)", value: timeString || "0 minutes", inline: true },
         {
           name: "Time Spent",
@@ -219,16 +224,6 @@ export default class XpCommand extends CustomApplicationCommand {
         {
           name: "Time Left",
           value: timeLeft || "0 minutes",
-          inline: true,
-        },
-        {
-          name: "Next Level",
-          value: `Requires: ${nextXp.toLocaleString()} XP`,
-          inline: true,
-        },
-        {
-          name: "Current Progress",
-          value: `Level ${currentLevel} (${currentXp} XP)`,
           inline: true,
         },
       );

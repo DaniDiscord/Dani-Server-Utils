@@ -13,7 +13,7 @@ export default class XpManager {
   public formula: (levelIndex: number) => number;
   public totalExp = 0;
   public exp = 0;
-  public level = 1;
+  public level = 0;
   public next = 100;
   public levelUp = false;
   public levelDown = false;
@@ -50,22 +50,11 @@ export default class XpManager {
   }
 
   private digestExp(total: number): DigestResult {
-    const ret: DigestResult = { totalExp: total, exp: total, level: 1, next: 100 };
+    const ret: DigestResult = { totalExp: total, exp: total, level: 0, next: 100 };
 
     for (let i = 0; ret.exp >= ret.next; i++, ret.level++) {
       ret.exp -= ret.next;
-      ret.next = this.formula(i);
-    }
-
-    return ret;
-  }
-
-  public digestLevel(levelNumber: number): DigestResult {
-    const ret: DigestResult = { totalExp: 0, exp: 0, level: levelNumber, next: 100 };
-
-    for (let i = 0; i < levelNumber; i++) {
-      ret.totalExp += ret.next;
-      ret.next = this.formula(i);
+      ret.next = this.formula(i + 1);
     }
 
     return ret;
