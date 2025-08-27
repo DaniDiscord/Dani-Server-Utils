@@ -1,12 +1,13 @@
-import { Collection, Interaction, InteractionType, MessageFlags } from "discord.js";
+import { Collection, GuildMember, Interaction, InteractionType, MessageFlags } from "discord.js";
 
-import { AutoPingUtility } from "../utilities/autoPing";
-import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader/EventLoader";
-import { ISettings } from "types/mongodb";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
+import { PermissionLevels } from "types/commands";
+import { ISettings } from "types/mongodb";
+import { AutoPingUtility } from "../utilities/autoPing";
 
 export default class InteractionCreate extends EventLoader {
   constructor(client: DsuClient) {
@@ -100,8 +101,13 @@ export default class InteractionCreate extends EventLoader {
         }`,
       );
 
+      const permLevel = this.client.getPermLevel(
+        undefined,
+        interaction.member as GuildMember,
+      );
+
       if (interaction.isCommand()) {
-        if (!cooldowns.has(interaction.commandName)) {
+        if (!cooldowns.has(interaction.commandName) && permLevel < PermissionLevels.MODERATOR) {
           cooldowns.set(interaction.commandName, new Collection());
         }
 
