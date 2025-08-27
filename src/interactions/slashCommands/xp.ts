@@ -3,7 +3,8 @@ import {
   ApplicationCommandType,
   AttachmentBuilder,
   ChatInputCommandInteraction,
-  EmbedBuilder
+  EmbedBuilder,
+  MessageFlags
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
@@ -14,6 +15,9 @@ import { XpModel } from "models/Xp";
 import { PermissionLevels } from "types/commands";
 import { Times } from "types/index";
 import { TimeParserUtility } from "../../utilities/timeParser";
+
+
+const BOT_COMMANDS_CHANNEL  = "594178859453382696"
 
 export default class XpCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -100,7 +104,13 @@ export default class XpCommand extends CustomApplicationCommand {
         });
 
         const attachment = new AttachmentBuilder(buf, { name: "xp_card.png" });
-        await interaction.reply({ files: [attachment] });
+
+        
+        if(interaction.channelId !== BOT_COMMANDS_CHANNEL) {
+          await interaction.reply({ files: [attachment], flags: "Ephemeral" });
+        } else {
+          await interaction.reply({ files: [attachment] });
+        }
         break;
 
       case "leaderboard":
@@ -146,8 +156,11 @@ export default class XpCommand extends CustomApplicationCommand {
             text: `Total participants: ${await XpModel.countDocuments({ guildId: interaction.guildId })}`,
           });
 
-        await interaction.reply({ embeds: [embed] });
-        break;
+        if(interaction.channelId !== BOT_COMMANDS_CHANNEL) {
+          await interaction.reply({ embeds: [embed], flags: "Ephemeral" });
+        } else {
+          await interaction.reply({ embeds: [embed] });
+        }        break;
 
       case "calc":
         const targetLevel = interaction.options.getNumber("level", true);
