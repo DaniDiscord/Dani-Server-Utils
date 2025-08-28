@@ -65,6 +65,7 @@ export default class XpCommand extends CustomApplicationCommand {
               description: "Target level to calculate",
               type: ApplicationCommandOptionType.Number,
               min_value: 1,
+              max_value: 100,
               required: true,
             },
             {
