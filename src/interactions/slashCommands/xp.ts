@@ -3,7 +3,7 @@ import {
   ApplicationCommandType,
   AttachmentBuilder,
   ChatInputCommandInteraction,
-  EmbedBuilder,  
+  EmbedBuilder,
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
@@ -164,6 +164,18 @@ export default class XpCommand extends CustomApplicationCommand {
       case "calc":
         const targetLevel = interaction.options.getNumber("level", true);
         const user = interaction.options.getUser("user") ?? interaction.user;
+
+        if(targetLevel > 100) {
+          await interaction.reply({
+            embeds: [
+              new EmbedBuilder()
+                .setColor("#ff0000")
+                .setDescription("Level cap is 100."),
+            ],
+            ephemeral: true,
+          });
+          return;
+        }
 
         const xpEmbed = await this.generateXpCalculation(targetLevel, user.id, interaction.guildId);
         await interaction.reply({ embeds: [xpEmbed], flags: "Ephemeral" });
