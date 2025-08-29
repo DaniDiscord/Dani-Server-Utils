@@ -1,5 +1,7 @@
 import { CanvasRenderingContext2D, createCanvas, loadImage } from "canvas";
 
+import { parse } from "twemoji-parser";
+
 export interface IGenerateXpCardProps {
   username: string;
   avatarURL: string;
@@ -109,9 +111,7 @@ export async function generateXpCard({
   const usernameX = 325;
   const nameY = 100;
 
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 36px Liberation Sans";
-  ctx.fillText(username.charAt(0).toUpperCase() + username.slice(1), usernameX, nameY);
+  await drawTextWithEmojis(ctx, username, usernameX, nameY, 36);
 
   // Role Icon
   const nearestRole = Math.floor(level / 5) * 5;
@@ -207,4 +207,52 @@ function drawRoundedRect(
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
+}
+
+export async function drawTextWithEmojis(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number = 36,
+  color: string = "#ffffff",
+) {
+  ctx.font = `bold ${fontSize}px Liberation Sans`;
+  ctx.textBaseline = "alphabetic";
+
+  let cursorX = x;
+
+  const parts = text.split(/(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu);
+
+  for (const part of parts) {
+    if (!part) continue;
+
+    const parsed = parse(part);
+    if (parsed.length > 0) {
+      // It's an emoji
+      const emoji = parsed[0];
+      const codepoint = Array.from(emoji.text)
+        .map((c) => c.codePointAt(0)!.toString(16))
+        .join("-");
+      const url = `https://twemoji.maxcdn.com/v/latest/72x72/${codepoint}.png`;
+
+      try {
+        const img = await loadImage(url);
+
+        const size = fontSize * 1.1;
+        const offsetY = y - fontSize * 0.85;
+
+        ctx.drawImage(img, cursorX, offsetY, size, size);
+        cursorX += size;
+      } catch (err) {
+        console.warn("Failed to load emoji:", part, err);
+      }
+    } else {
+      ctx.fillStyle = color;
+      ctx.fillText(part, cursorX, y);
+      cursorX += ctx.measureText(part).width;
+    }
+  }
+
+  return cursorX;
 }

@@ -1,22 +1,20 @@
 import {
+  APIEmbed,
   ApplicationCommandOptionType,
   ApplicationCommandType,
   AttachmentBuilder,
   ChatInputCommandInteraction,
-  EmbedBuilder,
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import XpManager from "lib/core/XpManager";
-import { generateXpCard } from "lib/util/xpCard";
-import { XpModel } from "models/Xp";
 import { PermissionLevels } from "types/commands";
-import { Times } from "types/index";
 import { TimeParserUtility } from "../../utilities/timeParser";
+import XpManager from "lib/core/XpManager";
+import { XpModel } from "models/Xp";
+import { generateXpCard } from "lib/util/xpCard";
 
-
-const BOT_COMMANDS_CHANNEL  = "594178859453382696"
+const BOT_COMMANDS_CHANNEL = "594178859453382696";
 
 export default class XpCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -72,7 +70,7 @@ export default class XpCommand extends CustomApplicationCommand {
               description: "The user to check the XP level for.",
               type: ApplicationCommandOptionType.User,
               required: false,
-            }
+            },
           ],
         },
       ],
@@ -82,9 +80,9 @@ export default class XpCommand extends CustomApplicationCommand {
   async run(interaction: ChatInputCommandInteraction) {
     const subcommand = interaction.options.getSubcommand();
     switch (subcommand) {
-      case "get":
-        const getUser = interaction.options.getUser("user") ?? interaction.user;
-        const xpModel = await this.getOrCreateXpModel(interaction.guildId!, getUser.id);
+      case "get": {
+        const user = interaction.options.getUser("user") ?? interaction.user;
+        const xpModel = await this.getOrCreateXpModel(interaction.guildId!, user.id);
         const xpManager = new XpManager(xpModel.expAmount);
 
         const rank =
@@ -93,26 +91,26 @@ export default class XpCommand extends CustomApplicationCommand {
             expAmount: { $gt: xpModel.expAmount },
           })) + 1;
 
+        console.log(xpManager.next);
         const buf = await generateXpCard({
-          username: getUser.username,
-          avatarURL: getUser.displayAvatarURL({ extension: "png", size: 256 }),
+          username: user.displayName,
+          avatarURL: user.displayAvatarURL({ extension: "png", size: 256 }),
           level: xpManager.level,
           xp: xpManager.exp,
-          xpNeeded: xpManager.next,
+          xpNeeded: xpManager.exp + xpManager.next,
           rank,
         });
 
         const attachment = new AttachmentBuilder(buf, { name: "xp_card.png" });
 
-        
-        if(interaction.channelId !== BOT_COMMANDS_CHANNEL) {
+        if (interaction.channelId !== BOT_COMMANDS_CHANNEL) {
           await interaction.reply({ files: [attachment], flags: "Ephemeral" });
         } else {
           await interaction.reply({ files: [attachment] });
         }
         break;
-
-      case "leaderboard":
+      }
+      case "leaderboard": {
         const limit = Math.min(interaction.options.getNumber("limit") ?? 10, 25);
         const topUsers = await XpModel.find({ guildId: interaction.guildId })
           .select("userId expAmount")
@@ -122,9 +120,10 @@ export default class XpCommand extends CustomApplicationCommand {
         if (topUsers.length === 0) {
           return interaction.reply({
             embeds: [
-              new EmbedBuilder()
-                .setColor("#ff0000")
-                .setDescription("No XP data available for this server yet."),
+              {
+                color: this.client.config.colors.error,
+                description: "No XP data available for this server yet.",
+              },
             ],
             ephemeral: true,
           });
@@ -147,111 +146,109 @@ export default class XpCommand extends CustomApplicationCommand {
           )
           .join("\n");
 
-        const embed = new EmbedBuilder()
-          .setTitle(`${interaction.guild?.name}'s XP Leaderboard`)
-          .setDescription(leaderboardText)
-          .setColor("#00ff00")
-          .setFooter({
+        const embed = {
+          title: `${interaction.guild?.name}'s XP Leaderboard`,
+          description: leaderboardText,
+          color: this.client.config.colors.primary,
+          footer: {
             text: `Total participants: ${await XpModel.countDocuments({ guildId: interaction.guildId })}`,
-          });
-
-        if(interaction.channelId !== BOT_COMMANDS_CHANNEL) {
+          },
+        };
+        if (interaction.channelId !== BOT_COMMANDS_CHANNEL) {
           await interaction.reply({ embeds: [embed], flags: "Ephemeral" });
         } else {
           await interaction.reply({ embeds: [embed] });
-        }        break;
+        }
+        break;
+      }
 
-      case "calc":
+      case "calc": {
         const targetLevel = interaction.options.getNumber("level", true);
         const user = interaction.options.getUser("user") ?? interaction.user;
+        const xpModel = await XpModel.findOne({
+          guildId: interaction.guildId,
+          userId: user.id,
+        });
 
-        if(targetLevel > 100) {
-          await interaction.reply({
+        if (!xpModel) {
+          return interaction.reply({
             embeds: [
-              new EmbedBuilder()
-                .setColor("#ff0000")
-                .setDescription("Level cap is 100."),
+              {
+                color: this.client.config.colors.error,
+                description: "User has no XP data yet.",
+              },
             ],
             ephemeral: true,
           });
-          return;
         }
 
-        const xpEmbed = await this.generateXpCalculation(targetLevel, user.id, interaction.guildId);
-        await interaction.reply({ embeds: [xpEmbed], flags: "Ephemeral" });
-        break;
+        const xpManager = new XpManager(xpModel.expAmount);
+        const targetResult = xpManager.digestLevel(targetLevel);
+        const currentResult = xpManager.digestExp(xpModel.expAmount);
+        const xpNeeded = targetResult.next;
+        const messagesNeeded = Math.ceil(xpNeeded / XpManager.EXP_PER_MESSAGE);
+        const timeLeftMs = messagesNeeded * XpManager.EXP_COOLDOWN;
+
+        const totalMessages = Math.ceil(
+          (xpManager.totalExp + xpNeeded) / XpManager.EXP_PER_MESSAGE,
+        );
+        const totalTimeMs = totalMessages * XpManager.EXP_COOLDOWN;
+        const messagesSoFar = Math.ceil(xpManager.totalExp / XpManager.EXP_PER_MESSAGE);
+        const timeSpentMs = messagesSoFar * XpManager.EXP_COOLDOWN;
+
+        const timeString = TimeParserUtility.parseDurationToString(totalTimeMs, {
+          allowedUnits: ["day", "hour", "minute"],
+        });
+        const timeSpent = TimeParserUtility.parseDurationToString(timeSpentMs, {
+          allowedUnits: ["day", "hour", "minute"],
+        });
+        const timeLeft = TimeParserUtility.parseDurationToString(timeLeftMs, {
+          allowedUnits: ["day", "hour", "minute"],
+        });
+
+        return interaction.reply({
+          embeds: [
+            {
+              title: `Xp Calculation for Level ${targetLevel}`,
+              color: this.client.config.colors.primary,
+              fields: [
+                {
+                  name: "Current Level",
+                  value: `${currentResult.level}`,
+                  inline: true,
+                },
+                {
+                  name: "Current XP Progress",
+                  value: `${currentResult.totalExp.toLocaleString()} total XP`,
+                  inline: true,
+                },
+                {
+                  name: "XP Needed for Target",
+                  value: `${(targetResult.totalExp - currentResult.totalExp).toLocaleString()} XP`,
+                  inline: true,
+                },
+                {
+                  name: "Target Level Total XP",
+                  value: `${targetResult.totalExp.toLocaleString()} XP`,
+                  inline: true,
+                },
+                {
+                  name: "XP Progress to Target",
+                  value: `${currentResult.totalExp.toLocaleString()} / ${targetResult.totalExp.toLocaleString()} XP`,
+                  inline: true,
+                },
+                {
+                  name: "Time Investment (Total)",
+                  value: timeString || "0 minutes",
+                },
+                { name: "Time Spent", value: timeSpent || "0 minutes" },
+                { name: "Time Left", value: timeLeft || "0 minutes" },
+              ],
+            } as APIEmbed,
+          ],
+        });
+      }
     }
-  }
-
-  private async generateXpCalculation(
-    targetLevel: number,
-    userId: string,
-    guildId: string | null
-  ) {
-    const xpManager = new XpManager(0);
-
-    let totalXp = 0;
-    let nextXp = 0;
-
-    for (let lvl = 0; lvl < targetLevel; lvl++) {
-      nextXp = xpManager.formula(lvl);
-      totalXp += nextXp;
-    }
-
-    const minutesRequired = totalXp / XpManager.EXP_PER_MESSAGE;
-    const timeString = TimeParserUtility.parseDurationToString(minutesRequired * Times.MINUTE, {
-      allowedUnits: ["day", "hour", "minute"],
-    });
-
-    const xpModel = await XpModel.findOne({
-      guildId: guildId,
-      userId: userId,
-    });
-
-    const currentXp = xpModel?.expAmount || 0;
-    const currentLevel = xpModel ? new XpManager(currentXp).level : 0;
-    const xpNeeded = totalXp - currentXp;
-
-    const timeSpentMinutes = currentXp / XpManager.EXP_PER_MESSAGE;
-    const timeSpent = TimeParserUtility.parseDurationToString(timeSpentMinutes * Times.MINUTE, {
-      allowedUnits: ["day", "hour", "minute"],
-    });
-
-    const timeDiffMinutes = Math.abs(xpNeeded) / XpManager.EXP_PER_MESSAGE;
-    const timeDiff = TimeParserUtility.parseDurationToString(timeDiffMinutes * Times.MINUTE, {
-      allowedUnits: ["day", "hour", "minute"],
-    });
-
-    const timeLeft = xpNeeded > 0 ? timeDiff : `Surpassed by ${timeDiff}`;
-
-    const embed = new EmbedBuilder()
-      .setTitle(`XP Calculation for Level ${targetLevel}`)
-      .setColor("#0099ff")
-      .addFields(
-        { name: "Total XP Required", value: totalXp.toLocaleString(), inline: true },
-        {
-          name: "Current Progress",
-          value: `Level ${currentLevel} (${currentXp} XP)`,
-          inline: true,
-        },
-        {
-          name: "XP Needed",
-          value: xpNeeded > 0 ? xpNeeded.toLocaleString() : "Already reached",
-          inline: true,
-        },
-        { name: "Time Investment (Total)", value: timeString || "0 minutes", inline: true },
-        {
-          name: "Time Spent",
-          value: timeSpent || "0 minutes",
-          inline: true,
-        },
-        {
-          name: "Time Left",
-          value: timeLeft || "0 minutes",
-          inline: true,
-        },
-      );
-    return embed;
   }
 
   private async getOrCreateXpModel(guildId: string, userId: string) {
