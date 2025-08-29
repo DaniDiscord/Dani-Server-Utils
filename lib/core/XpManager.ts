@@ -1,4 +1,8 @@
+import { EmbedBuilder } from "discord.js";
+import { TimeParserUtility } from "../../src/utilities/timeParser";
 import { Times } from "types/index";
+import { XpModel } from "models/Xp";
+import { clientConfig } from "lib/config/ClientConfig";
 
 type DigestResult = {
   totalExp: number;
@@ -47,6 +51,61 @@ export default class XpManager {
     else if (result.level < this.level) this.levelDown = true;
     this.applyDigest(result);
     return this;
+  }
+
+  public calculateProgress(target: number) {
+    const currentLevel = this.level;
+    const currentTotalXp = this.totalExp;
+
+    const targetLevel = Math.min(target, 100);
+
+    if (targetLevel <= currentLevel) {
+      return {
+        surpassed: true,
+        currentLevel,
+        xpProgress: `${this.exp.toLocaleString()} / ${this.next.toLocaleString()} XP`,
+        xpNeeded: 0,
+        totalTimeMs: 0,
+        timeSpentMs: 0,
+        timeLeftMs: 0,
+      };
+    }
+
+    let xpProgressDisplay: string;
+    let xpNeeded: number;
+
+    if (targetLevel === currentLevel + 1) {
+      xpProgressDisplay = `${this.exp.toLocaleString()} / ${this.next.toLocaleString()} XP`;
+      xpNeeded = this.next - this.exp;
+    } else {
+      let totalXpToTarget =
+        (5 * targetLevel * (targetLevel + 1) * (2 * targetLevel + 1)) / 6 +
+        25 * targetLevel * (targetLevel + 1) +
+        100 * targetLevel;
+      xpProgressDisplay = `${currentTotalXp.toLocaleString()} / ${totalXpToTarget.toLocaleString()} XP`;
+      xpNeeded = Math.max(0, totalXpToTarget - currentTotalXp);
+    }
+
+    const messagesNeeded = Math.ceil(xpNeeded / XpManager.EXP_PER_MESSAGE);
+    const timeLeftMs = messagesNeeded * XpManager.EXP_COOLDOWN;
+
+    const totalMessages = Math.ceil(
+      (currentTotalXp + xpNeeded) / XpManager.EXP_PER_MESSAGE,
+    );
+    const totalTimeMs = totalMessages * XpManager.EXP_COOLDOWN;
+
+    const messagesSoFar = Math.ceil(currentTotalXp / XpManager.EXP_PER_MESSAGE);
+    const timeSpentMs = messagesSoFar * XpManager.EXP_COOLDOWN;
+
+    return {
+      surpassed: false,
+      currentLevel,
+      xpProgress: xpProgressDisplay,
+      xpNeeded,
+      totalTimeMs,
+      timeSpentMs,
+      timeLeftMs,
+    };
   }
 
   public digestExp(total: number): DigestResult {
