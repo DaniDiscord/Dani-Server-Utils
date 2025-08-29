@@ -149,7 +149,6 @@ export default class MessageCreate extends EventLoader {
     await AnchorUtility.handleAnchor(this.client, message);
 
     await chainHandler.handleMessage(message);
-    this.client.logger.info(chainHandler.getMetrics());
     message.author.permLevel = level;
 
     const foundPhrases = await PhraseMatcherModel.find();

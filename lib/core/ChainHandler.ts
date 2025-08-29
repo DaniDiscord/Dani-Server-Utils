@@ -15,29 +15,15 @@ interface MessageRecord {
   timestamp: number;
 }
 
-interface ChainMetrics {
-  totalMessages: number;
-  totalChains: number;
-  chainsPerUser: Map<string, number>;
-  recentChains: { userId: string; content: string; timestamp: number }[];
-}
-
 export class ChainHandler {
   private windowSize: number;
   private timeout: number;
   private channelMessages: Map<string, Map<string, MessageRecord[]>>;
-  private metrics: ChainMetrics;
 
   constructor(windowSize = 20, timeoutSeconds = 10) {
     this.windowSize = windowSize;
     this.timeout = timeoutSeconds * 1000;
     this.channelMessages = new Map();
-    this.metrics = {
-      totalMessages: 0,
-      totalChains: 0,
-      chainsPerUser: new Map(),
-      recentChains: [],
-    };
   }
 
   private normalize(content: string): string {
@@ -75,8 +61,6 @@ export class ChainHandler {
 
   public async handleMessage(message: Message): Promise<boolean> {
     if (message.author.bot || !message.content?.trim()) return false;
-
-    this.metrics.totalMessages++;
 
     const normalized = this.normalize(message.content);
     const channelId = message.channelId;
@@ -116,13 +100,6 @@ export class ChainHandler {
     if (userMessages.length > this.windowSize) userMessages.shift();
 
     if (isChain) {
-      this.metrics.totalChains++;
-      this.metrics.recentChains.push({ userId, content: normalized, timestamp: now });
-      this.metrics.chainsPerUser.set(
-        userId,
-        (this.metrics.chainsPerUser.get(userId) || 0) + 1,
-      );
-
       const count = userMessages.filter(
         (m) =>
           m.content === normalized ||
@@ -197,14 +174,5 @@ export class ChainHandler {
     }
 
     return false;
-  }
-
-  public getMetrics(): ChainMetrics {
-    return {
-      totalMessages: this.metrics.totalMessages,
-      totalChains: this.metrics.totalChains,
-      chainsPerUser: new Map(this.metrics.chainsPerUser),
-      recentChains: [...this.metrics.recentChains],
-    };
   }
 }
