@@ -49,12 +49,17 @@ export default class XpManager {
     return this;
   }
 
-  private digestExp(total: number): DigestResult {
-    const ret: DigestResult = { totalExp: total, exp: total, level: 0, next: this.formula(0) };
+  public digestExp(total: number): DigestResult {
+    const ret: DigestResult = {
+      totalExp: total,
+      exp: total,
+      level: 0,
+      next: this.formula(0),
+    };
 
     while (ret.exp >= ret.next) {
       ret.exp -= ret.next;
-      ret.next = this.formula(ret.level); 
+      ret.next = this.formula(ret.level);
       ret.level++;
     }
 

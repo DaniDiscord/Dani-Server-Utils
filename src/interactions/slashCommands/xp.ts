@@ -8,15 +8,14 @@ import {
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import XpManager from "lib/core/XpManager";
-import { generateXpCard } from "lib/util/xpCard";
-import { XpModel } from "models/Xp";
 import { PermissionLevels } from "types/commands";
-import { Times } from "types/index";
 import { TimeParserUtility } from "../../utilities/timeParser";
+import { Times } from "types/index";
+import XpManager from "lib/core/XpManager";
+import { XpModel } from "models/Xp";
+import { generateXpCard } from "lib/util/xpCard";
 
-
-const BOT_COMMANDS_CHANNEL  = "594178859453382696"
+const BOT_COMMANDS_CHANNEL = "594178859453382696";
 
 export default class XpCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -72,7 +71,7 @@ export default class XpCommand extends CustomApplicationCommand {
               description: "The user to check the XP level for.",
               type: ApplicationCommandOptionType.User,
               required: false,
-            }
+            },
           ],
         },
       ],
@@ -94,7 +93,7 @@ export default class XpCommand extends CustomApplicationCommand {
           })) + 1;
 
         const buf = await generateXpCard({
-          username: getUser.username,
+          username: getUser.displayName,
           avatarURL: getUser.displayAvatarURL({ extension: "png", size: 256 }),
           level: xpManager.level,
           xp: xpManager.exp,
@@ -104,8 +103,7 @@ export default class XpCommand extends CustomApplicationCommand {
 
         const attachment = new AttachmentBuilder(buf, { name: "xp_card.png" });
 
-        
-        if(interaction.channelId !== BOT_COMMANDS_CHANNEL) {
+        if (interaction.channelId !== BOT_COMMANDS_CHANNEL) {
           await interaction.reply({ files: [attachment], flags: "Ephemeral" });
         } else {
           await interaction.reply({ files: [attachment] });
@@ -155,29 +153,32 @@ export default class XpCommand extends CustomApplicationCommand {
             text: `Total participants: ${await XpModel.countDocuments({ guildId: interaction.guildId })}`,
           });
 
-        if(interaction.channelId !== BOT_COMMANDS_CHANNEL) {
+        if (interaction.channelId !== BOT_COMMANDS_CHANNEL) {
           await interaction.reply({ embeds: [embed], flags: "Ephemeral" });
         } else {
           await interaction.reply({ embeds: [embed] });
-        }        break;
+        }
+        break;
 
       case "calc":
         const targetLevel = interaction.options.getNumber("level", true);
         const user = interaction.options.getUser("user") ?? interaction.user;
 
-        if(targetLevel > 100) {
+        if (targetLevel > 100) {
           await interaction.reply({
             embeds: [
-              new EmbedBuilder()
-                .setColor("#ff0000")
-                .setDescription("Level cap is 100."),
+              new EmbedBuilder().setColor("#ff0000").setDescription("Level cap is 100."),
             ],
             ephemeral: true,
           });
           return;
         }
 
-        const xpEmbed = await this.generateXpCalculation(targetLevel, user.id, interaction.guildId);
+        const xpEmbed = await this.generateXpCalculation(
+          targetLevel,
+          user.id,
+          interaction.guildId,
+        );
         await interaction.reply({ embeds: [xpEmbed], flags: "Ephemeral" });
         break;
     }
@@ -186,71 +187,82 @@ export default class XpCommand extends CustomApplicationCommand {
   private async generateXpCalculation(
     targetLevel: number,
     userId: string,
-    guildId: string | null
+    guildId: string | null,
   ) {
-    const xpManager = new XpManager(0);
+    const xpModel = await XpModel.findOne({ guildId, userId });
+    const currentXp = xpModel?.expAmount ?? 0;
 
-    let totalXp = 0;
-    let nextXp = 0;
+    const xpManager = new XpManager(currentXp);
+    const currentLevel = xpManager.level;
+    const currentTotalXp = xpManager.totalExp;
 
-    for (let lvl = 0; lvl < targetLevel; lvl++) {
-      nextXp = xpManager.formula(lvl);
-      totalXp += nextXp;
+    if (targetLevel <= currentLevel) {
+      return new EmbedBuilder()
+        .setTitle(`XP Calculation for Level ${targetLevel}`)
+        .setColor(this.client.config.colors.error)
+        .setDescription("Already Surpassed")
+        .addFields(
+          { name: "Current Level", value: `${currentLevel}`, inline: true },
+          {
+            name: "XP Progress",
+            value: `${xpManager.exp.toLocaleString()} / ${xpManager.next.toLocaleString()} XP`,
+            inline: true,
+          },
+        );
     }
 
-    const minutesRequired = totalXp / XpManager.EXP_PER_MESSAGE;
-    const timeString = TimeParserUtility.parseDurationToString(minutesRequired * Times.MINUTE, {
+    let xpProgressDisplay: string;
+    let xpNeeded: number;
+
+    if (targetLevel === currentLevel + 1) {
+      xpProgressDisplay = `${xpManager.exp.toLocaleString()} / ${xpManager.next.toLocaleString()} XP`;
+      xpNeeded = xpManager.next - xpManager.exp;
+    } else {
+      let totalXpToTarget = 0;
+      for (let lvl = 0; lvl < targetLevel; lvl++) {
+        totalXpToTarget += xpManager.formula(lvl);
+      }
+
+      xpProgressDisplay = `${currentTotalXp.toLocaleString()} / ${totalXpToTarget.toLocaleString()} XP`;
+      xpNeeded = Math.max(0, totalXpToTarget - currentTotalXp);
+    }
+
+    const messagesNeeded = Math.ceil(xpNeeded / XpManager.EXP_PER_MESSAGE);
+    const timeLeftMs = messagesNeeded * XpManager.EXP_COOLDOWN;
+
+    const totalMessages = Math.ceil(
+      (xpManager.totalExp + xpNeeded) / XpManager.EXP_PER_MESSAGE,
+    );
+    const totalTimeMs = totalMessages * XpManager.EXP_COOLDOWN;
+    const messagesSoFar = Math.ceil(currentTotalXp / XpManager.EXP_PER_MESSAGE);
+    const timeSpentMs = messagesSoFar * XpManager.EXP_COOLDOWN;
+
+    const timeString = TimeParserUtility.parseDurationToString(totalTimeMs, {
       allowedUnits: ["day", "hour", "minute"],
     });
-
-    const xpModel = await XpModel.findOne({
-      guildId: guildId,
-      userId: userId,
-    });
-
-    const currentXp = xpModel?.expAmount || 0;
-    const currentLevel = xpModel ? new XpManager(currentXp).level : 0;
-    const xpNeeded = totalXp - currentXp;
-
-    const timeSpentMinutes = currentXp / XpManager.EXP_PER_MESSAGE;
-    const timeSpent = TimeParserUtility.parseDurationToString(timeSpentMinutes * Times.MINUTE, {
+    const timeSpent = TimeParserUtility.parseDurationToString(timeSpentMs, {
       allowedUnits: ["day", "hour", "minute"],
     });
-
-    const timeDiffMinutes = Math.abs(xpNeeded) / XpManager.EXP_PER_MESSAGE;
-    const timeDiff = TimeParserUtility.parseDurationToString(timeDiffMinutes * Times.MINUTE, {
+    const timeLeft = TimeParserUtility.parseDurationToString(timeLeftMs, {
       allowedUnits: ["day", "hour", "minute"],
     });
-
-    const timeLeft = xpNeeded > 0 ? timeDiff : `Surpassed by ${timeDiff}`;
 
     const embed = new EmbedBuilder()
       .setTitle(`XP Calculation for Level ${targetLevel}`)
-      .setColor("#0099ff")
+      .setColor(this.client.config.colors.primary)
       .addFields(
-        { name: "Total XP Required", value: totalXp.toLocaleString(), inline: true },
+        { name: "Current Level", value: `${currentLevel}`, inline: true },
+        { name: "XP Progress", value: xpProgressDisplay, inline: true },
+        { name: "XP Needed", value: xpNeeded.toLocaleString(), inline: true },
         {
-          name: "Current Progress",
-          value: `Level ${currentLevel} (${currentXp} XP)`,
+          name: "Time Investment (Total)",
+          value: timeString || "0 minutes",
           inline: true,
         },
-        {
-          name: "XP Needed",
-          value: xpNeeded > 0 ? xpNeeded.toLocaleString() : "Already reached",
-          inline: true,
-        },
-        { name: "Time Investment (Total)", value: timeString || "0 minutes", inline: true },
-        {
-          name: "Time Spent",
-          value: timeSpent || "0 minutes",
-          inline: true,
-        },
-        {
-          name: "Time Left",
-          value: timeLeft || "0 minutes",
-          inline: true,
-        },
+        { name: "Time Spent", value: timeSpent || "0 minutes", inline: true },
+        { name: "Time Left", value: timeLeft || "0 minutes", inline: true },
       );
+
     return embed;
   }
 
