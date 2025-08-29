@@ -91,12 +91,13 @@ export default class XpCommand extends CustomApplicationCommand {
             expAmount: { $gt: xpModel.expAmount },
           })) + 1;
 
+        console.log(xpManager.next);
         const buf = await generateXpCard({
           username: user.displayName,
           avatarURL: user.displayAvatarURL({ extension: "png", size: 256 }),
           level: xpManager.level,
           xp: xpManager.exp,
-          xpNeeded: xpManager.next,
+          xpNeeded: xpManager.exp + xpManager.next,
           rank,
         });
 
@@ -168,63 +169,80 @@ export default class XpCommand extends CustomApplicationCommand {
           guildId: interaction.guildId,
           userId: user.id,
         });
-        const currentXp = xpModel?.expAmount ?? 0;
 
-        const xpManager = new XpManager(currentXp);
-        const result = xpManager.calculateProgress(targetLevel);
-
-        if (result.surpassed) {
+        if (!xpModel) {
           return interaction.reply({
             embeds: [
               {
-                title: `XP Calculation for Level ${targetLevel}`,
                 color: this.client.config.colors.error,
-                description: "Already Surpassed",
-                fields: [
-                  {
-                    name: "Current Level",
-                    value: `${result.currentLevel}`,
-                    inline: true,
-                  },
-                  { name: "XP Progress", value: result.xpProgress, inline: true },
-                ],
-              } as APIEmbed,
+                description: "User has no XP data yet.",
+              },
             ],
+            ephemeral: true,
           });
         }
+
+        const xpManager = new XpManager(xpModel.expAmount);
+        const targetResult = xpManager.digestLevel(targetLevel);
+        const currentResult = xpManager.digestExp(xpModel.expAmount);
+        const xpNeeded = targetResult.next;
+        const messagesNeeded = Math.ceil(xpNeeded / XpManager.EXP_PER_MESSAGE);
+        const timeLeftMs = messagesNeeded * XpManager.EXP_COOLDOWN;
+
+        const totalMessages = Math.ceil(
+          (xpManager.totalExp + xpNeeded) / XpManager.EXP_PER_MESSAGE,
+        );
+        const totalTimeMs = totalMessages * XpManager.EXP_COOLDOWN;
+        const messagesSoFar = Math.ceil(xpManager.totalExp / XpManager.EXP_PER_MESSAGE);
+        const timeSpentMs = messagesSoFar * XpManager.EXP_COOLDOWN;
+
+        const timeString = TimeParserUtility.parseDurationToString(totalTimeMs, {
+          allowedUnits: ["day", "hour", "minute"],
+        });
+        const timeSpent = TimeParserUtility.parseDurationToString(timeSpentMs, {
+          allowedUnits: ["day", "hour", "minute"],
+        });
+        const timeLeft = TimeParserUtility.parseDurationToString(timeLeftMs, {
+          allowedUnits: ["day", "hour", "minute"],
+        });
 
         return interaction.reply({
           embeds: [
             {
               title: `Xp Calculation for Level ${targetLevel}`,
+              color: this.client.config.colors.primary,
               fields: [
-                { name: "Current Level", value: `${result.currentLevel}`, inline: true },
-                { name: "Xp Progress", value: `${result.xpProgress}`, inline: true },
-                { name: "XP Needed", value: `${result.xpNeeded}`, inline: true },
+                {
+                  name: "Current Level",
+                  value: `${currentResult.level}`,
+                  inline: true,
+                },
+                {
+                  name: "Current XP Progress",
+                  value: `${currentResult.totalExp.toLocaleString()} total XP`,
+                  inline: true,
+                },
+                {
+                  name: "XP Needed for Target",
+                  value: `${(targetResult.totalExp - currentResult.totalExp).toLocaleString()} XP`,
+                  inline: true,
+                },
+                {
+                  name: "Target Level Total XP",
+                  value: `${targetResult.totalExp.toLocaleString()} XP`,
+                  inline: true,
+                },
+                {
+                  name: "XP Progress to Target",
+                  value: `${currentResult.totalExp.toLocaleString()} / ${targetResult.totalExp.toLocaleString()} XP`,
+                  inline: true,
+                },
                 {
                   name: "Time Investment (Total)",
-                  value:
-                    TimeParserUtility.parseDurationToString(result.totalTimeMs, {
-                      allowedUnits: ["day", "hour", "minute"],
-                    }) || "0 minutes",
-                  inline: true,
+                  value: timeString || "0 minutes",
                 },
-                {
-                  name: "Time Spent",
-                  value:
-                    TimeParserUtility.parseDurationToString(result.timeSpentMs, {
-                      allowedUnits: ["day", "hour", "minute"],
-                    }) || "0 minutes",
-                  inline: true,
-                },
-                {
-                  name: "Time Left",
-                  value:
-                    TimeParserUtility.parseDurationToString(result.timeLeftMs, {
-                      allowedUnits: ["day", "hour", "minute"],
-                    }) || "0 minutes",
-                  inline: true,
-                },
+                { name: "Time Spent", value: timeSpent || "0 minutes" },
+                { name: "Time Left", value: timeLeft || "0 minutes" },
               ],
             } as APIEmbed,
           ],
