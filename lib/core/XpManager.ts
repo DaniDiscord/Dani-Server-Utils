@@ -96,7 +96,6 @@ export default class XpManager {
       level < this.MAX_LEVEL ? this.totalExpForLevel(level + 1) : currentLevelTotal;
     const nextExp = level >= this.MAX_LEVEL ? 0 : nextLevelTotal - exp;
 
-    level += 1;
     return {
       totalExp: exp,
       exp: exp - currentLevelTotal,
