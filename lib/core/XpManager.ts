@@ -18,10 +18,11 @@ export default class XpManager {
   public levelUp = false;
   public levelDown = false;
 
+  private MAX_LEVEL = 100;
   constructor(
     initialExp: number,
-    customLeveling: (levelIndex: number) => number = (i) =>
-      5 * (i + 1) ** 2 + 50 * (i + 1) + 100,
+    customLeveling: (levelIndex: number) => number = (level) =>
+      5 * level * level + 40 * level + 55,
   ) {
     this.formula = customLeveling;
     this.applyDigest(this.digestExp(initialExp));
@@ -49,16 +50,73 @@ export default class XpManager {
     return this;
   }
 
-  private digestExp(total: number): DigestResult {
-    const ret: DigestResult = { totalExp: total, exp: total, level: 0, next: this.formula(0) };
+  public calculateDigest(currentExp: number, inputLevel: number): DigestResult {
+    const targetLevel = Math.min(inputLevel, this.MAX_LEVEL);
+    const totalExp = this.totalExpForLevel(targetLevel);
 
-    while (ret.exp >= ret.next) {
-      ret.exp -= ret.next;
-      ret.next = this.formula(ret.level); 
-      ret.level++;
+    return {
+      totalExp,
+      exp: currentExp,
+      level: targetLevel,
+      next: Math.max(totalExp - currentExp, 0),
+    };
+  }
+
+  public digestExp(exp: number): DigestResult {
+    if (exp <= 0) {
+      return { totalExp: 0, exp: 0, level: 0, next: this.formula(1) };
     }
 
-    return ret;
+    let level = 0;
+
+    let low = 0;
+    let high = this.MAX_LEVEL;
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const midTotal = this.totalExpForLevel(mid);
+      const nextTotal = this.totalExpForLevel(mid + 1);
+
+      if (exp >= midTotal && exp < nextTotal) {
+        level = mid;
+        break;
+      } else if (exp < midTotal) {
+        high = mid - 1;
+      } else {
+        low = mid + 1;
+      }
+    }
+
+    if (level === 0 && exp >= this.totalExpForLevel(this.MAX_LEVEL)) {
+      level = this.MAX_LEVEL;
+    }
+
+    const currentLevelTotal = this.totalExpForLevel(level);
+    const nextLevelTotal =
+      level < this.MAX_LEVEL ? this.totalExpForLevel(level + 1) : currentLevelTotal;
+    const nextExp = level >= this.MAX_LEVEL ? 0 : nextLevelTotal - exp;
+
+    return {
+      totalExp: exp,
+      exp: exp - currentLevelTotal,
+      level,
+      next: nextExp,
+    };
+  }
+
+  public digestLevel(level: number): DigestResult {
+    const cappedLevel = Math.min(level, this.MAX_LEVEL);
+    const totalExp = this.totalExpForLevel(cappedLevel);
+    const nextLevelTotal =
+      cappedLevel < this.MAX_LEVEL ? this.totalExpForLevel(cappedLevel + 1) : totalExp;
+    const nextExp = cappedLevel >= this.MAX_LEVEL ? 0 : nextLevelTotal - totalExp;
+
+    return {
+      totalExp,
+      exp: 0,
+      level: cappedLevel,
+      next: nextExp,
+    };
   }
 
   private applyDigest(result: DigestResult): void {
@@ -66,5 +124,16 @@ export default class XpManager {
     this.exp = result.exp;
     this.level = result.level;
     this.next = result.next;
+  }
+
+  private totalExpForLevel(level: number): number {
+    if (level <= 0) return 0;
+
+    const cumulative =
+      (5 * level * (level + 1) * (2 * level + 1)) / 6 +
+      20 * level * (level + 1) +
+      55 * level;
+
+    return cumulative;
   }
 }

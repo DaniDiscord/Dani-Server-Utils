@@ -15,26 +15,21 @@ import {
   TextDisplayBuilder,
 } from "discord.js";
 
-import { DsuClient } from "lib/core/DsuClient";
-import { EventLoader } from "lib/core/loader/EventLoader";
-import XpManager from "lib/core/XpManager";
+import { AnchorUtility } from "../utilities/anchor";
+import { AutoSlowUtility } from "../utilities/autoSlow";
+import { ChainHandler } from "lib/core/ChainHandler";
 import DefaultClientUtilities from "lib/util/defaultUtilities";
+import { DsuClient } from "lib/core/DsuClient";
+import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
+import { EventLoader } from "lib/core/loader/EventLoader";
+import { LinkHandlerUtility } from "../utilities/linkHandler";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
+import XpManager from "lib/core/XpManager";
 import { XpModel } from "models/Xp";
-import { AnchorUtility } from "../utilities/anchor";
-import { AutoSlowUtility } from "../utilities/autoSlow";
-import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
-import { LinkHandlerUtility } from "../utilities/linkHandler";
 
-const chainStops = ["muck"];
-const chainIgnoredChannels = ["594178859453382696", "970968834372698163"];
-const CHAIN_STOPS_ONLY = false;
-const CHAIN_DETECTION_LENGTH = 5;
-const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
-const CHAIN_WARN_THRESHOLD = 3;
-const CHAIN_DELETION_LOG_CHANNEL_ID = "989203228749099088";
+const chainHandler = new ChainHandler();
 
 export default class MessageCreate extends EventLoader {
   constructor(client: DsuClient) {
@@ -153,144 +148,7 @@ export default class MessageCreate extends EventLoader {
 
     await AnchorUtility.handleAnchor(this.client, message);
 
-    // Chain deletion
-    const chMessages = this.client.channelMessages.get(message.channelId);
-    const trimMsg = (str: string) => str.toLowerCase().trim();
-
-    if (
-      message.content != "" &&
-      !message.settings.chains?.ignored?.includes(trimMsg(message.content))
-    ) {
-      if (chMessages && !chainIgnoredChannels.includes(message.channelId)) {
-        if (
-          ((CHAIN_STOPS_ONLY && chainStops.some((o) => o == trimMsg(message.content))) ||
-            !CHAIN_STOPS_ONLY) &&
-          chMessages.some((o) => o.word == trimMsg(message.content)) &&
-          message.deletable &&
-          level < 2
-        ) {
-          const chMsg = chMessages.find((o) => o.word == trimMsg(message.content));
-          if (!chMsg) return;
-          chMsg.count++;
-          if (chMsg.count >= CHAIN_DELETE_MESSAGE_THRESHOLD) {
-            await message
-              .delete()
-              .catch(() => this.client.logger.error("Failed to delete chain message"));
-            if (chMsg.count == CHAIN_WARN_THRESHOLD) {
-              const msg = await message.channel
-                .send({ content: `Please stop chaining.` })
-                .catch(() =>
-                  this.client.logger.error("Failed to send chain warning message"),
-                );
-              if (msg && msg.deletable)
-                setTimeout(async () => {
-                  if (msg && msg.deletable)
-                    await msg
-                      .delete()
-                      .catch(() =>
-                        this.client.logger.error(
-                          "Failed to delete chain warning message",
-                        ),
-                      );
-                }, 5000);
-            }
-            const logCh = message.guild.channels.cache.get(CHAIN_DELETION_LOG_CHANNEL_ID);
-            if (
-              logCh &&
-              logCh.guild != null &&
-              (logCh.type === ChannelType.GuildText || logCh.isThread())
-            ) {
-              try {
-                const member = await message.guild.members.fetch({
-                  user: message.author.id,
-                });
-                const emb = new EmbedBuilder()
-                  .setAuthor({
-                    name: `${message.author.username}#${
-                      message.author.discriminator
-                    } ${member.nickname ? `(${member.nickname})` : ""}`,
-                    iconURL:
-                      message.author.avatarURL() ??
-                      "https://cdn.discordapp.com/embed/avatars/0.png",
-                  })
-                  .setColor("Random")
-                  .setDescription(`Chain detection in <#${message.channelId}>`)
-                  .addFields(
-                    {
-                      name: "Channel",
-                      value: `<#${message.channel.id}> (${
-                        (message.channel as GuildChannel)?.name ?? "Unknown"
-                      })`,
-                    },
-                    {
-                      name: "ID",
-                      value: `\`\`\`ini\nUser = ${message.author.id}\nMessage = ${message.id}\`\`\``,
-                    },
-                    {
-                      name: "Date",
-                      value: new Date(message.createdTimestamp).toString(),
-                    },
-                  );
-                const messageChunks = [];
-                if (message.content) {
-                  if (message.content.length > 1024) {
-                    messageChunks.push(
-                      message.content
-                        .replace(/\"/g, '"')
-                        .replace(/`/g, "")
-                        .substring(0, 1023),
-                    );
-                    messageChunks.push(
-                      message.content
-                        .replace(/\"/g, '"')
-                        .replace(/`/g, "")
-                        .substring(1024, message.content.length),
-                    );
-                  } else {
-                    messageChunks.push(message.content);
-                  }
-                } else {
-                  messageChunks.push("None");
-                }
-                messageChunks.forEach((chunk, i) => {
-                  emb.addFields({
-                    name: i === 0 ? "Content" : "Continued",
-                    value: chunk,
-                  });
-                });
-                await logCh
-                  .send({ embeds: [emb] })
-                  .catch(() =>
-                    this.client.logger.error(
-                      "Failed to send chain message to log channel",
-                    ),
-                  );
-              } catch (_) {
-                this.client.logger.error("Failed resolving chaining GuildMember.");
-                logCh.send({
-                  embeds: [
-                    DefaultClientUtilities.generateEmbed("error", {
-                      description: `Chain messages found in ${message.channel}, but failed to resolve culprit.`,
-                    }),
-                  ],
-                });
-              }
-            }
-          }
-        } else {
-          if (chMessages.length == CHAIN_DETECTION_LENGTH) chMessages.shift();
-          chMessages.push({ word: trimMsg(message.content), count: 0 });
-          this.client.channelMessages.set(message.channel.id, chMessages);
-        }
-      } else {
-        this.client.channelMessages.set(message.channel.id, [
-          {
-            word: trimMsg(message.content),
-            count: 0,
-          },
-        ]);
-      }
-    }
+    await chainHandler.handleMessage(message);
     message.author.permLevel = level;
 
     const foundPhrases = await PhraseMatcherModel.find();
