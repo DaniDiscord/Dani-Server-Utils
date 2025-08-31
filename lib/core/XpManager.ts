@@ -21,8 +21,8 @@ export default class XpManager {
   private MAX_LEVEL = 100;
   constructor(
     initialExp: number,
-    customLeveling: (levelIndex: number) => number = (i) =>
-      5 * (i + 1) ** 2 + 50 * (i + 1) + 100,
+    customLeveling: (levelIndex: number) => number = (level) =>
+      5 * level * level + 40 * level + 55,
   ) {
     this.formula = customLeveling;
     this.applyDigest(this.digestExp(initialExp));
@@ -130,9 +130,11 @@ export default class XpManager {
   private totalExpForLevel(level: number): number {
     if (level <= 0) return 0;
 
-    const m = level;
-    const cumulative = (5 * m * (m + 1) * (2 * m + 1)) / 6 + 25 * m * (m + 1) + 100 * m;
+    const cumulative =
+      (5 * level * (level + 1) * (2 * level + 1)) / 6 +
+      20 * level * (level + 1) +
+      55 * level;
 
-    return cumulative - 55;
+    return cumulative;
   }
 }
