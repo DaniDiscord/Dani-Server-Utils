@@ -7,7 +7,8 @@ import { Times } from "../types/index";
 export class AnchorUtility {
   static async handleAnchor(client: DsuClient, message: Message) {
     if (message.author.bot) return;
-    if (!message.guild || !(message.channel instanceof TextChannel)) return;
+    if (!message.guild || !message.channel.isTextBased() || message.channel.isDMBased())
+      return;
 
     const anchors = await AnchorModel.find({
       guildId: message.guild.id,

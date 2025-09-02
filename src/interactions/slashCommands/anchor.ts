@@ -113,7 +113,7 @@ export default class AnchorCommand extends CustomApplicationCommand {
           return;
         }
 
-        if (!(originalChannel instanceof TextChannel)) {
+        if (!originalChannel?.isTextBased()) {
           await interaction.reply({
             content: "The original channel is not a text channel",
           });
