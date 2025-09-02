@@ -246,6 +246,7 @@ export default class XpCommand extends CustomApplicationCommand {
               ],
             } as APIEmbed,
           ],
+          ephemeral: true,
         });
       }
     }
