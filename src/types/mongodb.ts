@@ -58,6 +58,10 @@ export interface RawSettings {
     moderator: string;
     admin: string;
   };
+  xpRoles: {
+    roleId: string;
+    level: number;
+  }[];
 }
 
 export interface ISettings extends RawSettings, Document {}

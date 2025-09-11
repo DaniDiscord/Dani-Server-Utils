@@ -41,6 +41,12 @@ const SettingsSchema = new Schema<ISettings>(
       moderator: String,
       admin: String,
     },
+    xpRoles: [
+      {
+        roleId: String,
+        level: Number,
+      },
+    ],
     toUpdate: { type: Boolean, default: false },
   },
   { timestamps: true },

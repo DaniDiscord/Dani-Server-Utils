@@ -13,6 +13,7 @@ import { TimeParserUtility } from "../../utilities/timeParser";
 import XpManager from "lib/core/XpManager";
 import { XpModel } from "models/Xp";
 import { generateXpCard } from "lib/util/xpCard";
+import { SettingsModel } from "models/Settings";
 
 const BOT_COMMANDS_CHANNEL = "594178859453382696";
 
@@ -73,6 +74,48 @@ export default class XpCommand extends CustomApplicationCommand {
             },
           ],
         },
+        {
+          type: ApplicationCommandOptionType.Subcommand,
+          name: "addrole",
+          description: "Add an XP role to the server!",
+          level: PermissionLevels.ADMINISTRATOR,
+          options: [
+            {
+              name: "role",
+              description: "The role to add to the XP roles!",
+              type: ApplicationCommandOptionType.Role,
+              required: true,
+            },
+            {
+              name: "level",
+              description: "The level to add the role to!",
+              type: ApplicationCommandOptionType.Number,
+              required: true,
+              min_value: 1,
+              max_value: 100,
+            },
+          ],
+        },
+        {
+          type: ApplicationCommandOptionType.Subcommand,
+          name: "removerole",
+          description: "Remove an XP role from the server!",
+          level: PermissionLevels.ADMINISTRATOR,
+          options: [
+            {
+              name: "role",
+              description: "The role to remove from the XP roles!",
+              type: ApplicationCommandOptionType.Role,
+              required: true,
+            },
+          ],
+        },
+        {
+          type: ApplicationCommandOptionType.Subcommand,
+          name: "listroles",
+          description: "List all XP roles for the server!",
+          level: PermissionLevels.ADMINISTRATOR,
+        },
       ],
     });
   }
@@ -110,6 +153,7 @@ export default class XpCommand extends CustomApplicationCommand {
         }
         break;
       }
+
       case "leaderboard": {
         const limit = Math.min(interaction.options.getNumber("limit") ?? 10, 25);
         const topUsers = await XpModel.find({ guildId: interaction.guildId })
@@ -248,6 +292,56 @@ export default class XpCommand extends CustomApplicationCommand {
           ],
           ephemeral: true,
         });
+      }
+
+      case "addrole": {
+        const role = interaction.options.getRole("role", true);
+        const level = interaction.options.getNumber("level", true);
+        const settings = await SettingsModel.findOne({ _id: interaction.guildId });
+        if (settings) {
+          settings.xpRoles.push({ roleId: role.id, level });
+          await settings.save();
+
+          return await interaction.reply({
+            embeds: [
+              {
+                color: this.client.config.colors.primary,
+                description: `Added XP role ${role} to level ${level}.`,
+              },
+            ],
+          });
+        }
+      }
+
+      case "removerole": {
+        const role = interaction.options.getRole("role", true);
+        const settings = await SettingsModel.findOne({ _id: interaction.guildId });
+        if (settings) {
+          settings.xpRoles = settings.xpRoles.filter((r) => r.roleId !== role.id);
+          await settings.save();
+          return await interaction.reply({
+            embeds: [
+              {
+                color: this.client.config.colors.primary,
+                description: `Removed XP role ${role}.`,
+              },
+            ],
+          });
+        }
+      }
+
+      case "listroles": {
+        const settings = await SettingsModel.findOne({ _id: interaction.guildId });
+        if (settings) {
+          return await interaction.reply({
+            embeds: [
+              {
+                color: this.client.config.colors.primary,
+                description: `XP roles for this server:\n${settings.xpRoles.map((r) => `**${r.level}**: <@&${r.roleId}>`).join("\n")}`,
+              },
+            ],
+          });
+        }
       }
     }
   }
