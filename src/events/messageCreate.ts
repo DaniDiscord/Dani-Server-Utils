@@ -308,6 +308,21 @@ export default class MessageCreate extends EventLoader {
       return;
     }
 
+    const currentXP = await XpModel.findOne({
+      guildId: message.guild.id,
+      userId: message.author.id,
+    });
+
+    const xpManager = new XpManager(currentXP?.expAmount || 0);
+    const xpRoles = message.settings.xpRoles;
+    const rolesToAdd = xpRoles.filter((role) => xpManager.level >= role.level);
+    for (const r of rolesToAdd) {
+      const role = message.guild.roles.cache.get(r.roleId);
+      if (role && !message.member?.roles.cache.has(role.id)) {
+        await message.member?.roles.add(role);
+      }
+    }
+
     this.client.textCommandLoader.handle(message);
   }
 }
