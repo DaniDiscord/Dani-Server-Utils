@@ -305,7 +305,14 @@ export default class MessageCreate extends EventLoader {
         new: true,
         setDefaultsOnInsert: true,
       },
-    ).exec();
+    ).exec().catch((err) => {
+      if(err.code !== 11000) {
+        this.client.logger.error(
+          `Failed to update xp for ${message.author.id} in guild ${message.guild?.id}: ${err}`,
+        );
+      }
+      return null;
+    });
 
     if (!result) {
       return;
