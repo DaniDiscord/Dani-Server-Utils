@@ -10,4 +10,6 @@ const XpSchema = new Schema<IXp>({
   lastXpTimestamp: Number,
 });
 
+XpSchema.index({ guildId: 1, userId: 1 }, { unique: true });
+
 export const XpModel: Model<IXp> = model("Xp", XpSchema);
