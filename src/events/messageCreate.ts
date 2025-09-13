@@ -6,28 +6,29 @@ import {
   ColorResolvable,
   ContainerBuilder,
   EmbedBuilder,
-  GuildChannel,
   MediaGalleryBuilder,
   Message,
   MessageFlags,
   MessageType,
   TextChannel,
-  TextDisplayBuilder,
+  TextDisplayBuilder
 } from "discord.js";
 
-import { AnchorUtility } from "../utilities/anchor";
-import { AutoSlowUtility } from "../utilities/autoSlow";
 import { ChainHandler } from "lib/core/ChainHandler";
-import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
-import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
 import { EventLoader } from "lib/core/loader/EventLoader";
-import { LinkHandlerUtility } from "../utilities/linkHandler";
+import XpManager from "lib/core/XpManager";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
-import XpManager from "lib/core/XpManager";
 import { XpModel } from "models/Xp";
+import { HydratedDocument } from "mongoose";
+import { IXp } from "types/mongodb";
+import { AnchorUtility } from "../utilities/anchor";
+import { AutoSlowUtility } from "../utilities/autoSlow";
+import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
+import { LinkHandlerUtility } from "../utilities/linkHandler";
 
 const chainHandler = new ChainHandler();
 
@@ -279,41 +280,38 @@ export default class MessageCreate extends EventLoader {
       }
     }
 
-    const result = await XpModel.findOneAndUpdate(
+    const now = Date.now();
+
+    const result: HydratedDocument<IXp> | null = await XpModel.findOneAndUpdate(
       {
         guildId: message.guild.id,
         userId: message.author.id,
         $or: [
           { lastXpTimestamp: { $exists: false } },
-          { lastXpTimestamp: { $lt: Date.now() - XpManager.EXP_COOLDOWN } },
+          { lastXpTimestamp: { $lt: now - XpManager.EXP_COOLDOWN } },
         ],
       },
-      {
-        $inc: {
-          messageCount: 1,
-          expAmount: XpManager.EXP_PER_MESSAGE,
+      [
+        {
+          $set: {
+            messageCount: { $add: ["$messageCount", 1] },
+            expAmount: { $add: ["$expAmount", XpManager.EXP_PER_MESSAGE] },
+            lastXpTimestamp: now,
+          },
         },
-        $set: {
-          lastXpTimestamp: Date.now(),
-        },
-      },
+      ],
       {
         upsert: true,
         new: true,
         setDefaultsOnInsert: true,
       },
-    );
+    ).exec();
 
     if (!result) {
       return;
     }
 
-    const currentXP = await XpModel.findOne({
-      guildId: message.guild.id,
-      userId: message.author.id,
-    });
-
-    const xpManager = new XpManager(currentXP?.expAmount || 0);
+    const xpManager = new XpManager(result.expAmount || 0);
     const xpRoles = message.settings.xpRoles;
     const rolesToAdd = xpRoles.filter((role) => xpManager.level >= role.level);
     for (const r of rolesToAdd) {
