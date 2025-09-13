@@ -5,10 +5,10 @@ import DefaultClientUtilities from "lib/util/defaultUtilities";
 const chainStops = ["muck"];
 const chainIgnoredChannels = ["594178859453382696", "970968834372698163"];
 const CHAIN_STOPS_ONLY = false;
-const CHAIN_DELETE_MESSAGE_THRESHOLD = 2;
-const CHAIN_WARN_THRESHOLD = 3;
+const CHAIN_DELETE_MESSAGE_THRESHOLD = 3;
+const CHAIN_WARN_THRESHOLD = 4;
 const CHAIN_DELETION_LOG_CHANNEL_ID = "989203228749099088";
-const FUZZY_THRESHOLD = 80;
+const FUZZY_THRESHOLD = 90;
 
 interface MessageRecord {
   content: string;
