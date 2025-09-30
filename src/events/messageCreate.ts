@@ -11,7 +11,7 @@ import {
   MessageFlags,
   MessageType,
   TextChannel,
-  TextDisplayBuilder
+  TextDisplayBuilder,
 } from "discord.js";
 
 import { ChainHandler } from "lib/core/ChainHandler";
@@ -280,39 +280,56 @@ export default class MessageCreate extends EventLoader {
       }
     }
 
-    const now = Date.now();
-
-    const result: HydratedDocument<IXp> | null = await XpModel.findOneAndUpdate(
+    const result = await XpModel.findOneAndUpdate(
       {
         guildId: message.guild.id,
         userId: message.author.id,
-        $or: [
-          { lastXpTimestamp: { $exists: false } },
-          { lastXpTimestamp: { $lt: now - XpManager.EXP_COOLDOWN } },
-        ],
       },
       [
         {
           $set: {
-            messageCount: { $add: ["$messageCount", 1] },
-            expAmount: { $add: ["$expAmount", XpManager.EXP_PER_MESSAGE] },
-            lastXpTimestamp: now,
+            messageCount: { $ifNull: ["$messageCount", 0] },
+            expAmount: { $ifNull: ["$expAmount", 0] },
+            lastXpTimestamp: { $ifNull: ["$lastXpTimestamp", new Date(0)] },
           },
         },
+        {
+          $set: {
+            _canGain: {
+              $or: [
+                { $not: ["$lastXpTimestamp"] },
+                {
+                  $lt: [
+                    "$lastXpTimestamp",
+                    { $subtract: ["$$NOW", XpManager.EXP_COOLDOWN] },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+        {
+          $set: {
+            messageCount: { $add: ["$messageCount", 1] },
+            expAmount: {
+              $add: [
+                "$expAmount",
+                { $cond: ["$_canGain", XpManager.EXP_PER_MESSAGE, 0] },
+              ],
+            },
+            lastXpTimestamp: {
+              $cond: ["$_canGain", "$$NOW", "$lastXpTimestamp"],
+            },
+          },
+        },
+        { $unset: "_canGain" },
       ],
       {
         upsert: true,
         new: true,
         setDefaultsOnInsert: true,
       },
-    ).exec().catch((err) => {
-      if(err.code !== 11000) {
-        this.client.logger.error(
-          `Failed to update xp for ${message.author.id} in guild ${message.guild?.id}: ${err}`,
-        );
-      }
-      return null;
-    });
+    );
 
     if (!result) {
       return;
