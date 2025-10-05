@@ -11,12 +11,12 @@ import {
 import { SuggestionConfigModel, SuggestionModel } from "models/Suggestion";
 
 import { CustomApplicationCommand } from "lib/core/command";
-import { DsuClient } from "lib/core/DsuClient";
 import DefaultClientUtilities from "lib/util/defaultUtilities";
+import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
-import { Times } from "types/index";
 import { SuggestionUtility } from "../../utilities/suggestions";
 import { TimeParserUtility } from "../../utilities/timeParser";
+import { Times } from "types/index";
 
 export default class SuggestionsCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -162,7 +162,7 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
       embeds: [
         DefaultClientUtilities.generateEmbed("general", {
           title: "Suggestion Author",
-          description: `User ID: \`${suggestion.userId}\``,
+          description: `User: <@${suggestion.userId}>  (\`${suggestion.userId}\`)`,
         }),
       ],
       flags: MessageFlags.Ephemeral,
@@ -235,7 +235,10 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
     });
   }
 
-  private async handleCreate(interaction: ChatInputCommandInteraction, permLevel: PermissionLevels) {
+  private async handleCreate(
+    interaction: ChatInputCommandInteraction,
+    permLevel: PermissionLevels,
+  ) {
     const defaultUtility = DefaultClientUtilities;
 
     const content = interaction.options.getString("suggestion", true);
