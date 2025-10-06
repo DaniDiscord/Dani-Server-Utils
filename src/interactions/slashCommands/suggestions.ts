@@ -18,6 +18,8 @@ import { SuggestionUtility } from "../../utilities/suggestions";
 import { TimeParserUtility } from "../../utilities/timeParser";
 import { Times } from "types/index";
 
+const LEVEL_5_ROLE_ID = "952603684104183879";
+
 export default class SuggestionsCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("suggestions", client, {
@@ -115,18 +117,6 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
       undefined,
       interaction.member as GuildMember,
     );
-    const helperCmds = ["ban", "unban", "author"];
-    if (permLevel < 2 && helperCmds.includes(subcommand)) {
-      return await interaction.reply({
-        embeds: [
-          {
-            title: "Insufficient Permissions",
-            description: "Must be perm level 2 (Helper) to use this command.",
-          },
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
 
     switch (subcommand) {
       case "config":
@@ -254,6 +244,32 @@ export default class SuggestionsCommand extends CustomApplicationCommand {
           defaultUtility.generateEmbed("error", {
             title: "No configuration found",
             description: "Please run `/suggestions config` first.",
+          }),
+        ],
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    const member = await interaction.guild?.members.fetch(interaction.user.id);
+
+    if (!member) {
+      return interaction.reply({
+        embeds: [
+          defaultUtility.generateEmbed("error", {
+            title: "Unknown Error",
+            description: `Please try again.`,
+          }),
+        ],
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    if (!member.roles.cache.has(LEVEL_5_ROLE_ID)) {
+      return interaction.reply({
+        embeds: [
+          defaultUtility.generateEmbed("error", {
+            title: "Missing Permissions",
+            description: `Must be <@&${LEVEL_5_ROLE_ID}> to use this command.`,
           }),
         ],
         flags: MessageFlags.Ephemeral,
