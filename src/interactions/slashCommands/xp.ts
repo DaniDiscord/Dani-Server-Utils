@@ -229,7 +229,7 @@ export default class XpCommand extends CustomApplicationCommand {
         const xpManager = new XpManager(xpModel.expAmount);
         const targetResult = xpManager.digestLevel(targetLevel);
         const currentResult = xpManager.digestExp(xpModel.expAmount);
-        const xpNeeded = targetResult.next;
+        const xpNeeded = targetResult.totalExp - currentResult.totalExp;
         const messagesNeeded = Math.ceil(xpNeeded / XpManager.EXP_PER_MESSAGE);
         const timeLeftMs = messagesNeeded * XpManager.EXP_COOLDOWN;
 
