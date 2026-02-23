@@ -369,8 +369,6 @@ export default class XpCommand extends CustomApplicationCommand {
         const newAccount = interaction.options.getUser("new_account", true);
         const oldTable = await XpModel.findOne({ userId: oldAccount.id });
 
-        await interaction.deferReply();
-
         if (!oldTable) {
           return await interaction.followUp({
             flags: "Ephemeral",
