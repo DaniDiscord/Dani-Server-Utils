@@ -7,6 +7,7 @@ import {
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
 import { SettingsModel } from "models/Settings";
@@ -50,6 +51,26 @@ export default class XpCommand extends CustomApplicationCommand {
               type: ApplicationCommandOptionType.Number,
               min_value: 1,
               max_value: 25,
+            },
+          ],
+        },
+        {
+          type: ApplicationCommandOptionType.Subcommand,
+          name: "transfer",
+          description: "Transfer XP to another user.",
+          level: PermissionLevels.ADMINISTRATOR,
+          options: [
+            {
+              name: "old_account",
+              description: "The user to remove XP from.",
+              type: ApplicationCommandOptionType.User,
+              required: true,
+            },
+            {
+              name: "new_account",
+              description: "The user the XP will transfer to.",
+              type: ApplicationCommandOptionType.User,
+              required: true,
             },
           ],
         },
@@ -340,6 +361,44 @@ export default class XpCommand extends CustomApplicationCommand {
             ],
           });
         }
+      }
+      case "transfer": {
+        const oldAccount = interaction.options.getUser("old_account", true);
+        const newAccount = interaction.options.getUser("new_account", true);
+        const oldTable = await XpModel.findOne({ userId: oldAccount.id });
+
+        if (!oldTable) {
+          return await interaction.followUp({
+            flags: "Ephemeral",
+            embeds: [
+              DefaultClientUtilities.generateEmbed("error", {
+                title: "Failed to locate user.",
+                description: `Could not find existing XP entry for user: ${oldAccount.username}`,
+              }),
+            ],
+          });
+        }
+
+        let newTable = await this.getOrCreateXpModel(interaction.guildId!, newAccount.id);
+
+        await newTable.updateOne({
+          $set: {
+            lastXpTimestamp: oldTable.lastXpTimestamp,
+            expAmount: oldTable.expAmount,
+          },
+        });
+
+        await oldTable.updateOne({ $set: { expAmount: 0 } });
+
+        return await interaction.followUp({
+          flags: "Ephemeral",
+          embeds: [
+            DefaultClientUtilities.generateEmbed("error", {
+              title: "Transferred XP.",
+              description: `Moved ${oldAccount}'s XP data to ${newAccount}.`,
+            }),
+          ],
+        });
       }
     }
   }
