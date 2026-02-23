@@ -57,18 +57,18 @@ export default class XpCommand extends CustomApplicationCommand {
         {
           type: ApplicationCommandOptionType.Subcommand,
           name: "transfer",
-          description: "Transfer XP from one table to another.",
+          description: "Transfer XP to another user.",
           level: PermissionLevels.ADMINISTRATOR,
           options: [
             {
               name: "old_account",
-              description: "The old table to move and drop.",
+              description: "The user to remove XP from.",
               type: ApplicationCommandOptionType.User,
               required: true,
             },
             {
               name: "new_account",
-              description: "The new table to alter.",
+              description: "The user the XP will transfer to.",
               type: ApplicationCommandOptionType.User,
               required: true,
             },
@@ -376,8 +376,8 @@ export default class XpCommand extends CustomApplicationCommand {
             flags: "Ephemeral",
             embeds: [
               DefaultClientUtilities.generateEmbed("error", {
-                title: "Failed to locate table.",
-                description: `Could not find existing table entry for user: ${oldAccount.username}`,
+                title: "Failed to locate user.",
+                description: `Could not find existing XP entry for user: ${oldAccount.username}`,
               }),
             ],
           });
@@ -398,7 +398,7 @@ export default class XpCommand extends CustomApplicationCommand {
           flags: "Ephemeral",
           embeds: [
             DefaultClientUtilities.generateEmbed("error", {
-              title: "Transferred tables.",
+              title: "Transferred XP.",
               description: `Moved ${oldAccount}'s XP data to ${newAccount}.`,
             }),
           ],
