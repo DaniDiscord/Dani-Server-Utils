@@ -9,11 +9,11 @@ import {
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
 import { PermissionLevels } from "types/commands";
+import { SettingsModel } from "models/Settings";
 import { TimeParserUtility } from "../../utilities/timeParser";
 import XpManager from "lib/core/XpManager";
 import { XpModel } from "models/Xp";
 import { generateXpCard } from "lib/util/xpCard";
-import { SettingsModel } from "models/Settings";
 
 const BOT_COMMANDS_CHANNEL = "594178859453382696";
 
@@ -121,6 +121,12 @@ export default class XpCommand extends CustomApplicationCommand {
   }
 
   async run(interaction: ChatInputCommandInteraction) {
+    if (interaction.channelId !== BOT_COMMANDS_CHANNEL) {
+      await interaction.deferReply({ flags: "Ephemeral" });
+    } else {
+      await interaction.deferReply();
+    }
+
     const subcommand = interaction.options.getSubcommand();
     switch (subcommand) {
       case "get": {
@@ -146,15 +152,13 @@ export default class XpCommand extends CustomApplicationCommand {
 
         const attachment = new AttachmentBuilder(buf, { name: "xp_card.png" });
 
-        if (interaction.channelId !== BOT_COMMANDS_CHANNEL) {
-          await interaction.reply({ files: [attachment], flags: "Ephemeral" });
-        } else {
-          await interaction.reply({ files: [attachment] });
-        }
+        await interaction.editReply({ files: [attachment] });
+
         break;
       }
 
       case "leaderboard": {
+        await interaction.deferReply();
         const limit = Math.min(interaction.options.getNumber("limit") ?? 10, 25);
         const topUsers = await XpModel.find({ guildId: interaction.guildId })
           .select("userId expAmount")
@@ -162,14 +166,13 @@ export default class XpCommand extends CustomApplicationCommand {
           .limit(limit);
 
         if (topUsers.length === 0) {
-          return interaction.reply({
+          return interaction.editReply({
             embeds: [
               {
                 color: this.client.config.colors.error,
                 description: "No XP data available for this server yet.",
               },
             ],
-            ephemeral: true,
           });
         }
 
@@ -198,11 +201,8 @@ export default class XpCommand extends CustomApplicationCommand {
             text: `Total participants: ${await XpModel.countDocuments({ guildId: interaction.guildId })}`,
           },
         };
-        if (interaction.channelId !== BOT_COMMANDS_CHANNEL) {
-          await interaction.reply({ embeds: [embed], flags: "Ephemeral" });
-        } else {
-          await interaction.reply({ embeds: [embed] });
-        }
+        await interaction.editReply({ embeds: [embed] });
+
         break;
       }
 
@@ -215,14 +215,13 @@ export default class XpCommand extends CustomApplicationCommand {
         });
 
         if (!xpModel) {
-          return interaction.reply({
+          return interaction.editReply({
             embeds: [
               {
                 color: this.client.config.colors.error,
                 description: "User has no XP data yet.",
               },
             ],
-            ephemeral: true,
           });
         }
 
@@ -250,7 +249,7 @@ export default class XpCommand extends CustomApplicationCommand {
           allowedUnits: ["day", "hour", "minute"],
         });
 
-        return interaction.reply({
+        return interaction.editReply({
           embeds: [
             {
               title: `Xp Calculation for Level ${targetLevel}`,
@@ -290,7 +289,6 @@ export default class XpCommand extends CustomApplicationCommand {
               ],
             } as APIEmbed,
           ],
-          ephemeral: true,
         });
       }
 
@@ -302,7 +300,7 @@ export default class XpCommand extends CustomApplicationCommand {
           settings.xpRoles.push({ roleId: role.id, level });
           await settings.save();
 
-          return await interaction.reply({
+          return await interaction.editReply({
             embeds: [
               {
                 color: this.client.config.colors.primary,
@@ -319,7 +317,7 @@ export default class XpCommand extends CustomApplicationCommand {
         if (settings) {
           settings.xpRoles = settings.xpRoles.filter((r) => r.roleId !== role.id);
           await settings.save();
-          return await interaction.reply({
+          return await interaction.editReply({
             embeds: [
               {
                 color: this.client.config.colors.primary,
@@ -333,7 +331,7 @@ export default class XpCommand extends CustomApplicationCommand {
       case "listroles": {
         const settings = await SettingsModel.findOne({ _id: interaction.guildId });
         if (settings) {
-          return await interaction.reply({
+          return await interaction.editReply({
             embeds: [
               {
                 color: this.client.config.colors.primary,
