@@ -158,7 +158,6 @@ export default class XpCommand extends CustomApplicationCommand {
       }
 
       case "leaderboard": {
-        await interaction.deferReply();
         const limit = Math.min(interaction.options.getNumber("limit") ?? 10, 25);
         const topUsers = await XpModel.find({ guildId: interaction.guildId })
           .select("userId expAmount")
