@@ -384,9 +384,11 @@ export default class XpCommand extends CustomApplicationCommand {
         let newTable = await this.getOrCreateXpModel(interaction.guildId!, newAccount.id);
 
         await newTable.updateOne({
+          $inc: {
+            expAmount: oldTable.expAmount,
+          },
           $set: {
             lastXpTimestamp: oldTable.lastXpTimestamp,
-            expAmount: oldTable.expAmount,
           },
         });
 
