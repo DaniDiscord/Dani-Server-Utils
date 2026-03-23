@@ -76,6 +76,12 @@ export class DsuClient extends Client {
   /** The loader used for slash command interactions. */
   public textCommandLoader: TextCommandLoader;
 
+  /**
+   * Cache of any string keys, key is and value is the keys they use
+   * For example, triggers would be <"trigger", ["each", "trigger", "here"]
+   */
+  public stringKeyCache: Collection<string, Set<string>>;
+
   /** Chain message storage */
   public channelMessages: Collection<
     string,
@@ -121,6 +127,7 @@ export class DsuClient extends Client {
     this.textCommands = new Collection();
     this.textCommandLoader = new TextCommandLoader(this);
 
+    this.stringKeyCache = new Collection();
     this.channelMessages = new Collection();
     this.dirtyCooldownHandler = new TimeoutHandler();
 

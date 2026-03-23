@@ -1,6 +1,8 @@
 import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
+  AutocompleteFocusedOption,
+  AutocompleteInteraction,
   ChatInputCommandInteraction,
   ColorResolvable,
   EmbedBuilder,
@@ -110,6 +112,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
             {
               name: "id",
               description: "The id of the trigger.",
+              autocomplete: true,
               type: ApplicationCommandOptionType.String,
               required: true,
             },
@@ -160,6 +163,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
             {
               name: "id",
               description: "The id of the trigger.",
+              autocomplete: true,
               type: ApplicationCommandOptionType.String,
               required: true,
             },
@@ -196,11 +200,11 @@ export default class TriggerCommand extends CustomApplicationCommand {
           description: "Show a trigger without it having to be triggered.",
           type: ApplicationCommandOptionType.Subcommand,
           level: PermissionLevels.HELPER,
-
           options: [
             {
               name: "trigger_id",
               description: "The id of the trigger.",
+              autocomplete: true,
               type: ApplicationCommandOptionType.String,
               required: true,
             },
@@ -272,6 +276,14 @@ export default class TriggerCommand extends CustomApplicationCommand {
         ),
       );
 
+      const cache = this.client.stringKeyCache.get("triggers");
+
+      if (!cache) {
+        this.client.stringKeyCache.set("triggers", new Set([trigger.id]));
+      } else {
+        cache.add(trigger.id);
+      }
+
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
@@ -298,6 +310,14 @@ export default class TriggerCommand extends CustomApplicationCommand {
             guildId: interaction.guildId,
             triggerId: `trigger-${id}`,
           });
+        }
+
+        const cache = this.client.stringKeyCache.get("triggers");
+
+        if (!cache) {
+          this.client.stringKeyCache.set("triggers", new Set());
+        } else {
+          cache.delete(id);
         }
 
         await interaction.reply({
@@ -537,5 +557,28 @@ export default class TriggerCommand extends CustomApplicationCommand {
         interaction.reply(trigger.message.content);
       }
     }
+  }
+
+  public async autoComplete(
+    interaction: AutocompleteInteraction,
+    option: AutocompleteFocusedOption,
+  ) {
+    const query = option.value.toLowerCase();
+
+    const cache = this.client.stringKeyCache.get("triggers");
+
+    if (!cache) {
+      return;
+    }
+
+    const filtered = cache.values().filter((word) => word.includes(query));
+
+    console.log(
+      "Filtered result: ",
+      filtered.map((trigger) => ({ name: trigger, value: trigger })),
+    );
+    await interaction.respond([
+      ...filtered.map((trigger) => ({ name: trigger, value: trigger })),
+    ]);
   }
 }

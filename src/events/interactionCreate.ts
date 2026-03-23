@@ -1,13 +1,19 @@
-import { Collection, GuildMember, Interaction, InteractionType, MessageFlags } from "discord.js";
+import {
+  Collection,
+  GuildMember,
+  Interaction,
+  InteractionType,
+  MessageFlags,
+} from "discord.js";
 
+import { AutoPingUtility } from "../utilities/autoPing";
+import DefaultClientUtilities from "lib/util/defaultUtilities";
 import { DsuClient } from "lib/core/DsuClient";
 import { EventLoader } from "lib/core/loader/EventLoader";
-import DefaultClientUtilities from "lib/util/defaultUtilities";
+import { ISettings } from "types/mongodb";
+import { PermissionLevels } from "types/commands";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
-import { PermissionLevels } from "types/commands";
-import { ISettings } from "types/mongodb";
-import { AutoPingUtility } from "../utilities/autoPing";
 
 export default class InteractionCreate extends EventLoader {
   constructor(client: DsuClient) {
@@ -107,11 +113,10 @@ export default class InteractionCreate extends EventLoader {
       );
 
       if (interaction.isCommand()) {
-
         const command = this.client.applicationCommandLoader.fetchCommand(
           interaction.commandName,
         );
-        
+
         if (!command) {
           return this.client.logger.error(
             `Exception: Cannot find command to add cooldown (${interaction.commandName})`,
@@ -161,6 +166,14 @@ export default class InteractionCreate extends EventLoader {
         this.client.applicationCommandLoader.handle(interaction);
       } else if (interaction.isUserContextMenuCommand()) {
         this.client.applicationCommandLoader.handle(interaction);
+      } else if (interaction.isAutocomplete()) {
+        const command = this.client.applicationCommandLoader.fetchCommand(
+          interaction.commandName,
+        );
+        if (command && command.autoComplete) {
+          const focused = interaction.options.getFocused(true);
+          return command.autoComplete(interaction, focused);
+        }
       }
     } catch (error) {
       this.client.logger.error(`Failed to handle command ${interaction.id}: ${error}`);

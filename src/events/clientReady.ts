@@ -5,6 +5,7 @@ import { EventLoader } from "../../lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
 import { SettingsModel } from "models/Settings";
 import { Times } from "types/index";
+import { TriggerModel } from "models/Trigger";
 import _ from "lodash";
 
 export default class ClientReady extends EventLoader {
@@ -65,6 +66,24 @@ export default class ClientReady extends EventLoader {
     }
   }
 
+  private async updateStringKeys(client: DsuClient, guildId: string) {
+    let settings = client.settings.get(guildId);
+
+    if (!settings) return;
+
+    let cache = client.stringKeyCache.get("triggers");
+
+    console.log("Settings ID:", settings, settings._id);
+
+    const dbTriggers = new Set(settings.triggers.map((t) => t.id));
+
+    if (cache) {
+      for (const t of dbTriggers) cache.add(t);
+    } else {
+      client.stringKeyCache.set("triggers", dbTriggers);
+    }
+  }
+
   override async run(client: DsuClient) {
     const updateSettings = async () => {
       if (client.isReady()) {
@@ -76,11 +95,17 @@ export default class ClientReady extends EventLoader {
       }
 
       await Promise.all(
-        Array.from(client.settings.keys()).map((guildId) =>
+        Array.from(client.settings.keys()).map((guildId) => {
           this.syncSettings(client, guildId).catch((e) =>
             client.logger.error("Sync failed for guild", { guildId, error: e }),
-          ),
-        ),
+          );
+          this.updateStringKeys(client, guildId).catch((e) =>
+            client.logger.error("Failed to update string keys for guild", {
+              guildId,
+              error: e,
+            }),
+          );
+        }),
       );
     };
 
