@@ -268,7 +268,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
       };
 
       this.client.settings.set(
-        interaction.settings._id as string,
+        interaction.guild!.id,
         await SettingsModel.findOneAndUpdate(
           { _id: interaction.settings._id },
           { $push: { triggers: trigger }, toUpdate: true },
@@ -297,7 +297,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
 
       if (interaction.settings.triggers.some((t) => t.id == id)) {
         this.client.settings.set(
-          interaction.settings._id as string,
+          interaction.guild!.id,
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { $pull: { triggers: { id: id } }, toUpdate: true },
@@ -352,7 +352,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
         });
 
         this.client.settings.set(
-          interaction.settings._id as string,
+          interaction.guild!.id,
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { triggers: newTriggers, toUpdate: true },
@@ -401,7 +401,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
         });
 
         this.client.settings.set(
-          interaction.settings._id as string,
+          interaction.guild!.id,
           await SettingsModel.findOneAndUpdate(
             { _id: interaction.settings._id },
             { triggers: newTriggers, toUpdate: true },
@@ -522,6 +522,14 @@ export default class TriggerCommand extends CustomApplicationCommand {
           ? "No triggers in guild"
           : triggers.map((t) => `\`${t.id}\``).join(", ");
 
+
+      const existingCache = this.client.stringKeyCache.get("triggers");
+      if (
+        existingCache?.size !== triggers.length ||
+        ![...existingCache].every((t) => triggers.some((obj) => obj.id === t))
+      ) {
+        this.client.stringKeyCache.set("triggers", new Set(triggers.map((t) => t.id)));
+      }
       await interaction.reply({
         embeds: [new EmbedBuilder().setColor("Green").setDescription(str)],
       });

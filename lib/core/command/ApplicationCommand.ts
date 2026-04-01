@@ -30,7 +30,7 @@ export class CustomApplicationCommand extends BaseInteraction {
     };
   }
 
-  public override validate(interaction: CommandInteraction, type: InteractionType) {
+  public override validate(interaction: CommandInteraction, _type: InteractionType) {
     const subcommand = interaction.isChatInputCommand()
       ? interaction.options.getSubcommand(false)
       : null;

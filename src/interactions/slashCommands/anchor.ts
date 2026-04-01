@@ -4,7 +4,6 @@ import {
   ChatInputCommandInteraction,
   EmbedBuilder,
   PermissionsBitField,
-  TextChannel,
 } from "discord.js";
 
 import { AnchorModel } from "models/Anchor";

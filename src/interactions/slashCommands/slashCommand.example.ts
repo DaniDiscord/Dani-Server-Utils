@@ -2,9 +2,9 @@ import { ApplicationCommandType, ChatInputCommandInteraction } from "discord.js"
 
 import { CustomApplicationCommand } from "lib/core/command";
 import { DsuClient } from "lib/core/DsuClient";
-import { InteractionCommandOptions as _ } from "types/commands";
+import { PermissionLevels } from "types/commands";
 
-// This needs default if its youre trying to add it.
+// This needs default if you're trying to add it.
 export class Name extends CustomApplicationCommand {
   /**
    * Constructor call takes 3 arguments (name, client, options)
@@ -14,7 +14,7 @@ export class Name extends CustomApplicationCommand {
     super("name", client, {
       // **MAKE SURE THIS TYPE IS DEFINED! It will NOT be loaded correctly.**
       type: ApplicationCommandType.ChatInput,
-      permissionLevel: "USER",
+      permissionLevel: PermissionLevels.USER,
     });
   }
 

@@ -5,8 +5,8 @@ import { EventLoader } from "../../lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
 import { SettingsModel } from "models/Settings";
 import { Times } from "types/index";
-import { TriggerModel } from "models/Trigger";
 import _ from "lodash";
+import { startServer } from "lib/external/server.ts";
 
 export default class ClientReady extends EventLoader {
   constructor(client: DsuClient) {
@@ -73,7 +73,6 @@ export default class ClientReady extends EventLoader {
 
     let cache = client.stringKeyCache.get("triggers");
 
-    console.log("Settings ID:", settings, settings._id);
 
     const dbTriggers = new Set(settings.triggers.map((t) => t.id));
 
@@ -123,5 +122,7 @@ export default class ClientReady extends EventLoader {
     AnchorUtility.checkAnchorInactivity(this.client);
 
     client.logger.info(`Bot logged in as ${client.user?.tag}.`);
+
+    startServer(client);
   }
 }

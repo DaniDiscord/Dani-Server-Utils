@@ -23,8 +23,6 @@ import { PhraseMatcherModel } from "models/PhraseMatcher";
 import { SettingsModel } from "models/Settings";
 import { TriggerModel } from "models/Trigger";
 import { XpModel } from "models/Xp";
-import { HydratedDocument } from "mongoose";
-import { IXp } from "types/mongodb";
 import { AnchorUtility } from "../utilities/anchor";
 import { AutoSlowUtility } from "../utilities/autoSlow";
 import { EmojiSuggestionsUtility } from "../utilities/emojiSuggestions";
@@ -50,11 +48,11 @@ export default class MessageCreate extends EventLoader {
         /(?:https?:\/\/)?(?:discord\.gg|discord(?:app)?\.com\/invite)\/([\w-]+)/gi;
       if (content.match(DISCORD_INVITE_PATTERNS)) {
         const matches = [...content.matchAll(DISCORD_INVITE_PATTERNS)];
-        matches.forEach(async (match) => {
+        for (const match of matches) {
           const code = match[1];
           try {
             const server = await this.client.fetchInvite(code);
-            if (!server.guild) return;
+            if (!server.guild) continue;
 
             const container = new ContainerBuilder()
               .addTextDisplayComponents(
@@ -81,7 +79,7 @@ export default class MessageCreate extends EventLoader {
             });
             message.reply({ embeds: [embed] });
           }
-        });
+        }
       }
     }
     if (message.author.bot) return;
