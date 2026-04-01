@@ -11,21 +11,6 @@ import { PermissionLevels } from "types/commands";
 import { SettingsModel } from "models/Settings.ts";
 import { ISettings } from "types/mongodb.ts";
 
-const DEFAULT_VIKUNJA: ISettings["vikunja"] = {
-  enabled: true,
-  forumChannelId: null,
-  allowedEvents: [
-    "task.created",
-    "task.updated",
-    "task.deleted",
-    "task.assigned",
-    "task.comment.created",
-  ],
-  debounceMinutes: 5,
-  threadCache: {},
-};
-
-
 export default class Vikunja extends CustomApplicationCommand {
   constructor(client: DsuClient) {
     super("vikunja", client, {
@@ -59,16 +44,7 @@ export default class Vikunja extends CustomApplicationCommand {
     switch(subcommand) {
       case "parent": {
         const channel = interaction.options.getChannel('set', true, [ChannelType.GuildForum])
-        await this.updateVikunja(interaction, this.client, {  forumChannelId: channel.id, threadCache: {}, allowedEvents: [
-            "task.created",
-            "task.updated",
-            "task.deleted",
-            "task.assigned",
-            "task.comment.created",
-            "task.attachment.created",
-            "task.relation.created",
-            "task.relation.deleted"
-          ] });
+        await this.updateVikunja(interaction, this.client, { forumChannelId: channel.id });
         await interaction.reply(`Updated parent forum channel to ${channel.name}`)
         return;
       }
@@ -83,25 +59,18 @@ export default class Vikunja extends CustomApplicationCommand {
   private async updateVikunja(
     interaction: ChatInputCommandInteraction,
     client: DsuClient,
-    partial: Partial<ISettings["vikunja"]>,
+    newSettings: ISettings["vikunja"],
   ): Promise<void> {
     const guildId = interaction.guildId!;
-    const current = client.settings.get(guildId)?.vikunja ?? DEFAULT_VIKUNJA;
-
-    if(!current) {
-      return;
-    }
-    const updated = { ...current, ...partial };
-
     await SettingsModel.findByIdAndUpdate(
       guildId,
-      { $set: { vikunja: updated } },
+      { $set: { vikunja: newSettings } },
       { upsert: true },
     );
 
     const settings = client.settings.get(guildId);
     if (settings) {
-      settings.vikunja = updated;
+      settings.vikunja = newSettings;
       client.settings.set(guildId, settings);
     }
   }

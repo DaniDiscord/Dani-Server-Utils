@@ -49,11 +49,7 @@
       ],
 
       vikunja: {
-        enabled: { type: Boolean, default: true },
         forumChannelId: { type: String, default: null },
-        allowedEvents: [String],
-        debounceMessage: { type: Number, default: 5},
-        threadCache: { type: Map, of: String, default: {} }
       },
 
       toUpdate: { type: Boolean, default: false },

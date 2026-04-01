@@ -63,7 +63,6 @@ export interface RawSettings {
     level: number;
   }[];
   vikunja?: {
-    enabled: boolean;
     forumChannelId: string | null;
   }
 }
