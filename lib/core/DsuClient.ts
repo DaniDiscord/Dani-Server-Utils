@@ -4,7 +4,6 @@ import {
   ButtonLoader,
   ModalLoader,
   SelectMenuLoader,
-  TextCommandLoader,
 } from "./loader";
 import { Button, CustomApplicationCommand, Modal, SelectMenu } from "./command";
 import { Client, ClientOptions, Collection, GuildMember, Message } from "discord.js";
@@ -15,7 +14,6 @@ import { EventLoader } from "./loader/EventLoader";
 import { ISettings } from "../../src/types/mongodb";
 import { Logger } from "./Logger";
 import { SettingsModel } from "../../src/models/Settings";
-import TextCommand from "./command/TextCommand";
 import { TimeoutHandler } from "./TimeoutHandler";
 import { clientConfig } from "../config/ClientConfig";
 import { existsSync } from "fs";
@@ -71,11 +69,6 @@ export class DsuClient extends Client {
   /** The loader used for application command interactions. */
   public applicationCommandLoader: ApplicationCommandLoader;
 
-  /** A collection of text commands loaded by the client. */
-  public textCommands: Collection<string, TextCommand>;
-  /** The loader used for slash command interactions. */
-  public textCommandLoader: TextCommandLoader;
-
   /**
    * Cache of any string keys, key is and value is the keys they use
    * For example, triggers would be <"trigger", ["each", "trigger", "here"]
@@ -124,8 +117,6 @@ export class DsuClient extends Client {
     this.applicationCommands = new Collection();
     this.applicationCommandLoader = new ApplicationCommandLoader(this);
 
-    this.textCommands = new Collection();
-    this.textCommandLoader = new TextCommandLoader(this);
 
     this.stringKeyCache = new Collection();
     this.channelMessages = new Collection();
@@ -140,7 +131,6 @@ export class DsuClient extends Client {
     this.selectMenuLoader.load();
     this.applicationCommandLoader.load();
     this.modalLoader.load();
-    this.textCommandLoader.loadFiles();
   }
 
   /**

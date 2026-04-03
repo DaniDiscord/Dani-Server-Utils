@@ -343,6 +343,5 @@ export default class MessageCreate extends EventLoader {
       }
     }
 
-    this.client.textCommandLoader.handle(message);
   }
 }
