@@ -13,7 +13,6 @@ export class AnchorUtility {
     const anchors = await AnchorModel.find({
       guildId: message.guild.id,
       channelId: message.channel.id,
-      "config.inactivityThreshold": { $eq: 0 },
     });
     if (!anchors || anchors.length === 0) return;
 
@@ -22,15 +21,22 @@ export class AnchorUtility {
     for (const anchor of anchors) {
       anchor.messageCount++;
 
-      const timeThresholdMs = anchor.config.timeThreshold;
-      const lastAnchorTime = anchor.lastAnchorTime ? anchor.lastAnchorTime.getTime() : 0;
+      const timeThresholdMs = anchor.config.timeThreshold || 0;
+      const messageThreshold = anchor.config.messageThreshold || 0;
 
-      if (now - lastAnchorTime < timeThresholdMs) {
+      if (timeThresholdMs === 0 && messageThreshold === 0) {
         await anchor.save();
         continue;
       }
 
-      if (anchor.messageCount < anchor.config.messageThreshold) {
+      const lastAnchorTime = anchor.lastAnchorTime ? anchor.lastAnchorTime.getTime() : 0;
+
+      if (timeThresholdMs > 0 && now - lastAnchorTime < timeThresholdMs) {
+        await anchor.save();
+        continue;
+      }
+
+      if (messageThreshold > 0 && anchor.messageCount < messageThreshold) {
         await anchor.save();
         continue;
       }
@@ -70,29 +76,40 @@ export class AnchorUtility {
     const anchors = await AnchorModel.find({
       "config.inactivityThreshold": { $gt: 0 },
     });
+
+    let nextCheckDelay = Times.MINUTE * 2;
+
     if (!anchors || anchors.length === 0) {
-      setTimeout(() => this.checkAnchorInactivity(client), Times.MINUTE * 5);
+      setTimeout(() => this.checkAnchorInactivity(client), nextCheckDelay);
       return;
     }
 
     for (const anchor of anchors) {
       try {
-        const channel = await client.channels.fetch(anchor.channelId);
-        if (!channel || !(channel instanceof TextChannel)) continue;
+        const channel = await client.channels.fetch(anchor.channelId).catch(() => null);
+        if (!channel || !channel.isTextBased()) continue;
 
-        const messages = await channel.messages.fetch({ limit: 1 });
-        let lastMessageTime = 0;
-        if (messages.size >= anchor.config.messageThreshold) {
-          const latestMessage = messages.first();
-          if (latestMessage) {
-            lastMessageTime = latestMessage.createdTimestamp;
-          }
-        } else if (anchor.lastAnchorTime) {
-          lastMessageTime = anchor.lastAnchorTime.getTime();
+        const messages = await channel.messages.fetch({ limit: 1 }).catch(() => null);
+        if (!messages) continue;
+
+        const latestMessage = messages.first();
+        if (!latestMessage) continue;
+
+        if (anchor.lastAnchorId && latestMessage.id === anchor.lastAnchorId) {
+          continue;
         }
 
+        const lastMessageTime = latestMessage.createdTimestamp;
         const inactivityThresholdMs = anchor.config.inactivityThreshold;
-        if (now - lastMessageTime < inactivityThresholdMs) continue;
+
+        const timeUntilInactive = inactivityThresholdMs - (now - lastMessageTime);
+
+        if (timeUntilInactive > 0) {
+          if (timeUntilInactive < nextCheckDelay) {
+            nextCheckDelay = timeUntilInactive;
+          }
+          continue;
+        }
 
         if (anchor.lastAnchorId) {
           try {
@@ -121,18 +138,6 @@ export class AnchorUtility {
       }
     }
 
-    const nextAnchor = anchors
-      .filter((a) => a.config.inactivityThreshold > 0)
-      .sort((a, b) => a.config.inactivityThreshold - b.config.inactivityThreshold)[0];
-
-    if (nextAnchor) {
-      const lastAnchorTime = nextAnchor.lastAnchorTime
-        ? nextAnchor.lastAnchorTime.getTime()
-        : now;
-      const nextCheck = nextAnchor.config.inactivityThreshold - (now - lastAnchorTime);
-      setTimeout(() => this.checkAnchorInactivity(client), nextCheck);
-    } else {
-      setTimeout(() => this.checkAnchorInactivity(client), Times.MINUTE * 5);
-    }
+    setTimeout(() => this.checkAnchorInactivity(client), Math.max(nextCheckDelay, 5000));
   }
 }
