@@ -74,7 +74,14 @@ export async function generateXpCard({
   );
   ctx.stroke();
 
-  const avatar = await loadImage(avatarURL);
+  let avatar;
+  try{
+    avatar = await loadImage(avatarURL);
+  }
+  catch (error){
+    avatar = await loadImage("https://cdn.discordapp.com/embed/avatars/0.png");
+  }
+  
   const avatarX = 40;
   const avatarY = 25;
   const avatarSize = 250;
