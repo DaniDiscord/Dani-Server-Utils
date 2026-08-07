@@ -2,6 +2,7 @@
   "name": "dani-server-utils",
   "version": "1.12.1",
   "description": "The Dani Discord (discord.gg/danii) server bot!",
+  "license": "MIT",
   "main": "src/client.ts",
   "scripts": {
     "dev": "bun .",

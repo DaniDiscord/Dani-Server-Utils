@@ -5,6 +5,11 @@
     <a href="https://discord.gg/danii" style="text-decoration: underline; cursor: pointer;">Dani's Discord</a> utility bot!
 </h2>
 
+## License & privacy
+
+This project is licensed under the [MIT License](LICENSE).  
+See our [Privacy Policy](PRIVACY.md) for information about the data the bot stores.
+
 ## Building & running
 
 The bots configuration is managed by an environment file
