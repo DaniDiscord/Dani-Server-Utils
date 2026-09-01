@@ -134,6 +134,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
             {
               name: "id",
               description: "The id of the trigger.",
+              autocomplete: true,
               type: ApplicationCommandOptionType.String,
               required: true,
             },
@@ -149,6 +150,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
             {
               name: "id",
               description: "The id of the trigger.",
+              autocomplete: true,
               type: ApplicationCommandOptionType.String,
               required: true,
             },
@@ -184,6 +186,7 @@ export default class TriggerCommand extends CustomApplicationCommand {
             {
               name: "id",
               description: "The id of the trigger.",
+              autocomplete: true,
               type: ApplicationCommandOptionType.String,
               required: true,
             },
