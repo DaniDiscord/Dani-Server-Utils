@@ -1,10 +1,10 @@
 import prettierConfig from "eslint-config-prettier";
 import prettierPlugin from "eslint-plugin-prettier";
-import tsEslint from "typescript-eslint";
+import { defineConfig } from "eslint/config"
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 
-export default tsEslint.config({
+export default defineConfig({
   files: ["**/*.ts"],
   plugins: {
     prettier: prettierPlugin,
@@ -48,16 +48,6 @@ export default tsEslint.config({
         argsIgnorePattern: "^_",
         varsIgnorePattern: "^_",
         caughtErrorsIgnorePattern: "^_",
-      },
-    ],
-    "sort-imports": [
-      "error",
-      {
-        ignoreCase: false,
-        ignoreDeclarationSort: false,
-        ignoreMemberSort: false,
-        memberSyntaxSortOrder: ["none", "all", "multiple", "single"],
-        allowSeparatedGroups: false,
       },
     ],
   },

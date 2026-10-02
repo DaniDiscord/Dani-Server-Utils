@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import TurndownService from "turndown";
-import { ChannelType, ForumChannel, EmbedBuilder, Colors } from "discord.js";
+import { ChannelType, Colors, EmbedBuilder, ForumChannel } from "discord.js";
 import { DsuClient } from "lib/core/DsuClient.ts";
 import { SettingsModel } from "models/Settings.ts";
 
@@ -23,8 +23,6 @@ const colors: Record<string, number> = {
   default: Colors.Grey,
 };
 
-
-
 const td = new TurndownService({ bulletListMarker: "-" });
 
 function md(html: string): string {
@@ -43,7 +41,6 @@ function trunc(text: string, max = 1000): string {
 function formatUser(u?: { name?: string; username?: string }): string {
   return u?.name || u?.username || "Unknown";
 }
-
 
 function dueTimestamp(iso?: string): string | null {
   if (!iso || iso === "0001-01-01T00:00:00Z") return null;
@@ -116,9 +113,7 @@ function buildEmbed(payload: any): EmbedBuilder {
         .setDescription(`Assigned to **${formatUser(d.assigned_user)}**`)
         .setColor(color)
         .setTimestamp(time)
-        .addFields(
-          { name: "Assigned By", value: formatUser(doer), inline: true },
-        );
+        .addFields({ name: "Assigned By", value: formatUser(doer), inline: true });
       const due = dueTimestamp(task.due_date);
       if (due) embed.addFields({ name: "Due", value: due, inline: true });
       return embed;
@@ -143,9 +138,7 @@ function buildEmbed(payload: any): EmbedBuilder {
       const comment = d.comment;
       const deleted = event === "task.comment.deleted";
       return new EmbedBuilder()
-        .setTitle(
-          `${deleted ? "Comment Deleted" : "Comment Updated"} on: ${task.title}`,
-        )
+        .setTitle(`${deleted ? "Comment Deleted" : "Comment Updated"} on: ${task.title}`)
         .setURL(taskLink)
         .setDescription(trunc(md(comment?.comment || ""), 500) || "")
         .setColor(color)
@@ -165,16 +158,20 @@ function buildEmbed(payload: any): EmbedBuilder {
 
 const threadCache = new Map<number, string>();
 
-async function getOrCreateThread(client: DsuClient, guildId: string, project: any): Promise<string> {
+async function getOrCreateThread(
+  client: DsuClient,
+  guildId: string,
+  project: any,
+): Promise<string> {
   const settings = await SettingsModel.findById(guildId);
 
-  if(!settings) {
+  if (!settings) {
     client.logger.error(`Settings configuration not found for: ${guildId}`);
   }
 
   const vikunjaConfig = settings?.vikunja;
 
-  if(!vikunjaConfig) {
+  if (!vikunjaConfig) {
     client.logger.error(`Vikunja configuration not set for: ${guildId}`);
   }
   const cached = threadCache.get(project.id);
@@ -189,7 +186,9 @@ async function getOrCreateThread(client: DsuClient, guildId: string, project: an
 
   const forum = await client.channels.fetch(vikunjaConfig?.forumChannelId!);
   if (!forum || forum.type !== ChannelType.GuildForum)
-    throw new Error(`Channel ${vikunjaConfig?.forumChannelId} is not a Forum channel or doesnt exist`);
+    throw new Error(
+      `Channel ${vikunjaConfig?.forumChannelId} is not a Forum channel or doesnt exist`,
+    );
 
   const f = forum as ForumChannel;
   const threadName = `Project: ${project.title}`;
@@ -239,11 +238,10 @@ async function getOrCreateThread(client: DsuClient, guildId: string, project: an
 }
 
 export function startServer(client: DsuClient) {
-
   const app = express();
   app.use(bodyParser.json());
 
-    app.post("/webhook", async (req, res) => {
+  app.post("/webhook", async (req, res) => {
     const guildId = req.query.guild as string;
     const payload = req.body;
 

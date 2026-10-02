@@ -1,6 +1,5 @@
+import { APIEmbed, APILabelComponent } from "discord.js";
 import { Document, Types } from "mongoose";
-
-import { APIEmbed } from "discord.js";
 
 /* COMMAND */
 export interface RawCommand {
@@ -64,12 +63,10 @@ export interface RawSettings {
   }[];
   vikunja?: {
     forumChannelId: string | null;
-  }
+  };
 }
 
 export interface ISettings extends RawSettings, Document {}
-
-
 
 /* COUNTER */
 interface RawCounter {
@@ -249,3 +246,27 @@ export interface IXp extends Document {
   guildId: string;
   lastXpTimestamp?: number;
 }
+
+export interface RawServerEventConfig {
+  guildId: string;
+  staffApprovalChannelId: string;
+  votingChannelId: string;
+  events: Types.ObjectId[];
+}
+
+export interface IServerEventConfig extends RawServerEventConfig, Document {}
+
+export interface RawServerEvent {
+  started: boolean;
+  name: string;
+  endAt: Date;
+  fields: APILabelComponent[];
+  maxUserSubmissions: number;
+  maxWinners: number;
+  bannedUsers: {
+    userId: string;
+    reason?: string;
+  }[];
+}
+
+export interface IServerEvent extends RawServerEvent, Document {}

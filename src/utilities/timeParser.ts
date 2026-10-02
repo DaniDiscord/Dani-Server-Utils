@@ -32,7 +32,7 @@ export class TimeParserUtility {
 
   static parseDurationToString(
     duration: number,
-    options?: { compact?: boolean; allowedUnits?: string[] }
+    options?: { compact?: boolean; allowedUnits?: string[] },
   ): string {
     let remainingDuration = duration;
     const parts: string[] = [];
@@ -48,7 +48,7 @@ export class TimeParserUtility {
         parts.push(
           options?.compact
             ? `${count}${unit.label === "month" ? "M" : unit.label[0]}`
-            : `${count} ${unit.label}${count > 1 ? "s" : ""}`
+            : `${count} ${unit.label}${count > 1 ? "s" : ""}`,
         );
         remainingDuration %= unit.value;
       }

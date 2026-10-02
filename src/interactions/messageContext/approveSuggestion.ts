@@ -38,9 +38,8 @@ export default class ApproveSuggestion extends CustomApplicationCommand {
         flags: MessageFlags.Ephemeral,
       });
     }
-   
-    
-    if(suggestion.model.status !== "pending") {
+
+    if (suggestion.model.status !== "pending") {
       return interaction.reply({
         embeds: [
           DefaultClientUtilities.generateEmbed("error", {
@@ -50,8 +49,7 @@ export default class ApproveSuggestion extends CustomApplicationCommand {
         ],
         flags: MessageFlags.Ephemeral,
       });
-    } 
-
+    }
 
     SuggestionUtility.approve(interaction);
   }

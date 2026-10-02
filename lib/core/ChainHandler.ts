@@ -191,8 +191,7 @@ export class ChainHandler {
   private async log(message: Message): Promise<void> {
     if (!CONFIG.logChannelId) return;
     const ch = message.guild?.channels.cache.get(CONFIG.logChannelId) as
-      | TextChannel
-      | undefined;
+      TextChannel | undefined;
     if (!ch?.isTextBased()) return;
 
     const embed = new EmbedBuilder()

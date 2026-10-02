@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "esnext",
+    "module": "node16",
     "lib": ["ESNext"],
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "allowJs": true,
     "strict": true,
     "allowSyntheticDefaultImports": true,

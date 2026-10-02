@@ -1,60 +1,59 @@
-  import { Model, Schema, model } from "mongoose";
+import { Model, Schema, model } from "mongoose";
 
-  import { CommandModel } from "./Command";
-  import { ISettings } from "../types/mongodb";
-  import { MentorModel } from "./Mentor";
+import { CommandModel } from "./Command";
+import { ISettings } from "../types/mongodb";
+import { MentorModel } from "./Mentor";
 
-  const SettingsSchema = new Schema<ISettings>(
-    {
-      _id: String,
-      prefix: { type: String, default: "!" },
-      mentorRoles: [{ type: Schema.Types.ObjectId, ref: MentorModel.modelName }],
-      commands: [{ type: Schema.Types.ObjectId, ref: CommandModel.modelName }],
-      chains: {
-        ignored: [String],
-      },
-      pollsAllowed: [String],
-      triggers: [
-        {
-          id: String,
-          keywords: [[String]],
-          cooldown: Number,
-          enabled: Boolean,
-          message: {
-            embed: Boolean,
-            content: String,
-            title: String,
-            description: String,
-            color: String,
-          },
-        },
-      ],
-      phrases: [
-        {
-          logChannelId: String,
-          matchThreshold: { type: Number, default: 100 },
-          phrase: { type: String, required: true },
-        },
-      ],
-      roles: {
-        helper: String,
-        moderator: String,
-        admin: String,
-      },
-      xpRoles: [
-        {
-          roleId: String,
-          level: Number,
-        },
-      ],
-
-      vikunja: {
-        forumChannelId: { type: String, default: null },
-      },
-
-      toUpdate: { type: Boolean, default: false },
+const SettingsSchema = new Schema<ISettings>(
+  {
+    _id: String,
+    prefix: { type: String, default: "!" },
+    mentorRoles: [{ type: Schema.Types.ObjectId, ref: MentorModel.modelName }],
+    commands: [{ type: Schema.Types.ObjectId, ref: CommandModel.modelName }],
+    chains: {
+      ignored: [String],
     },
-    { timestamps: true },
-  );
+    pollsAllowed: [String],
+    triggers: [
+      {
+        id: String,
+        keywords: [[String]],
+        cooldown: Number,
+        enabled: Boolean,
+        message: {
+          embed: Boolean,
+          content: String,
+          title: String,
+          description: String,
+          color: String,
+        },
+      },
+    ],
+    phrases: [
+      {
+        logChannelId: String,
+        matchThreshold: { type: Number, default: 100 },
+        phrase: { type: String, required: true },
+      },
+    ],
+    roles: {
+      helper: String,
+      moderator: String,
+      admin: String,
+    },
+    xpRoles: [
+      {
+        roleId: String,
+        level: Number,
+      },
+    ],
+    vikunja: {
+      forumChannelId: { type: String, default: null },
+    },
 
-  export const SettingsModel: Model<ISettings> = model("Settings", SettingsSchema);
+    toUpdate: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
+export const SettingsModel: Model<ISettings> = model("Settings", SettingsSchema);
