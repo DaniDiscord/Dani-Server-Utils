@@ -4,6 +4,7 @@ import { DsuClient } from "../../lib/core/DsuClient";
 import { EventLoader } from "../../lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
 import { ServerEventModel } from "models/ServerEvent";
+import { ServerEventUtility } from "../utilities/serverEvent";
 import { SettingsModel } from "models/Settings";
 import { Times } from "types/index";
 import _ from "lodash";
@@ -133,6 +134,9 @@ export default class ClientReady extends EventLoader {
 
     AutoArchiveUtility.handleAutoArchive(this.client);
     AnchorUtility.checkAnchorInactivity(this.client);
+    ServerEventUtility.restoreSchedules(this.client).catch((e) =>
+      this.client.logger.error("Failed to restore event schedules", e),
+    );
 
     client.logger.info(`Bot logged in as ${client.user?.tag}.`);
 

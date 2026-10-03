@@ -16,9 +16,10 @@ export const ServerEventConfigModel: Model<IServerEventConfig> = model(
 );
 
 const ServerEventSchema = new Schema<IServerEvent>({
+  guildId: { type: String, required: true },
   started: Boolean,
   endAt: { type: Date },
-  name: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
   fields: [{ type: Schema.Types.Mixed }],
   maxUserSubmissions: { type: Number, default: 1 },
   maxWinners: { type: Number, default: 1 },
@@ -29,6 +30,8 @@ const ServerEventSchema = new Schema<IServerEvent>({
     },
   ],
 });
+
+ServerEventSchema.index({ guildId: 1, name: 1 }, { unique: true });
 
 export const ServerEventModel: Model<IServerEvent> = model(
   "ServerEvent",

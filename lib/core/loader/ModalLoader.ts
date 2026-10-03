@@ -46,11 +46,19 @@ export class ModalLoader extends BaseInteractionLoader {
   private async runModal(modal: Modal, interaction: ModalSubmitInteraction) {
     const optionData = interaction.components
       .map((rowData) => {
+        if (rowData.type === ComponentType.Label) {
+          return rowData.component.customId;
+        }
+        if (rowData.type !== ComponentType.ActionRow) {
+          return undefined;
+        }
         const component = rowData.components[0];
         if (component.type === ComponentType.TextInput) {
           return `${component.customId}: ${component.value}`;
         }
+        return component.customId;
       })
+      .filter((line): line is string => line !== undefined)
       .join("\n");
 
     this.client.logger.info(

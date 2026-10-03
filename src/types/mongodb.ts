@@ -257,6 +257,7 @@ export interface RawServerEventConfig {
 export interface IServerEventConfig extends RawServerEventConfig, Document {}
 
 export interface RawServerEvent {
+  guildId: string;
   started: boolean;
   name: string;
   endAt: Date;
@@ -270,3 +271,21 @@ export interface RawServerEvent {
 }
 
 export interface IServerEvent extends RawServerEvent, Document {}
+
+export interface RawServerEventSubmission {
+  guildId: string;
+  eventId: Types.ObjectId;
+  userId: string;
+  status: "pending" | "approved" | "denied";
+  staffMessageId?: string;
+  voteMessageId?: string;
+  entries: {
+    label: string;
+    customId: string;
+    kind: "text" | "file";
+    text?: string;
+    fileUrls?: string[];
+  }[];
+}
+
+export interface IServerEventSubmission extends RawServerEventSubmission, Document {}

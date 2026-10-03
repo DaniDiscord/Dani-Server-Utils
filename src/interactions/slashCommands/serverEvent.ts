@@ -6,7 +6,6 @@ import {
   AutocompleteInteraction,
   ButtonBuilder,
   ButtonStyle,
-  CacheType,
   ChannelType,
   ChatInputCommandInteraction,
   codeBlock,
@@ -14,9 +13,8 @@ import {
   LabelBuilder,
   MessageComponentInteraction,
   ModalBuilder,
+  StringSelectMenuBuilder,
   TextDisplayBuilder,
-  TextInputBuilder,
-  TextInputStyle,
   time,
 } from "discord.js";
 import { CustomApplicationCommand } from "lib/core/command";
@@ -27,6 +25,9 @@ import { ServerEventConfigModel, ServerEventModel } from "models/ServerEvent";
 import { Times } from "types/index";
 import { FieldType, ServerEventUtility } from "../../utilities/serverEvent";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 export default class EventCommand extends CustomApplicationCommand {
   constructor(client: DsuClient) {
@@ -43,6 +44,7 @@ export default class EventCommand extends CustomApplicationCommand {
               description: "The name of the event.",
               type: ApplicationCommandOptionType.String,
               required: true,
+              autocomplete: true,
             },
           ],
           level: PermissionLevels.USER,
@@ -86,7 +88,29 @@ export default class EventCommand extends CustomApplicationCommand {
               name: "event_name",
               description: "The event to end.",
               type: ApplicationCommandOptionType.String,
+              required: true,
               autocomplete: true,
+            },
+          ],
+          level: PermissionLevels.MODERATOR,
+        },
+        {
+          name: "unban",
+          description: "Unban a user from an event.",
+          type: ApplicationCommandOptionType.Subcommand,
+          options: [
+            {
+              name: "event_name",
+              description: "The name of the event.",
+              type: ApplicationCommandOptionType.String,
+              required: true,
+              autocomplete: true,
+            },
+            {
+              name: "user",
+              description: "The user to unban.",
+              type: ApplicationCommandOptionType.User,
+              required: true,
             },
           ],
           level: PermissionLevels.MODERATOR,
@@ -141,6 +165,9 @@ export default class EventCommand extends CustomApplicationCommand {
         case "cancel":
           await this.handleCancel(interaction);
           break;
+        case "unban":
+          await this.handleUnban(interaction);
+          break;
         case "create":
           await this.handleCreate(interaction);
           break;
@@ -170,7 +197,10 @@ export default class EventCommand extends CustomApplicationCommand {
     await interaction.deferReply({});
     const eventName = interaction.options.getString("event_name", true);
 
-    const event = await ServerEventModel.findOne({ name: eventName });
+    const event = await ServerEventModel.findOne({
+      guildId: interaction.guildId,
+      name: eventName,
+    });
 
     if (!event) {
       await interaction.editReply({
@@ -188,21 +218,15 @@ export default class EventCommand extends CustomApplicationCommand {
       await interaction.editReply({
         embeds: [
           DefaultClientUtilities.generateEmbed("error", {
-            title: "Cannot submit to event",
-            description: `This event is currently not running`,
+            title: "Event is not running",
+            description: `The ${event.name} event is currently not running`,
           }),
         ],
       });
       return;
     }
 
-    await event.updateOne({
-      started: false,
-      endAt: Date.now(),
-    });
-
-    // TODO: handle event ending similar to main event ending. Either tie it to the endAt change in the DB or
-    // call whatever method will actually handle the voting and finishing cleanup.
+    await ServerEventUtility.finish(this.client, event.id, true);
 
     await interaction.editReply({
       embeds: [
@@ -214,11 +238,15 @@ export default class EventCommand extends CustomApplicationCommand {
     });
   }
 
-  async handleSubmit(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+  async handleUnban(interaction: ChatInputCommandInteraction) {
+    await interaction.deferReply({});
     const eventName = interaction.options.getString("event_name", true);
+    const target = interaction.options.getUser("user", true);
 
-    const event = await ServerEventModel.findOne({ name: eventName });
+    const event = await ServerEventModel.findOne({
+      guildId: interaction.guildId,
+      name: eventName,
+    });
 
     if (!event) {
       await interaction.editReply({
@@ -232,21 +260,68 @@ export default class EventCommand extends CustomApplicationCommand {
       return;
     }
 
-    if (!event.started) {
+    if (!event.bannedUsers.some((ban) => ban.userId === target.id)) {
       await interaction.editReply({
         embeds: [
           DefaultClientUtilities.generateEmbed("error", {
-            title: "Cannot submit to event",
-            description: `This event is currently not running`,
+            title: "Not banned",
+            description: `<@${target.id}> is not banned from \`${event.name}\`.`,
           }),
         ],
       });
       return;
     }
 
+    event.bannedUsers = event.bannedUsers.filter((ban) => ban.userId !== target.id);
+    await event.save();
+
+    await interaction.editReply({
+      embeds: [
+        DefaultClientUtilities.generateEmbed("success", {
+          title: "Unbanned user",
+          description: `<@${target.id}> can submit to \`${event.name}\` again.`,
+        }),
+      ],
+    });
+  }
+
+  async handleSubmit(interaction: ChatInputCommandInteraction) {
+    const eventName = interaction.options.getString("event_name", true);
+
+    const event = await ServerEventModel.findOne({
+      guildId: interaction.guildId,
+      name: eventName,
+    });
+
+    if (!event) {
+      await interaction.reply({
+        embeds: [
+          DefaultClientUtilities.generateEmbed("error", {
+            title: "Failed to find event",
+            description: `Couldn't find an event under name \`${eventName}\``,
+          }),
+        ],
+        flags: "Ephemeral",
+      });
+      return;
+    }
+
+    if (!event.started) {
+      await interaction.reply({
+        embeds: [
+          DefaultClientUtilities.generateEmbed("error", {
+            title: "Cannot submit to event",
+            description: `This event is currently not running`,
+          }),
+        ],
+        flags: "Ephemeral",
+      });
+      return;
+    }
+
     const modal = new ModalBuilder()
       .setCustomId(`event-submit-${event.id}`)
-      .setTitle(event.name)
+      .setTitle(event.name.slice(0, 45))
       .addLabelComponents(...event.fields);
 
     await interaction.showModal(modal);
@@ -292,48 +367,56 @@ export default class EventCommand extends CustomApplicationCommand {
     });
 
     collector.on("collect", async (component: MessageComponentInteraction) => {
-      if (component.isStringSelectMenu() && component.customId === "add-component-menu") {
-        await ServerEventUtility.handleAddField(
-          component,
-          eventName,
-          fields,
-          component.values[0] as FieldType,
-        );
-        return;
-      }
+      try {
+        if (
+          component.isStringSelectMenu() &&
+          component.customId === "add-component-menu"
+        ) {
+          await ServerEventUtility.handleAddField(
+            component,
+            eventName,
+            fields,
+            component.values[0] as FieldType,
+            `add-event-field-${component.id}`,
+          );
+          return;
+        }
 
-      if (!component.isButton()) return;
+        if (!component.isButton()) return;
 
-      if (component.customId === "cancel-event-button") {
-        collector.stop("cancelled");
-        await component.update({
-          components: [
-            new TextDisplayBuilder({
-              content: `Cancelled creating event \`${eventName}\`.`,
-            }),
-          ],
-          flags: "IsComponentsV2",
-        });
-        return;
-      }
-
-      if (component.customId === "submit-event-button") {
-        if (fields.length === 0) {
-          await component.reply({
-            content: "Add at least one field before submitting.",
-            flags: "Ephemeral",
+        if (component.customId === "cancel-event-button") {
+          collector.stop("cancelled");
+          await component.update({
+            components: [
+              new TextDisplayBuilder({
+                content: `Cancelled creating event \`${eventName}\`.`,
+              }),
+            ],
+            flags: "IsComponentsV2",
           });
           return;
         }
 
-        const created = await ServerEventUtility.handleFinalize(
-          this.client,
-          component,
-          interaction,
-          eventName,
-          fields,
-        );
-        if (created) collector.stop("submitted");
+        if (component.customId === "submit-event-button") {
+          if (fields.length === 0) {
+            await component.reply({
+              content: "Add at least one field before submitting.",
+              flags: "Ephemeral",
+            });
+            return;
+          }
+
+          const created = await ServerEventUtility.handleFinalize(
+            this.client,
+            component,
+            interaction,
+            eventName,
+            fields,
+          );
+          if (created) collector.stop("submitted");
+        }
+      } catch (error) {
+        this.client.logger.error("Event creation failed", { error });
       }
     });
 
@@ -356,7 +439,7 @@ export default class EventCommand extends CustomApplicationCommand {
     const eventName = interaction.options.getString("event_name", true);
 
     const [event, eventConfig] = await Promise.all([
-      ServerEventModel.findOne({ name: eventName }),
+      ServerEventModel.findOne({ guildId: interaction.guildId, name: eventName }),
       ServerEventConfigModel.findOne({ guildId: interaction.guildId }),
     ]);
 
@@ -385,22 +468,53 @@ export default class EventCommand extends CustomApplicationCommand {
       return;
     }
 
-    const endDateCustomId = "end-date-input";
-    const endDateTextInput = new LabelBuilder()
-      .setLabel("Set End Date")
-      .setDescription("Event will last this long from today (e.g. 1w)")
-      .setTextInputComponent((textInput) =>
-        textInput
-          .setCustomId(endDateCustomId)
-          .setRequired(true)
-          .setPlaceholder("valid options: d, w, y")
-          .setStyle(TextInputStyle.Short),
-      );
+    const daysId = "end-days";
+    const hourId = "end-hour";
+    const minuteId = "end-minute";
+
+    const durationOptions = [
+      { label: "Today", value: "0" },
+      { label: "1 day", value: "1" },
+      { label: "3 days", value: "3" },
+      { label: "7 days", value: "7" },
+      { label: "14 days", value: "14" },
+      { label: "30 days", value: "30" },
+    ];
+    const hourOptions = Array.from({ length: 24 }, (_, hour) => ({
+      label: `${String(hour).padStart(2, "0")}:00`,
+      value: `${hour}`,
+    }));
+    const minuteOptions = ["00", "15", "30", "45"].map((minute) => ({
+      label: minute,
+      value: minute,
+    }));
 
     const startModal = new ModalBuilder()
       .setCustomId("start-event-modal")
-      .setTitle(`Prepare to start \`${event.name}\``)
-      .addLabelComponents(endDateTextInput);
+      .setTitle(`Start ${event.name}`.slice(0, 45))
+      .addLabelComponents(
+        new LabelBuilder({ label: "Ends in" }).setStringSelectMenuComponent(
+          new StringSelectMenuBuilder()
+            .setCustomId(daysId)
+            .setPlaceholder("Pick a duration")
+            .addOptions(durationOptions)
+            .setRequired(true),
+        ),
+        new LabelBuilder({ label: "End time hour (UTC)" }).setStringSelectMenuComponent(
+          new StringSelectMenuBuilder()
+            .setCustomId(hourId)
+            .setPlaceholder("Pick an hour")
+            .addOptions(hourOptions)
+            .setRequired(true),
+        ),
+        new LabelBuilder({ label: "End time minute" }).setStringSelectMenuComponent(
+          new StringSelectMenuBuilder()
+            .setCustomId(minuteId)
+            .setPlaceholder("Pick minutes")
+            .addOptions(minuteOptions)
+            .setRequired(true),
+        ),
+      );
 
     await interaction.showModal(startModal);
 
@@ -413,36 +527,23 @@ export default class EventCommand extends CustomApplicationCommand {
 
     if (!submitted) return;
 
-    const label = submitted.fields.getTextInputValue(endDateCustomId);
+    const days = Number.parseInt(submitted.fields.getStringSelectValues(daysId)[0]);
+    const hour = Number.parseInt(submitted.fields.getStringSelectValues(hourId)[0]);
+    const minute = Number.parseInt(submitted.fields.getStringSelectValues(minuteId)[0]);
 
-    const match = label.trim().match(/^(\d+)(d|w|y)$/i);
-    if (!match) {
-      await submitted.reply({
-        content:
-          "Invalid end date. Use a number followed by `d`, `w`, or `y` (e.g. `1w`).",
-        flags: "Ephemeral",
-      });
-      return;
-    }
+    let endDate = dayjs()
+      .utc()
+      .add(days, "day")
+      .hour(hour)
+      .minute(minute)
+      .second(0)
+      .millisecond(0);
 
-    const [, amount, unit] = match;
-    const unitMap = { d: "day", w: "week", y: "year" } as const;
-    const endDate = dayjs().add(
-      Number(amount),
-      unitMap[unit.toLowerCase() as "d" | "w" | "y"],
-    );
+    if (!endDate.isAfter(dayjs())) endDate = endDate.add(1, "day");
 
     const errorEmbed = DefaultClientUtilities.generateEmbed("error", {
       title: "Cannot start event.",
     });
-
-    if (!endDate.isValid() || !endDate.isAfter(dayjs())) {
-      await submitted.reply({
-        embeds: [errorEmbed.setDescription("That end date isn't valid.")],
-        flags: "Ephemeral",
-      });
-      return;
-    }
 
     let errors = [];
 
@@ -506,16 +607,17 @@ export default class EventCommand extends CustomApplicationCommand {
     event.endAt = endDate.toDate();
     await event.save();
 
+    ServerEventUtility.scheduleEnd(this.client, event.id);
+    await ServerEventUtility.announceStart(this.client, event).catch(() => {});
+
     await confirmation.update({
       content: `Event \`${event.name}\` started, ending ${time(endDate.toDate(), "R")}.`,
       components: [],
     });
-
-    // TODO send message about event starting, remaining length, and max submissions/command to run.
-    // will also need to wire-up autoreactions and similar.. all of which can be re-used from emoji suggestions.
   }
 
   async handleConfigGet(interaction: ChatInputCommandInteraction) {
+    await interaction.deferReply({});
     const eventConfig = await ServerEventConfigModel.findOne({
       guildId: interaction.guildId,
     });
