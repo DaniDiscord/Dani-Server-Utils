@@ -1,4 +1,5 @@
 import {
+  APILabelComponent,
   ChannelType,
   ComponentType,
   MessageFlags,
@@ -53,13 +54,10 @@ export default class EventSubmitModal extends Modal {
       return;
     }
 
-    const rawFields = event.fields as unknown as {
-      label: string;
-      component: { type: ComponentType; customId?: string; custom_id?: string };
-    }[];
+    const rawFields = event.fields as APILabelComponent[];
 
     const entries = rawFields.map((field) => {
-      const fieldId = field.component.customId ?? field.component.custom_id ?? "";
+      const fieldId = field.component.custom_id ?? "";
       if (field.component.type === ComponentType.FileUpload) {
         const files = interaction.fields.getUploadedFiles(fieldId);
         return {
