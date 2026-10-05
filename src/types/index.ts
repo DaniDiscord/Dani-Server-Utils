@@ -54,4 +54,3 @@ export const units = [
 ];
 
 export type AllEvents = keyof ClientEvents | "raw" | "voiceServerUpdate";
-

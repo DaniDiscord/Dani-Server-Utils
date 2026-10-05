@@ -92,8 +92,8 @@ export const clientConfig = {
         } else return false;
         return Boolean(
           helperRole &&
-            ((msg && msg.member && msg.member.roles.cache.has(helperRole.id)) ||
-              (member && member.roles.cache.has(helperRole.id))),
+          ((msg && msg.member && msg.member.roles.cache.has(helperRole.id)) ||
+            (member && member.roles.cache.has(helperRole.id))),
         );
       },
     },
@@ -109,8 +109,8 @@ export const clientConfig = {
         } else return false;
         return Boolean(
           modRole &&
-            ((msg && msg.member && msg.member.roles.cache.has(modRole.id)) ||
-              (member && member.roles.cache.has(modRole.id))),
+          ((msg && msg.member && msg.member.roles.cache.has(modRole.id)) ||
+            (member && member.roles.cache.has(modRole.id))),
         );
       },
     },
@@ -126,10 +126,10 @@ export const clientConfig = {
         } else return false;
         return Boolean(
           (msg && msg.member && msg.member.permissions.has("ManageGuild")) ||
-            (member && member.permissions.has("ManageGuild")) ||
-            (admRole &&
-              ((msg && msg.member && msg.member.roles.cache.has(admRole.id)) ||
-                (member && member.roles.cache.has(admRole.id)))),
+          (member && member.permissions.has("ManageGuild")) ||
+          (admRole &&
+            ((msg && msg.member && msg.member.roles.cache.has(admRole.id)) ||
+              (member && member.roles.cache.has(admRole.id)))),
         );
       },
     },
@@ -139,7 +139,7 @@ export const clientConfig = {
       check: (msg, member) =>
         Boolean(
           (msg && msg.member && msg.guild?.ownerId === msg.author.id) ||
-            (member && member.guild.ownerId === member.id),
+          (member && member.guild.ownerId === member.id),
         ),
     },
     {
@@ -148,7 +148,7 @@ export const clientConfig = {
       check: (message, member) =>
         Boolean(
           (message && message.author.id === clientConfig.ownerId) ||
-            (member && member.id === clientConfig.ownerId),
+          (member && member.id === clientConfig.ownerId),
         ),
     },
   ],

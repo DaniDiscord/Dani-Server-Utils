@@ -2,7 +2,7 @@ import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
   ChannelType,
-  ChatInputCommandInteraction
+  ChatInputCommandInteraction,
 } from "discord.js";
 
 import { CustomApplicationCommand } from "lib/core/command";
@@ -40,21 +40,23 @@ export default class Vikunja extends CustomApplicationCommand {
   async run(interaction: ChatInputCommandInteraction) {
     const subcommand = interaction.options.getSubcommand();
 
-
-    switch(subcommand) {
+    switch (subcommand) {
       case "parent": {
-        const channel = interaction.options.getChannel('set', true, [ChannelType.GuildForum])
-        await this.updateVikunja(interaction, this.client, { forumChannelId: channel.id });
-        await interaction.reply(`Updated parent forum channel to ${channel.name}`)
+        const channel = interaction.options.getChannel("set", true, [
+          ChannelType.GuildForum,
+        ]);
+        await this.updateVikunja(interaction, this.client, {
+          forumChannelId: channel.id,
+        });
+        await interaction.reply(`Updated parent forum channel to ${channel.name}`);
         return;
       }
       default: {
-        await interaction.reply({ content: "No option" })
+        await interaction.reply({ content: "No option" });
         return;
       }
     }
   }
-
 
   private async updateVikunja(
     interaction: ChatInputCommandInteraction,

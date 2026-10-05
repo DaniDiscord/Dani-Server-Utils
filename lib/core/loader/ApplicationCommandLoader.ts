@@ -193,8 +193,6 @@ export class ApplicationCommandLoader extends BaseInteractionLoader {
         description: "Something went wrong executing the command.",
       });
 
-      interaction.deferReply();
-
       if (interaction.replied) {
         return interaction.followUp({
           flags: [MessageFlags.Ephemeral],

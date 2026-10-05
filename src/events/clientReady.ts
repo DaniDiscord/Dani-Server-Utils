@@ -3,6 +3,8 @@ import { AutoArchiveUtility } from "../utilities/autoArchive";
 import { DsuClient } from "../../lib/core/DsuClient";
 import { EventLoader } from "../../lib/core/loader/EventLoader";
 import { ISettings } from "types/mongodb";
+import { ServerEventModel } from "models/ServerEvent";
+import { ServerEventUtility } from "../utilities/serverEvent";
 import { SettingsModel } from "models/Settings";
 import { Times } from "types/index";
 import _ from "lodash";
@@ -66,21 +68,33 @@ export default class ClientReady extends EventLoader {
     }
   }
 
+  private mergeIntoStringKeyCache(client: DsuClient, key: string, values: Set<string>) {
+    const cache = client.stringKeyCache.get(key);
+
+    if (cache) {
+      for (const value of values) cache.add(value);
+    } else {
+      client.stringKeyCache.set(key, values);
+    }
+  }
+
   private async updateStringKeys(client: DsuClient, guildId: string) {
-    let settings = client.settings.get(guildId);
+    const settings = client.settings.get(guildId);
 
     if (!settings) return;
 
-    let cache = client.stringKeyCache.get("triggers");
+    this.mergeIntoStringKeyCache(
+      client,
+      "triggers",
+      new Set(settings.triggers.map((t) => t.id)),
+    );
 
-
-    const dbTriggers = new Set(settings.triggers.map((t) => t.id));
-
-    if (cache) {
-      for (const t of dbTriggers) cache.add(t);
-    } else {
-      client.stringKeyCache.set("triggers", dbTriggers);
-    }
+    const events = await ServerEventModel.find({ guildId }).select("name");
+    this.mergeIntoStringKeyCache(
+      client,
+      "events",
+      new Set(events.map((event) => event.name)),
+    );
   }
 
   override async run(client: DsuClient) {
@@ -120,6 +134,9 @@ export default class ClientReady extends EventLoader {
 
     AutoArchiveUtility.handleAutoArchive(this.client);
     AnchorUtility.checkAnchorInactivity(this.client);
+    ServerEventUtility.restoreSchedules(this.client).catch((e) =>
+      this.client.logger.error("Failed to restore event schedules", e),
+    );
 
     client.logger.info(`Bot logged in as ${client.user?.tag}.`);
 

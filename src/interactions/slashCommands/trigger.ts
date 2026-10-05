@@ -525,7 +525,6 @@ export default class TriggerCommand extends CustomApplicationCommand {
           ? "No triggers in guild"
           : triggers.map((t) => `\`${t.id}\``).join(", ");
 
-
       const existingCache = this.client.stringKeyCache.get("triggers");
       if (
         existingCache?.size !== triggers.length ||
